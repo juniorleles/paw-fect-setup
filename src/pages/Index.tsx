@@ -13,10 +13,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -51,7 +53,10 @@ const Index = () => {
           voiceTone: c.voice_tone as OnboardingData["voiceTone"],
           assistantName: c.assistant_name,
         });
-        if (c.activated) setActivated(true);
+        if (c.activated) {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
       }
       setLoadingConfig(false);
     };
