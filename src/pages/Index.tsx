@@ -9,6 +9,7 @@ import StepPersonalization from "@/components/onboarding/StepPersonalization";
 import SuccessScreen from "@/components/onboarding/SuccessScreen";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
 import { ArrowLeft, ArrowRight, Zap, PawPrint } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const Index = () => {
   const [step, setStep] = useState(1);
@@ -86,12 +87,22 @@ const Index = () => {
         <ProgressBar currentStep={step} completedSteps={completedSteps} onStepClick={setStep} />
 
         {/* Step content */}
-        <div className="mb-6">
-          {step === 1 && <StepWhatsApp data={data} onChange={updateData} />}
-          {step === 2 && <StepPetShopData data={data} onChange={updateData} errors={errors} />}
-          {step === 3 && <StepBusinessHours data={data} onChange={updateData} />}
-          {step === 4 && <StepServices data={data} onChange={updateData} errors={errors} />}
-          {step === 5 && <StepPersonalization data={data} onChange={updateData} errors={errors} />}
+        <div className="mb-6 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              {step === 1 && <StepWhatsApp data={data} onChange={updateData} />}
+              {step === 2 && <StepPetShopData data={data} onChange={updateData} errors={errors} />}
+              {step === 3 && <StepBusinessHours data={data} onChange={updateData} />}
+              {step === 4 && <StepServices data={data} onChange={updateData} errors={errors} />}
+              {step === 5 && <StepPersonalization data={data} onChange={updateData} errors={errors} />}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Navigation */}
