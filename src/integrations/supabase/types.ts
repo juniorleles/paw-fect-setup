@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pet_shop_configs: {
+        Row: {
+          activated: boolean
+          address: string
+          assistant_name: string
+          business_hours: Json
+          city: string
+          created_at: string
+          id: string
+          neighborhood: string
+          phone: string
+          phone_verified: boolean
+          services: Json
+          shop_name: string
+          state: string
+          updated_at: string
+          user_id: string
+          voice_tone: string
+        }
+        Insert: {
+          activated?: boolean
+          address?: string
+          assistant_name?: string
+          business_hours?: Json
+          city?: string
+          created_at?: string
+          id?: string
+          neighborhood?: string
+          phone?: string
+          phone_verified?: boolean
+          services?: Json
+          shop_name?: string
+          state?: string
+          updated_at?: string
+          user_id: string
+          voice_tone?: string
+        }
+        Update: {
+          activated?: boolean
+          address?: string
+          assistant_name?: string
+          business_hours?: Json
+          city?: string
+          created_at?: string
+          id?: string
+          neighborhood?: string
+          phone?: string
+          phone_verified?: boolean
+          services?: Json
+          shop_name?: string
+          state?: string
+          updated_at?: string
+          user_id?: string
+          voice_tone?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
