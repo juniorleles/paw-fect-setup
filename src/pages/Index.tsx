@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import ProgressBar from "@/components/onboarding/ProgressBar";
 import StepWhatsApp from "@/components/onboarding/StepWhatsApp";
@@ -8,18 +8,87 @@ import StepServices from "@/components/onboarding/StepServices";
 import StepPersonalization from "@/components/onboarding/StepPersonalization";
 import SuccessScreen from "@/components/onboarding/SuccessScreen";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
-import { ArrowLeft, ArrowRight, Zap, PawPrint } from "lucide-react";
+import { ArrowLeft, ArrowRight, Zap, PawPrint, LogOut, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activated, setActivated] = useState(false);
+  const [configId, setConfigId] = useState<string | null>(null);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+
+  // Load existing config
+  useEffect(() => {
+    const loadConfig = async () => {
+      if (!user) return;
+      const { data: configs } = await supabase
+        .from("pet_shop_configs")
+        .select("*")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (configs && configs.length > 0) {
+        const c = configs[0];
+        setConfigId(c.id);
+        setData({
+          phone: c.phone,
+          phoneVerified: c.phone_verified,
+          shopName: c.shop_name,
+          address: c.address,
+          neighborhood: c.neighborhood,
+          city: c.city,
+          state: c.state,
+          businessHours: c.business_hours as unknown as OnboardingData["businessHours"],
+          services: c.services as unknown as OnboardingData["services"],
+          voiceTone: c.voice_tone as OnboardingData["voiceTone"],
+          assistantName: c.assistant_name,
+        });
+        if (c.activated) setActivated(true);
+      }
+      setLoadingConfig(false);
+    };
+    loadConfig();
+  }, [user]);
+
+  const saveConfig = useCallback(async (updatedData: OnboardingData, isActivated = false) => {
+    if (!user) return;
+    const payload = {
+      user_id: user.id,
+      phone: updatedData.phone,
+      phone_verified: updatedData.phoneVerified,
+      shop_name: updatedData.shopName,
+      address: updatedData.address,
+      neighborhood: updatedData.neighborhood,
+      city: updatedData.city,
+      state: updatedData.state,
+      business_hours: updatedData.businessHours as any,
+      services: updatedData.services as any,
+      voice_tone: updatedData.voiceTone,
+      assistant_name: updatedData.assistantName,
+      activated: isActivated,
+    };
+
+    if (configId) {
+      await supabase.from("pet_shop_configs").update(payload).eq("id", configId);
+    } else {
+      const { data: inserted } = await supabase.from("pet_shop_configs").insert(payload).select("id").single();
+      if (inserted) setConfigId(inserted.id);
+    }
+  }, [user, configId]);
 
   const updateData = useCallback((partial: Partial<OnboardingData>) => {
-    setData((prev) => ({ ...prev, ...partial }));
+    setData((prev) => {
+      const updated = { ...prev, ...partial };
+      return updated;
+    });
     setErrors({});
   }, []);
 
@@ -45,19 +114,30 @@ const Index = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     if (!validate()) return;
     setCompletedSteps((prev) => [...new Set([...prev, step])]);
+    await saveConfig(data);
     if (step < 5) setStep(step + 1);
   };
 
   const goBack = () => step > 1 && setStep(step - 1);
 
-  const handleActivate = () => {
+  const handleActivate = async () => {
     if (!validate()) return;
     setCompletedSteps((prev) => [...new Set([...prev, 5])]);
+    await saveConfig(data, true);
     setActivated(true);
+    toast({ title: "Secretária ativada!", description: "Dados salvos com sucesso." });
   };
+
+  if (loadingConfig) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (activated) {
     return (
@@ -81,6 +161,12 @@ const Index = () => {
             </h1>
           </div>
           <p className="text-muted-foreground">Configure sua secretária digital em minutos</p>
+          <button
+            onClick={signOut}
+            className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <LogOut className="w-3 h-3" /> Sair
+          </button>
         </div>
 
         {/* Progress */}
