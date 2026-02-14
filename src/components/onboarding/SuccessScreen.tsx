@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { OnboardingData } from "@/types/onboarding";
-import { CheckCircle2, MessageCircle, Clock, Scissors, Bot } from "lucide-react";
+import { CheckCircle2, MessageCircle, Clock, Scissors, Bot, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   data: OnboardingData;
@@ -16,6 +18,7 @@ const CONFETTI_COLORS = [
 ];
 
 const SuccessScreen = ({ data }: Props) => {
+  const navigate = useNavigate();
   const [confetti, setConfetti] = useState<Array<{ id: number; left: number; color: string; delay: number; size: number }>>([]);
 
   useEffect(() => {
@@ -106,6 +109,10 @@ const SuccessScreen = ({ data }: Props) => {
               <strong>{data.shopName}</strong>. Estou aqui pra te ajudar a agendar os melhores serviços pro seu pet! 🐾"
             </p>
           </div>
+
+          <Button onClick={() => navigate("/dashboard")} className="h-12 px-8 font-bold" size="lg">
+            Ir para o Dashboard <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
         </CardContent>
       </Card>
     </div>

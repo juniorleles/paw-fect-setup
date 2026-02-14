@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
+import Settings from "./pages/Settings";
+import DashboardLayout from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -23,6 +26,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return user ? <>{children}</> : <Navigate to="/auth" replace />;
 };
 
+const DashboardRoute = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <DashboardLayout>{children}</DashboardLayout>
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -33,6 +42,8 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
+            <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
