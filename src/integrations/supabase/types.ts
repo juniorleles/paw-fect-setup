@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          owner_name: string
+          owner_phone: string
+          pet_name: string
+          service: string
+          status: string
+          time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string | null
+          owner_name: string
+          owner_phone?: string
+          pet_name: string
+          service: string
+          status?: string
+          time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          owner_name?: string
+          owner_phone?: string
+          pet_name?: string
+          service?: string
+          status?: string
+          time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pet_shop_configs: {
         Row: {
           activated: boolean
