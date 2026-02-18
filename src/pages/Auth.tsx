@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PawPrint, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
@@ -121,8 +121,11 @@ const Auth = () => {
               variant="outline"
               className="w-full h-12 font-medium gap-2"
               onClick={async () => {
-                const { error } = await lovable.auth.signInWithOAuth("google", {
-                  redirect_uri: window.location.origin,
+                const { error } = await supabase.auth.signInWithOAuth({
+                  provider: "google",
+                  options: {
+                    redirectTo: window.location.origin,
+                  },
                 });
                 if (error) {
                   toast({
