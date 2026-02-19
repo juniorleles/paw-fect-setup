@@ -1,6 +1,8 @@
 *** Settings ***
 Library    Browser
-Test Teardown    Take Screenshot
+Test Teardown    Run Keywords
+...    Run Keyword And Ignore Error    Take Screenshot
+...    AND    Run Keyword And Ignore Error    Close Browser
 
 *** Variables ***
 ${BASE_URL}    https://stage.magiczap.io/
