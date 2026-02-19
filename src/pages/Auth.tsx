@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { PawPrint, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
@@ -121,9 +122,31 @@ const Auth = () => {
               variant="outline"
               className="w-full h-12 font-medium gap-2"
               onClick={async () => {
-                const { error } = await lovable.auth.signInWithOAuth("google", {
-                  redirect_uri: window.location.origin,
-                });
+                const isCustomDomain =
+                  !window.location.hostname.includes("lovable.app") &&
+                  !window.location.hostname.includes("lovableproject.com");
+
+                let error: any = null;
+
+                if (isCustomDomain) {
+                  const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: {
+                      redirectTo: window.location.origin,
+                      skipBrowserRedirect: true,
+                    },
+                  });
+                  error = oauthError;
+                  if (!error && data?.url) {
+                    window.location.href = data.url;
+                    return;
+                  }
+                } else {
+                  const result = await lovable.auth.signInWithOAuth("google", {
+                    redirect_uri: window.location.origin,
+                  });
+                  error = result.error;
+                }
                 if (error) {
                   toast({
                     title: "Erro",
