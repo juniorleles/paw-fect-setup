@@ -1,0 +1,33 @@
+name: Robot Tests (Playwright + Docker)
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  robot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t robot-playwright .
+
+      - name: Run Robot tests
+        run: |
+          rm -rf output || true
+          mkdir -p output
+          docker run --rm \
+            -v "${{ github.workspace }}/output:/app/output" \
+            robot-playwright
+
+      - name: Upload Robot Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-report
+          path: output/
