@@ -3,7 +3,7 @@ name: Robot Tests (Playwright + Docker)
 on:
   pull_request:
   push:
-    branches: [ "main" ]
+    branches: ["main", "develop"]
   workflow_dispatch:
 
 jobs:
@@ -11,21 +11,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Build Docker image
         run: docker build -t robot-playwright .
 
-      - name: Run Robot tests
+      - name: Run Robot (SMOKE on PR)
+        if: github.event_name == 'pull_request'
         run: |
           rm -rf output || true
           mkdir -p output
           docker run --rm \
             -v "${{ github.workspace }}/output:/app/output" \
-            robot-playwright
+            robot-playwright \
+            robot -d output -i smoke tests
 
-      - name: Upload Robot Report
+      - name: Run Robot (REGRESSION on main)
+        if: github.event_name == 'push'
+        run: |
+          rm -rf output || true
+          mkdir -p output
+          docker run --rm \
+            -v "${{ github.workspace }}/output:/app/output" \
+            robot-playwright \
+            robot -d output -i regression tests
+
+      - name: Upload Robot Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:

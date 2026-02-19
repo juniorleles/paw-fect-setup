@@ -1,15 +1,22 @@
 name: Deploy (Stage/Prod)
 
 on:
-  push:
-    branches: ["main", "develop"]
+  workflow_run:
+    workflows: ["Robot Tests (Playwright + Docker)"]
+    types:
+      - completed
 
 jobs:
   deploy:
+    # Só faz deploy se o Robot terminou com sucesso
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout do EXATO commit que foi testado no Robot
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: actions/setup-node@v4
         with:
@@ -19,11 +26,11 @@ jobs:
       - run: npm ci
 
       - name: Build (staging)
-        if: github.ref == 'refs/heads/develop'
+        if: ${{ github.event.workflow_run.head_branch == 'develop' }}
         run: npm run build -- --mode staging
 
       - name: Build (production)
-        if: github.ref == 'refs/heads/main'
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
         run: npm run build -- --mode production
 
       - name: Configure AWS credentials
@@ -35,7 +42,7 @@ jobs:
 
       # 🚀 DEPLOY STAGE
       - name: Deploy STAGE
-        if: github.ref == 'refs/heads/develop'
+        if: ${{ github.event.workflow_run.head_branch == 'develop' }}
         run: |
           aws s3 sync dist s3://pawfect-setup-stage \
             --delete \
@@ -52,7 +59,7 @@ jobs:
 
       # 🚀 DEPLOY PROD
       - name: Deploy PROD
-        if: github.ref == 'refs/heads/main'
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
         run: |
           aws s3 sync dist s3://pawfect-setup-prod \
             --delete \

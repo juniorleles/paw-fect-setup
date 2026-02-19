@@ -8,3 +8,8 @@ Abrir site e validar título
     ${title}=      Get Title
     Should Contain    ${title}    Lovable App
     Close Browser
+    
+Fluxo completo (regression)
+    [Tags]    regression
+    # aqui seus passos completos…
+    Log    exemplo
