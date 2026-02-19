@@ -24,9 +24,9 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}/output:/app/output" \
             robot-playwright \
-            robot -d output -i smoke tests
+            pabot --processes 2 --outputdir output -i smoke tests
 
-      - name: Run Robot (REGRESSION on main)
+      - name: Run Robot (REGRESSION on main/develop)
         if: github.event_name == 'push'
         run: |
           rm -rf output || true
@@ -34,7 +34,7 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}/output:/app/output" \
             robot-playwright \
-            robot -d output -i regression tests
+            pabot --processes 2 --outputdir output -i regression tests
 
       - name: Upload Robot Reports
         if: always()
@@ -42,3 +42,34 @@ jobs:
         with:
           name: robot-report
           path: output/
+
+  publish_pages:
+    needs: robot
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download Robot artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: robot-report
+          path: site
+
+      - name: Make Pages index
+        run: |
+          if [ -f site/report.html ]; then
+            cp site/report.html site/index.html
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

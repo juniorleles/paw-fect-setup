@@ -8,12 +8,10 @@ on:
 
 jobs:
   deploy:
-    # Só faz deploy se o Robot terminou com sucesso
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout do EXATO commit que foi testado no Robot
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -40,7 +38,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
 
-      # 🚀 DEPLOY STAGE
       - name: Deploy STAGE
         if: ${{ github.event.workflow_run.head_branch == 'develop' }}
         run: |
@@ -57,7 +54,6 @@ jobs:
             --distribution-id E3JF2XH858TUI8 \
             --paths "/index.html"
 
-      # 🚀 DEPLOY PROD
       - name: Deploy PROD
         if: ${{ github.event.workflow_run.head_branch == 'main' }}
         run: |
@@ -73,3 +69,42 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id E133YQTNLCUGEM \
             --paths "/index.html"
+
+  post_deploy_tests:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Build Docker image (Robot)
+        run: docker build -t robot-playwright .
+
+      - name: Post-deploy SMOKE (STAGE)
+        if: ${{ github.event.workflow_run.head_branch == 'develop' }}
+        run: |
+          rm -rf output || true
+          mkdir -p output
+          docker run --rm \
+            -v "${{ github.workspace }}/output:/app/output" \
+            robot-playwright \
+            robot -d output -i smoke --variable BASE_URL:https://stage.magiczap.io/ tests
+
+      - name: Post-deploy SMOKE (PROD)
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        run: |
+          rm -rf output || true
+          mkdir -p output
+          docker run --rm \
+            -v "${{ github.workspace }}/output:/app/output" \
+            robot-playwright \
+            robot -d output -i smoke --variable BASE_URL:https://www.magiczap.io/auth tests
+
+      - name: Upload Post-Deploy Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-post-deploy-report
+          path: output/
