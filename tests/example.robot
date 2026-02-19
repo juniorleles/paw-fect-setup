@@ -6,5 +6,5 @@ Abrir site e validar título
     New Browser    chromium    headless=True
     New Page       https://www.magiczap.io/
     ${title}=      Get Title
-    Should Contain    ${title}    Example
+    Should Contain    ${title}    Lovable App
     Close Browser
