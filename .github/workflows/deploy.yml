@@ -1,0 +1,68 @@
+name: Deploy (Stage/Prod)
+
+on:
+  push:
+    branches: ["main", "develop"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build (staging)
+        if: github.ref == 'refs/heads/develop'
+        run: npm run build -- --mode staging
+
+      - name: Build (production)
+        if: github.ref == 'refs/heads/main'
+        run: npm run build -- --mode production
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      # 🚀 DEPLOY STAGE
+      - name: Deploy STAGE
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          aws s3 sync dist s3://pawfect-setup-stage \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+
+          aws s3 cp dist/index.html s3://pawfect-setup-stage/index.html \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --content-type "text/html" \
+            --metadata-directive REPLACE
+
+          aws cloudfront create-invalidation \
+            --distribution-id E3JF2XH858TUI8 \
+            --paths "/index.html"
+
+      # 🚀 DEPLOY PROD
+      - name: Deploy PROD
+        if: github.ref == 'refs/heads/main'
+        run: |
+          aws s3 sync dist s3://pawfect-setup-prod \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+
+          aws s3 cp dist/index.html s3://pawfect-setup-prod/index.html \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --content-type "text/html" \
+            --metadata-directive REPLACE
+
+          aws cloudfront create-invalidation \
+            --distribution-id E133YQTNLCUGEM \
+            --paths "/index.html"
