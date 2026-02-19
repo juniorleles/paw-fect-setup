@@ -1,0 +1,110 @@
+name: Deploy (Stage/Prod)
+
+on:
+  workflow_run:
+    workflows: ["Robot Tests (Playwright + Docker)"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build (staging)
+        if: ${{ github.event.workflow_run.head_branch == 'develop' }}
+        run: npm run build -- --mode staging
+
+      - name: Build (production)
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        run: npm run build -- --mode production
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Deploy STAGE
+        if: ${{ github.event.workflow_run.head_branch == 'develop' }}
+        run: |
+          aws s3 sync dist s3://pawfect-setup-stage \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+
+          aws s3 cp dist/index.html s3://pawfect-setup-stage/index.html \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --content-type "text/html" \
+            --metadata-directive REPLACE
+
+          aws cloudfront create-invalidation \
+            --distribution-id E3JF2XH858TUI8 \
+            --paths "/index.html"
+
+      - name: Deploy PROD
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        run: |
+          aws s3 sync dist s3://pawfect-setup-prod \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+
+          aws s3 cp dist/index.html s3://pawfect-setup-prod/index.html \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --content-type "text/html" \
+            --metadata-directive REPLACE
+
+          aws cloudfront create-invalidation \
+            --distribution-id E133YQTNLCUGEM \
+            --paths "/index.html"
+
+  post_deploy_tests:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Build Docker image (Robot)
+        run: docker build -t robot-playwright .
+
+      - name: Post-deploy SMOKE (STAGE)
+        if: ${{ github.event.workflow_run.head_branch == 'develop' }}
+        run: |
+          rm -rf output || true
+          mkdir -p output
+          docker run --rm \
+            -v "${{ github.workspace }}/output:/app/output" \
+            robot-playwright \
+            robot -d output -i smoke --variable BASE_URL:https://stage.magiczap.io/ tests
+
+      - name: Post-deploy SMOKE (PROD)
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        run: |
+          rm -rf output || true
+          mkdir -p output
+          docker run --rm \
+            -v "${{ github.workspace }}/output:/app/output" \
+            robot-playwright \
+            robot -d output -i smoke --variable BASE_URL:https://www.magiczap.io/auth tests
+
+      - name: Upload Post-Deploy Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-post-deploy-report
+          path: output/
