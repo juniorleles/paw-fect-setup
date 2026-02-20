@@ -13,3 +13,7 @@ project_id = "kxcqizfxfqzmnhxeaepc"
     verify_jwt = false
   [functions.whatsapp-ai-handler]
     verify_jwt = false
+  [functions.appointment-reminder]
+    verify_jwt = false
+  [functions.reconnect-whatsapp]
+    verify_jwt = false
