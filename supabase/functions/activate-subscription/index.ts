@@ -120,6 +120,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Register webhook for connection status updates
+    const supabaseProjectUrl = Deno.env.get("SUPABASE_URL")!;
+    const webhookUrl = `${supabaseProjectUrl}/functions/v1/evolution-webhook`;
+    try {
+      const webhookRes = await fetch(`${baseUrl}/webhook/instance`, {
+        method: "POST",
+        headers: evoHeaders,
+        body: JSON.stringify({
+          url: webhookUrl,
+          webhook_by_events: false,
+          webhook_base64: false,
+          events: ["CONNECTION_UPDATE", "QRCODE_UPDATED"],
+          instanceName,
+        }),
+      });
+      console.log("Webhook registration:", webhookRes.status, await webhookRes.text());
+    } catch (whErr) {
+      console.error("Webhook registration error:", whErr);
+    }
+
     // Update database with instance name
     await serviceClient
       .from("pet_shop_configs")
