@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.activate-subscription]
 verify_jwt = false
+
+[functions.evolution-webhook]
+verify_jwt = false
