@@ -1,1 +1,7 @@
 project_id = "kxcqizfxfqzmnhxeaepc"
+
+[functions.cancel-subscription]
+verify_jwt = false
+
+[functions.reactivate-subscription]
+verify_jwt = false
