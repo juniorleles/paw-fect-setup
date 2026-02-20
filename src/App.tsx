@@ -13,6 +13,7 @@ import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 import DashboardLayout from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const queryClient = new QueryClient();
 
@@ -28,9 +29,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return user ? <>{children}</> : <Navigate to="/auth" replace />;
 };
 
+const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
+  const { status, loading } = useSubscription();
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (status === "cancelled") {
+    return <Navigate to="/subscription-cancelled" replace />;
+  }
+  return <>{children}</>;
+};
+
 const DashboardRoute = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
-    <DashboardLayout>{children}</DashboardLayout>
+    <SubscriptionGuard>
+      <DashboardLayout>{children}</DashboardLayout>
+    </SubscriptionGuard>
   </ProtectedRoute>
 );
 
