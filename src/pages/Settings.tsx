@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSubscription } from "@/hooks/useSubscription";
 import CancelSubscriptionDialog from "@/components/CancelSubscriptionDialog";
 import { Badge } from "@/components/ui/badge";
+import WhatsAppStatusBadge from "@/components/dashboard/WhatsAppStatusBadge";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -141,7 +142,10 @@ const Settings = () => {
           <TabsTrigger value="ai">IA</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="whatsapp" className="mt-6">
+        <TabsContent value="whatsapp" className="mt-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <WhatsAppStatusBadge />
+          </div>
           <StepWhatsApp data={data} onChange={updateData} />
         </TabsContent>
         <TabsContent value="shop" className="mt-6">
