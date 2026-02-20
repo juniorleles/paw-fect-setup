@@ -19,13 +19,17 @@ import { useSubscription } from "@/hooks/useSubscription";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isRecovery } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
+  }
+  // If in recovery mode, redirect to reset-password instead of dashboard
+  if (isRecovery) {
+    return <Navigate to="/reset-password" replace />;
   }
   return user ? <>{children}</> : <Navigate to="/auth" replace />;
 };
