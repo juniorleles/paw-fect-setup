@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.reactivate-subscription]
 verify_jwt = false
+
+[functions.activate-subscription]
+verify_jwt = false
