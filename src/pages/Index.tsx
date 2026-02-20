@@ -132,6 +132,20 @@ const Index = () => {
     if (!validate()) return;
     setCompletedSteps((prev) => [...new Set([...prev, 5])]);
     await saveConfig(data, true);
+
+    // Create active subscription if none exists
+    if (user) {
+      const { data: existingSub } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!existingSub) {
+        await supabase.from("subscriptions").insert({ user_id: user.id, status: "active" });
+      }
+    }
+
     setActivated(true);
     toast({ title: "Secretária ativada!", description: "Dados salvos com sucesso." });
   };
