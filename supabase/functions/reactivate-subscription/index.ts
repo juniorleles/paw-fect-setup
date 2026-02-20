@@ -64,11 +64,37 @@ Deno.serve(async (req) => {
       .update({ activated: true })
       .eq("user_id", user.id);
 
+    // Reconnect WhatsApp via Evolution API
+    const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
+    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
+    const evolutionInstance = Deno.env.get("EVOLUTION_INSTANCE_NAME");
+
+    let whatsappReconnected = false;
+    if (evolutionUrl && evolutionKey && evolutionInstance) {
+      try {
+        const connectRes = await fetch(
+          `${evolutionUrl}/instance/connect/${evolutionInstance}`,
+          {
+            method: "GET",
+            headers: {
+              apikey: evolutionKey,
+            },
+          }
+        );
+        whatsappReconnected = connectRes.ok;
+        if (!connectRes.ok) {
+          console.error("Evolution API connect failed:", await connectRes.text());
+        }
+      } catch (evoErr) {
+        console.error("Evolution API error:", evoErr);
+      }
+    }
+
     // Log the action
     await supabase.from("subscription_logs").insert({
       user_id: user.id,
       action: "reactivate",
-      details: { reactivated_at: new Date().toISOString() },
+      details: { reactivated_at: new Date().toISOString(), whatsapp_reconnected: whatsappReconnected },
     });
 
     return new Response(
