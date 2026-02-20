@@ -24,7 +24,7 @@ import type { Service } from "@/types/onboarding";
 
 interface Props {
   services: Service[];
-  onSave: (apt: Omit<Appointment, "id" | "created_at" | "updated_at">) => Promise<{ error: any }>;
+  onSave: (apt: Omit<Appointment, "id" | "created_at" | "updated_at" | "confirmation_message_sent_at">) => Promise<{ error: any }>;
   editingAppointment?: Appointment | null;
   onUpdate?: (id: string, updates: Partial<Appointment>) => Promise<{ error: any }>;
   trigger?: React.ReactNode;

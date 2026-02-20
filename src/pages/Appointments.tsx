@@ -30,6 +30,8 @@ import {
   Clock,
   XCircle,
   X,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -331,6 +333,15 @@ const Appointments = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
+                              {apt.confirmation_message_sent_at ? (
+                                <span title={`Lembrete enviado em ${format(new Date(apt.confirmation_message_sent_at), "dd/MM HH:mm")}`}>
+                                  <Bell className="w-3.5 h-3.5 text-success" />
+                                </span>
+                              ) : (
+                                <span title="Lembrete ainda não enviado">
+                                  <BellOff className="w-3.5 h-3.5 text-muted-foreground/40" />
+                                </span>
+                              )}
                               <div className="text-right mr-1">
                                 <p className="text-sm font-medium">{apt.time.slice(0, 5)}</p>
                                 <span className={`text-xs px-2 py-0.5 rounded-full border ${statusInfo.class}`}>

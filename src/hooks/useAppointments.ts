@@ -25,7 +25,7 @@ export const useAppointments = () => {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  const addAppointment = async (apt: Omit<Appointment, "id" | "created_at" | "updated_at">) => {
+  const addAppointment = async (apt: Omit<Appointment, "id" | "created_at" | "updated_at" | "confirmation_message_sent_at">) => {
     const { error } = await supabase.from("appointments").insert(apt as any);
     if (!error) await fetchAppointments();
     return { error };
