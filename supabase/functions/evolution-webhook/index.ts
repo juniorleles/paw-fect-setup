@@ -58,9 +58,49 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Handle QRCODE_UPDATED - could be used to push new QR codes
+    // Handle QRCODE_UPDATED
     if (event === "QRCODE_UPDATED" || event === "qrcode.updated") {
       console.log(`QR code updated for ${instanceName}`);
+    }
+
+    // Handle incoming messages
+    if (event === "MESSAGES_UPSERT" || event === "messages.upsert") {
+      const messages = body.data || [];
+      const msgArray = Array.isArray(messages) ? messages : [messages];
+
+      for (const msg of msgArray) {
+        // Skip messages sent by us (fromMe) and non-text messages
+        if (msg.key?.fromMe) continue;
+        
+        const textContent = msg.message?.conversation 
+          || msg.message?.extendedTextMessage?.text
+          || msg.message?.ephemeralMessage?.message?.conversation
+          || msg.message?.ephemeralMessage?.message?.extendedTextMessage?.text;
+        
+        if (!textContent) continue;
+
+        const senderPhone = msg.key?.remoteJid;
+        if (!senderPhone || senderPhone.endsWith("@g.us")) continue; // Skip group messages
+
+        console.log(`Message from ${senderPhone}: ${textContent.substring(0, 100)}`);
+
+        // Forward to AI handler
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        try {
+          const aiRes = await fetch(`${supabaseUrl}/functions/v1/whatsapp-ai-handler`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              instanceName,
+              message: textContent,
+              senderPhone,
+            }),
+          });
+          console.log("AI handler response:", aiRes.status);
+        } catch (aiErr) {
+          console.error("AI handler call error:", aiErr);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ ok: true }), {
