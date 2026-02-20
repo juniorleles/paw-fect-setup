@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useWhatsAppStatus, type WhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Smartphone, RefreshCw, Loader2 } from "lucide-react";
+import { Smartphone, RefreshCw, Loader2, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; textClass: string }> = {
   connected: {
@@ -28,9 +29,12 @@ const WhatsAppStatusBadge = () => {
   const status = useWhatsAppStatus();
   const config = STATUS_CONFIG[status];
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [reconnecting, setReconnecting] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleReconnect = async () => {
     setReconnecting(true);
@@ -42,8 +46,9 @@ const WhatsAppStatusBadge = () => {
         toast({ title: "Erro ao reconectar", description: data?.error || error?.message, variant: "destructive" });
         return;
       }
-      if (data?.qr_code) {
+      if (data?.qr_code || data?.pairing_code) {
         setQrCode(data.qr_code);
+        setPairingCode(data.pairing_code);
         setQrDialogOpen(true);
       } else {
         toast({ title: "Reconexão iniciada", description: "Aguarde a atualização do status." });
@@ -53,6 +58,13 @@ const WhatsAppStatusBadge = () => {
     } finally {
       setReconnecting(false);
     }
+  };
+
+  const handleCopyCode = async () => {
+    if (!pairingCode) return;
+    await navigator.clipboard.writeText(pairingCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -82,19 +94,37 @@ const WhatsAppStatusBadge = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-primary" />
-              Escaneie o QR Code
+              {isMobile && pairingCode ? "Código de pareamento" : "Escaneie o QR Code"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <p className="text-sm text-muted-foreground text-center">
-              Abra o WhatsApp no seu celular, vá em <strong>Dispositivos conectados</strong> e escaneie o código abaixo.
-            </p>
-            {qrCode && (
-              <img
-                src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
-                alt="QR Code WhatsApp"
-                className="w-64 h-64 rounded-xl border border-border"
-              />
+            {isMobile && pairingCode ? (
+              <>
+                <p className="text-sm text-muted-foreground text-center">
+                  Abra o WhatsApp, vá em <strong>Dispositivos conectados</strong> → <strong>Conectar dispositivo</strong> → <strong>Conectar com número de telefone</strong> e digite o código abaixo.
+                </p>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-secondary border border-border">
+                  <span className="text-3xl font-mono font-bold tracking-[0.3em] text-foreground">
+                    {pairingCode}
+                  </span>
+                  <Button variant="ghost" size="icon" onClick={handleCopyCode} className="shrink-0">
+                    {copied ? <Check className="w-5 h-5 text-success" /> : <Copy className="w-5 h-5" />}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground text-center">
+                  Abra o WhatsApp no seu celular, vá em <strong>Dispositivos conectados</strong> e escaneie o código abaixo.
+                </p>
+                {qrCode && (
+                  <img
+                    src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
+                    alt="QR Code WhatsApp"
+                    className="w-64 h-64 rounded-xl border border-border"
+                  />
+                )}
+              </>
             )}
             <p className="text-xs text-muted-foreground">
               O status será atualizado automaticamente ao conectar.

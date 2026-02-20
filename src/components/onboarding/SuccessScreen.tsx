@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OnboardingData } from "@/types/onboarding";
-import { CheckCircle2, MessageCircle, Clock, Scissors, Bot, ArrowRight } from "lucide-react";
+import { CheckCircle2, MessageCircle, Clock, Scissors, Bot, ArrowRight, Copy, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Props {
   data: OnboardingData;
+  pairingCode?: string | null;
+  qrCode?: string | null;
+  isMobile?: boolean;
 }
 
 const CONFETTI_COLORS = [
@@ -17,9 +20,10 @@ const CONFETTI_COLORS = [
   "hsl(45 95% 55%)",
 ];
 
-const SuccessScreen = ({ data }: Props) => {
+const SuccessScreen = ({ data, pairingCode, qrCode, isMobile }: Props) => {
   const navigate = useNavigate();
   const [confetti, setConfetti] = useState<Array<{ id: number; left: number; color: string; delay: number; size: number }>>([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const pieces = Array.from({ length: 50 }, (_, i) => ({
@@ -33,6 +37,15 @@ const SuccessScreen = ({ data }: Props) => {
   }, []);
 
   const openDays = data.businessHours.filter((d) => d.isOpen).length;
+
+  const handleCopyCode = async () => {
+    if (!pairingCode) return;
+    await navigator.clipboard.writeText(pairingCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const showPairingCode = isMobile && pairingCode;
 
   return (
     <div className="relative overflow-hidden">
@@ -68,6 +81,41 @@ const SuccessScreen = ({ data }: Props) => {
               <span className="font-bold text-primary">{data.assistantName}</span> está pronta para atender seus clientes
             </p>
           </div>
+
+          {/* WhatsApp Connection - Pairing Code for mobile, QR for desktop */}
+          {(showPairingCode || qrCode) && (
+            <div className="p-4 rounded-2xl bg-secondary border border-border max-w-sm mx-auto space-y-3">
+              <p className="text-sm font-semibold text-foreground">
+                📱 Conecte seu WhatsApp
+              </p>
+              {showPairingCode ? (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Abra o WhatsApp → <strong>Dispositivos conectados</strong> → <strong>Conectar dispositivo</strong> → <strong>Conectar com número de telefone</strong> e digite:
+                  </p>
+                  <div className="flex items-center justify-center gap-3 p-3 rounded-xl bg-background border border-border">
+                    <span className="text-2xl font-mono font-bold tracking-[0.3em] text-foreground">
+                      {pairingCode}
+                    </span>
+                    <Button variant="ghost" size="icon" onClick={handleCopyCode} className="shrink-0">
+                      {copied ? <Check className="w-5 h-5 text-success" /> : <Copy className="w-5 h-5" />}
+                    </Button>
+                  </div>
+                </>
+              ) : qrCode ? (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Abra o WhatsApp → <strong>Dispositivos conectados</strong> e escaneie o código:
+                  </p>
+                  <img
+                    src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
+                    alt="QR Code WhatsApp"
+                    className="w-48 h-48 rounded-xl border border-border mx-auto"
+                  />
+                </>
+              ) : null}
+            </div>
+          )}
 
           {/* Summary */}
           <div className="grid grid-cols-2 gap-3 text-left max-w-sm mx-auto">

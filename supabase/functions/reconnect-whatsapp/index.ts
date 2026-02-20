@@ -60,8 +60,9 @@ Deno.serve(async (req) => {
       });
     } catch { /* ignore */ }
 
-    // Connect to get new QR code
+    // Connect to get new QR code and pairing code
     let qrCode = null;
+    let pairingCode = null;
     const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
       method: "GET",
       headers: evoHeaders,
@@ -71,6 +72,7 @@ Deno.serve(async (req) => {
       try {
         const parsed = JSON.parse(await connectRes.text());
         qrCode = parsed?.base64 || null;
+        pairingCode = parsed?.pairingCode || null;
       } catch { /* ignore */ }
     } else {
       // Instance may not exist, create it
@@ -88,6 +90,7 @@ Deno.serve(async (req) => {
         try {
           const parsed = JSON.parse(await createRes.text());
           qrCode = parsed?.qrcode?.base64 || null;
+          pairingCode = parsed?.qrcode?.pairingCode || null;
         } catch { /* ignore */ }
       }
     }
@@ -104,7 +107,7 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id);
 
     return new Response(
-      JSON.stringify({ success: true, qr_code: qrCode }),
+      JSON.stringify({ success: true, qr_code: qrCode, pairing_code: pairingCode }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

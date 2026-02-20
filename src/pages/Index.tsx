@@ -8,12 +8,13 @@ import StepServices from "@/components/onboarding/StepServices";
 import StepPersonalization from "@/components/onboarding/StepPersonalization";
 import SuccessScreen from "@/components/onboarding/SuccessScreen";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
-import { ArrowLeft, ArrowRight, Zap, PawPrint, LogOut, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Zap, PawPrint, LogOut, Loader2, Copy, Check } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -24,6 +25,8 @@ const Index = () => {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activated, setActivated] = useState(false);
+  const [activationResult, setActivationResult] = useState<{ qr_code?: string; pairing_code?: string } | null>(null);
+  const isMobile = useIsMobile();
   const [configId, setConfigId] = useState<string | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
@@ -149,6 +152,7 @@ const Index = () => {
           return;
         }
         console.log("Subscription activated:", result);
+        setActivationResult({ qr_code: result?.qr_code, pairing_code: result?.pairing_code });
       } catch (e: any) {
         console.error("Activate error:", e);
         toast({ title: "Erro na ativação", description: e.message, variant: "destructive" });
@@ -172,7 +176,7 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-lg">
-          <SuccessScreen data={data} />
+          <SuccessScreen data={data} pairingCode={activationResult?.pairing_code} qrCode={activationResult?.qr_code} isMobile={isMobile} />
         </div>
       </div>
     );
