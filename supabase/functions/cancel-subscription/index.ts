@@ -70,25 +70,26 @@ Deno.serve(async (req) => {
     const evolutionInstance = Deno.env.get("EVOLUTION_INSTANCE_NAME");
 
     let whatsappDisconnected = false;
+    console.log("Evolution config:", { hasUrl: !!evolutionUrl, hasKey: !!evolutionKey, instance: evolutionInstance });
     if (evolutionUrl && evolutionKey && evolutionInstance) {
       try {
-        const logoutRes = await fetch(
-          `${evolutionUrl}/instance/logout/${evolutionInstance}`,
-          {
-            method: "DELETE",
-            headers: {
-              apikey: evolutionKey,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const logoutUrl = `${evolutionUrl}/instance/logout/${evolutionInstance}`;
+        console.log("Calling Evolution API:", logoutUrl);
+        const logoutRes = await fetch(logoutUrl, {
+          method: "DELETE",
+          headers: {
+            apikey: evolutionKey,
+            "Content-Type": "application/json",
+          },
+        });
+        const logoutBody = await logoutRes.text();
+        console.log("Evolution API response:", logoutRes.status, logoutBody);
         whatsappDisconnected = logoutRes.ok;
-        if (!logoutRes.ok) {
-          console.error("Evolution API logout failed:", await logoutRes.text());
-        }
       } catch (evoErr) {
         console.error("Evolution API error:", evoErr);
       }
+    } else {
+      console.warn("Evolution API credentials missing");
     }
 
     // Log the action
