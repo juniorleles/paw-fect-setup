@@ -22,6 +22,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import WhatsAppStatusBadge from "@/components/dashboard/WhatsAppStatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -144,7 +145,8 @@ const Dashboard = () => {
             Secretária <span className="font-semibold text-primary">{data.assistantName}</span> está ativa
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          <WhatsAppStatusBadge />
           <AppointmentDialog services={data.services} onSave={addAppointment} />
           <Button variant="outline" onClick={() => navigate("/settings")}>
             Configurações
