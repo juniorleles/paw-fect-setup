@@ -62,6 +62,33 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          phone: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          phone: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          phone?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pet_shop_configs: {
         Row: {
           activated: boolean
