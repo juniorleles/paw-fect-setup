@@ -63,7 +63,7 @@ const WhatsAppStatusBadge = () => {
           <span className={`w-2 h-2 rounded-full ${config.dotClass}`} />
           <span className={`font-medium ${config.textClass}`}>{config.label}</span>
         </div>
-        {status === "disconnected" && (
+        {(status === "disconnected" || status === "pending") && (
           <Button
             variant="outline"
             size="sm"
@@ -72,7 +72,7 @@ const WhatsAppStatusBadge = () => {
             className="gap-1.5 text-xs"
           >
             {reconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            Reconectar
+            {status === "pending" ? "Ver QR Code" : "Reconectar"}
           </Button>
         )}
       </div>
