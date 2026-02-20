@@ -11,3 +11,5 @@ project_id = "kxcqizfxfqzmnhxeaepc"
     verify_jwt = false
   [functions.reactivate-subscription]
     verify_jwt = false
+  [functions.whatsapp-ai-handler]
+    verify_jwt = false
