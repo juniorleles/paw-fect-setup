@@ -11,6 +11,7 @@ export interface Appointment {
   notes: string;
   created_at: string;
   updated_at: string;
+  confirmation_message_sent_at: string | null;
 }
 
-export type AppointmentInsert = Omit<Appointment, "id" | "created_at" | "updated_at">;
+export type AppointmentInsert = Omit<Appointment, "id" | "created_at" | "updated_at" | "confirmation_message_sent_at">;

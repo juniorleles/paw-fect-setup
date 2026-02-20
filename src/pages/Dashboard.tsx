@@ -20,6 +20,8 @@ import {
   Trash2,
   CheckCircle2,
   XCircle,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import WhatsAppStatusBadge from "@/components/dashboard/WhatsAppStatusBadge";
@@ -250,6 +252,15 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {apt.confirmation_message_sent_at ? (
+                        <span title={`Lembrete enviado em ${format(new Date(apt.confirmation_message_sent_at), "dd/MM HH:mm")}`}>
+                          <Bell className="w-3.5 h-3.5 text-success" />
+                        </span>
+                      ) : (
+                        <span title="Lembrete ainda não enviado">
+                          <BellOff className="w-3.5 h-3.5 text-muted-foreground/40" />
+                        </span>
+                      )}
                       <div className="text-right mr-1">
                         <p className="text-sm font-medium">{formatDate(apt.date)}, {apt.time.slice(0, 5)}</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${statusInfo.class}`}>
