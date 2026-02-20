@@ -133,21 +133,31 @@ const Index = () => {
     setCompletedSteps((prev) => [...new Set([...prev, 5])]);
     await saveConfig(data, true);
 
-    // Create active subscription if none exists
+    // Activate subscription and create per-user Evolution instance
     if (user) {
-      const { data: existingSub } = await supabase
-        .from("subscriptions")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!existingSub) {
-        await supabase.from("subscriptions").insert({ user_id: user.id, status: "active" });
+      try {
+        const { data: result, error } = await supabase.functions.invoke("activate-subscription", {
+          method: "POST",
+        });
+        if (error) {
+          console.error("Activate subscription error:", error);
+          toast({ title: "Erro na ativação", description: error.message, variant: "destructive" });
+          return;
+        }
+        if (result?.error) {
+          toast({ title: "Erro na ativação", description: result.error, variant: "destructive" });
+          return;
+        }
+        console.log("Subscription activated:", result);
+      } catch (e: any) {
+        console.error("Activate error:", e);
+        toast({ title: "Erro na ativação", description: e.message, variant: "destructive" });
+        return;
       }
     }
 
     setActivated(true);
-    toast({ title: "Secretária ativada!", description: "Dados salvos com sucesso." });
+    toast({ title: "Secretária ativada!", description: "Sua instância WhatsApp foi criada com sucesso." });
   };
 
   if (loadingConfig) {

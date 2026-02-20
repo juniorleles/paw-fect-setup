@@ -67,6 +67,7 @@ export type Database = {
           business_hours: Json
           city: string
           created_at: string
+          evolution_instance_name: string
           id: string
           neighborhood: string
           phone: string
@@ -77,6 +78,7 @@ export type Database = {
           updated_at: string
           user_id: string
           voice_tone: string
+          whatsapp_status: string
         }
         Insert: {
           activated?: boolean
@@ -85,6 +87,7 @@ export type Database = {
           business_hours?: Json
           city?: string
           created_at?: string
+          evolution_instance_name?: string
           id?: string
           neighborhood?: string
           phone?: string
@@ -95,6 +98,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           voice_tone?: string
+          whatsapp_status?: string
         }
         Update: {
           activated?: boolean
@@ -103,6 +107,7 @@ export type Database = {
           business_hours?: Json
           city?: string
           created_at?: string
+          evolution_instance_name?: string
           id?: string
           neighborhood?: string
           phone?: string
@@ -113,6 +118,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           voice_tone?: string
+          whatsapp_status?: string
         }
         Relationships: []
       }

@@ -45,7 +45,7 @@ export const useSubscription = () => {
     }
   };
 
-  const reactivate = async (): Promise<{ error?: string }> => {
+  const reactivate = async (): Promise<{ error?: string; qr_code?: string }> => {
     setReactivating(true);
     try {
       const { data, error } = await supabase.functions.invoke("reactivate-subscription", {
@@ -54,7 +54,7 @@ export const useSubscription = () => {
       if (error) return { error: error.message };
       if (data?.error) return { error: data.error };
       setStatus("active");
-      return {};
+      return { qr_code: data?.qr_code };
     } catch (e: any) {
       return { error: e.message };
     } finally {

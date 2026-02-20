@@ -22,16 +22,12 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Usuário não autenticado" }), {
         status: 401,
@@ -53,50 +49,72 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Deactivate pet shop config
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    await serviceClient
+    // Get the user's instance name from DB
+    const { data: config } = await serviceClient
       .from("pet_shop_configs")
-      .update({ activated: false, phone_verified: false })
-      .eq("user_id", user.id);
+      .select("evolution_instance_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    // Disconnect WhatsApp via Evolution API
+    const instanceName = config?.evolution_instance_name;
+
+    // Delete instance on Evolution API (per-user)
     const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
     const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-    const evolutionInstance = Deno.env.get("EVOLUTION_INSTANCE_NAME");
 
     let whatsappDisconnected = false;
-    console.log("Evolution config:", { hasUrl: !!evolutionUrl, hasKey: !!evolutionKey, instance: evolutionInstance });
-    if (evolutionUrl && evolutionKey && evolutionInstance) {
+    if (evolutionUrl && evolutionKey && instanceName) {
+      const baseUrl = evolutionUrl.replace(/\/+$/, "");
+      const evoHeaders: Record<string, string> = {
+        apikey: evolutionKey.trim(),
+        "Content-Type": "application/json",
+      };
       try {
-        const logoutUrl = `${evolutionUrl}/instance/logout/${evolutionInstance}`;
-        console.log("Calling Evolution API:", logoutUrl);
-        const logoutRes = await fetch(logoutUrl, {
+        console.log(`Logging out instance: ${instanceName}`);
+        const logoutRes = await fetch(`${baseUrl}/instance/logout/${instanceName}`, {
           method: "DELETE",
-          headers: {
-            apikey: evolutionKey,
-            "Content-Type": "application/json",
-          },
+          headers: evoHeaders,
         });
-        const logoutBody = await logoutRes.text();
-        console.log("Evolution API response:", logoutRes.status, logoutBody);
-        whatsappDisconnected = logoutRes.ok;
+        console.log("Logout response:", logoutRes.status, await logoutRes.text());
+
+        console.log(`Deleting instance: ${instanceName}`);
+        const deleteRes = await fetch(`${baseUrl}/instance/delete/${instanceName}`, {
+          method: "DELETE",
+          headers: evoHeaders,
+        });
+        const deleteBody = await deleteRes.text();
+        console.log("Delete response:", deleteRes.status, deleteBody);
+        whatsappDisconnected = deleteRes.ok || logoutRes.ok;
       } catch (evoErr) {
         console.error("Evolution API error:", evoErr);
       }
-    } else {
-      console.warn("Evolution API credentials missing");
     }
 
-    // Log the action
+    // Deactivate config and clear instance
+    await serviceClient
+      .from("pet_shop_configs")
+      .update({
+        activated: false,
+        phone_verified: false,
+        whatsapp_status: "disconnected",
+        evolution_instance_name: "",
+      })
+      .eq("user_id", user.id);
+
+    // Log
     await supabase.from("subscription_logs").insert({
       user_id: user.id,
       action: "cancel",
-      details: { cancelled_at: new Date().toISOString(), whatsapp_disconnected: whatsappDisconnected },
+      details: {
+        cancelled_at: new Date().toISOString(),
+        instance_deleted: instanceName || null,
+        whatsapp_disconnected: whatsappDisconnected,
+      },
     });
 
     return new Response(

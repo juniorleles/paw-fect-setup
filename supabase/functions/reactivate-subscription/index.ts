@@ -22,16 +22,12 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Usuário não autenticado" }), {
         status: 401,
@@ -53,52 +49,92 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Reactivate pet shop config
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    await serviceClient
-      .from("pet_shop_configs")
-      .update({ activated: true })
-      .eq("user_id", user.id);
-
-    // Reconnect WhatsApp via Evolution API
+    // Create new per-user instance on Evolution API
     const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
     const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-    const evolutionInstance = Deno.env.get("EVOLUTION_INSTANCE_NAME");
+    const instanceName = `user_${user.id.replace(/-/g, "").substring(0, 16)}`;
 
+    let qrCode = null;
     let whatsappReconnected = false;
-    if (evolutionUrl && evolutionKey && evolutionInstance) {
+
+    if (evolutionUrl && evolutionKey) {
+      const baseUrl = evolutionUrl.replace(/\/+$/, "");
+      const evoHeaders: Record<string, string> = {
+        apikey: evolutionKey.trim(),
+        "Content-Type": "application/json",
+      };
       try {
-        const connectRes = await fetch(
-          `${evolutionUrl}/instance/connect/${evolutionInstance}`,
-          {
+        console.log(`Creating instance for reactivation: ${instanceName}`);
+        const createRes = await fetch(`${baseUrl}/instance/create`, {
+          method: "POST",
+          headers: evoHeaders,
+          body: JSON.stringify({
+            instanceName,
+            integration: "WHATSAPP-BAILEYS",
+            qrcode: true,
+          }),
+        });
+
+        const createBody = await createRes.text();
+        console.log("Evolution create response:", createRes.status, createBody);
+
+        if (createRes.ok) {
+          whatsappReconnected = true;
+          try {
+            const parsed = JSON.parse(createBody);
+            qrCode = parsed?.qrcode?.base64 || null;
+          } catch { /* ignore */ }
+        } else if (createRes.status === 409 || createBody.includes("already")) {
+          const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
             method: "GET",
-            headers: {
-              apikey: evolutionKey,
-            },
+            headers: evoHeaders,
+          });
+          whatsappReconnected = connectRes.ok;
+          if (connectRes.ok) {
+            try {
+              const parsed = JSON.parse(await connectRes.text());
+              qrCode = parsed?.base64 || null;
+            } catch { /* ignore */ }
           }
-        );
-        whatsappReconnected = connectRes.ok;
-        if (!connectRes.ok) {
-          console.error("Evolution API connect failed:", await connectRes.text());
         }
       } catch (evoErr) {
         console.error("Evolution API error:", evoErr);
       }
     }
 
-    // Log the action
+    // Reactivate config with new instance
+    await serviceClient
+      .from("pet_shop_configs")
+      .update({
+        activated: true,
+        evolution_instance_name: instanceName,
+        whatsapp_status: whatsappReconnected ? "pending" : "disconnected",
+      })
+      .eq("user_id", user.id);
+
+    // Log
     await supabase.from("subscription_logs").insert({
       user_id: user.id,
       action: "reactivate",
-      details: { reactivated_at: new Date().toISOString(), whatsapp_reconnected: whatsappReconnected },
+      details: {
+        reactivated_at: new Date().toISOString(),
+        instance_name: instanceName,
+        whatsapp_reconnected: whatsappReconnected,
+      },
     });
 
     return new Response(
-      JSON.stringify({ success: true, message: "Assinatura reativada com sucesso" }),
+      JSON.stringify({
+        success: true,
+        message: "Assinatura reativada com sucesso",
+        instance_name: instanceName,
+        qr_code: qrCode,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
