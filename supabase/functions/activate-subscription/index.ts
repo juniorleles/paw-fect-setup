@@ -73,8 +73,16 @@ Deno.serve(async (req) => {
       "Content-Type": "application/json",
     };
 
-    // Try to create instance
-    console.log(`Creating Evolution instance: ${instanceName} at ${baseUrl}`);
+    // Try to create instance - debug auth
+    console.log(`Evolution debug: url=${baseUrl}, keyLen=${evolutionKey.length}, keyStart=${evolutionKey.substring(0, 6)}`);
+    console.log(`Creating Evolution instance: ${instanceName}`);
+
+    // First test: fetch instances to verify auth works
+    const testRes = await fetch(`${baseUrl}/instance/fetchInstances`, {
+      method: "GET",
+      headers: evoHeaders,
+    });
+    console.log("Auth test (fetchInstances):", testRes.status, await testRes.text());
     const createRes = await fetch(`${baseUrl}/instance/create`, {
       method: "POST",
       headers: evoHeaders,
