@@ -5,17 +5,26 @@ on:
     workflows: ["Robot Tests (Playwright + Docker)"]
     types: [completed]
     branches: [main, develop]
+
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Escolha o ambiente"
+        required: true
+        type: choice
+        options:
+          - stage
+          - prod
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
@@ -25,11 +34,11 @@ jobs:
       - run: npm ci
 
       - name: Build (staging)
-        if: ${{ github.event.workflow_run.head_branch == 'develop' }}
+        if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'develop') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'stage') }}
         run: npm run build -- --mode staging
 
       - name: Build (production)
-        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod') }}
         run: npm run build -- --mode production
 
       - name: Configure AWS credentials
@@ -39,36 +48,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
 
-      # 🚀 DEPLOY STAGE
       - name: Deploy STAGE
-        if: ${{ github.event.workflow_run.head_branch == 'develop' }}
+        if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'develop') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'stage') }}
         run: |
-          aws s3 sync dist s3://pawfect-setup-stage \
-            --delete \
-            --cache-control "public, max-age=31536000, immutable"
-
+          aws s3 sync dist s3://pawfect-setup-stage --delete
           aws s3 cp dist/index.html s3://pawfect-setup-stage/index.html \
             --cache-control "public, max-age=0, must-revalidate" \
             --content-type "text/html" \
             --metadata-directive REPLACE
+          aws cloudfront create-invalidation --distribution-id E3JF2XH858TUI8 --paths "/*"
 
-          aws cloudfront create-invalidation \
-            --distribution-id E3JF2XH858TUI8 \
-            --paths "/*"
-
-      # 🚀 DEPLOY PROD
       - name: Deploy PROD
-        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod') }}
         run: |
-          aws s3 sync dist s3://pawfect-setup-prod \
-            --delete \
-            --cache-control "public, max-age=31536000, immutable"
-
+          aws s3 sync dist s3://pawfect-setup-prod --delete
           aws s3 cp dist/index.html s3://pawfect-setup-prod/index.html \
             --cache-control "public, max-age=0, must-revalidate" \
             --content-type "text/html" \
             --metadata-directive REPLACE
-
-          aws cloudfront create-invalidation \
-            --distribution-id E133YQTNLCUGEM \
-            --paths "/*"
+          aws cloudfront create-invalidation --distribution-id E133YQTNLCUGEM --paths "/*"
