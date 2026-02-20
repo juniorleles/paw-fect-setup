@@ -379,7 +379,42 @@ Deno.serve(async (req) => {
       ? customerAppointments.map((a: any) => `- ${a.date} às ${a.time}: ${a.service} (pet: ${a.pet_name}, status: ${a.status})`).join("\n")
       : "Nenhum agendamento encontrado.";
 
-    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText);
+    // Long-term memory: fetch past appointments for this customer
+    const { data: pastAppointments } = await serviceClient
+      .from("appointments")
+      .select("date, time, service, status, pet_name, owner_name, owner_phone, notes")
+      .eq("user_id", shopConfig.user_id)
+      .lt("date", today)
+      .order("date", { ascending: false })
+      .limit(30);
+
+    const pastCustomerAppts = (pastAppointments || [])
+      .filter((a: any) => phoneMatches(a.owner_phone || "", cleanPhone));
+
+    const petNames = [...new Set(pastCustomerAppts.map((a: any) => a.pet_name))];
+    const ownerName = pastCustomerAppts[0]?.owner_name || customerAppointments[0]?.owner_name || null;
+    const favoriteServices = [...new Set(pastCustomerAppts.map((a: any) => a.service))];
+    const totalVisits = pastCustomerAppts.length;
+
+    let longTermMemory = "";
+    if (totalVisits > 0) {
+      longTermMemory = `\nMEMÓRIA DO CLIENTE (telefone: ${cleanPhone}):
+- Nome do tutor: ${ownerName || "Desconhecido"}
+- Pets conhecidos: ${petNames.join(", ")}
+- Serviços já utilizados: ${favoriteServices.join(", ")}
+- Total de visitas anteriores: ${totalVisits}
+- Últimas visitas:
+${pastCustomerAppts.slice(0, 5).map((a: any) => `  · ${a.date} - ${a.service} (${a.pet_name})${a.notes ? ` [obs: ${a.notes}]` : ""}`).join("\n")}
+
+USE ESSAS INFORMAÇÕES para personalizar o atendimento:
+- Chame o tutor pelo nome se souber.
+- Mencione os pets pelos nomes conhecidos.
+- Sugira serviços que o cliente já usou antes.
+- Lembre de observações anteriores relevantes (ex: alergias, preferências).
+- NÃO peça nome do tutor ou do pet se já souber.`;
+    }
+
+    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText) + longTermMemory;
 
     // Build messages array with history
     const aiMessages: { role: string; content: string }[] = [
