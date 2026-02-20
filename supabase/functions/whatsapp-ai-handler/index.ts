@@ -106,7 +106,7 @@ async function handleConfirmationResponse(
 ): Promise<string | null> {
   const normalized = message.trim().toUpperCase();
 
-  const isConfirm = normalized === "CONFIRMO" || normalized === "SIM" || normalized === "CONFIRMAR";
+  const isConfirm = normalized === "CONFIRMO" || normalized === "CONFIRMAR";
   const isReschedule = normalized === "REMARCAR" || normalized === "PRECISO REMARCAR" || normalized === "REAGENDAR";
   const isCancel = normalized === "CANCELAR" || normalized === "CANCELA";
 
