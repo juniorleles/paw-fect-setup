@@ -64,11 +64,38 @@ Deno.serve(async (req) => {
       .update({ activated: false, phone_verified: false })
       .eq("user_id", user.id);
 
+    // Disconnect WhatsApp via Evolution API
+    const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
+    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
+    const evolutionInstance = Deno.env.get("EVOLUTION_INSTANCE_NAME");
+
+    let whatsappDisconnected = false;
+    if (evolutionUrl && evolutionKey && evolutionInstance) {
+      try {
+        const logoutRes = await fetch(
+          `${evolutionUrl}/instance/logout/${evolutionInstance}`,
+          {
+            method: "DELETE",
+            headers: {
+              apikey: evolutionKey,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        whatsappDisconnected = logoutRes.ok;
+        if (!logoutRes.ok) {
+          console.error("Evolution API logout failed:", await logoutRes.text());
+        }
+      } catch (evoErr) {
+        console.error("Evolution API error:", evoErr);
+      }
+    }
+
     // Log the action
     await supabase.from("subscription_logs").insert({
       user_id: user.id,
       action: "cancel",
-      details: { cancelled_at: new Date().toISOString() },
+      details: { cancelled_at: new Date().toISOString(), whatsapp_disconnected: whatsappDisconnected },
     });
 
     return new Response(
