@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAppointmentNotifications } from "@/hooks/useAppointmentNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
@@ -25,6 +26,7 @@ const navItems = [
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  useAppointmentNotifications();
 
   const handleSignOut = async () => {
     await signOut();
