@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Bell, BellOff, Clock, CheckCircle2, XCircle, RotateCcw, AlertTriangle, Pencil, Trash2 } from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
+import { Bell, BellOff, Clock, CheckCircle2, XCircle, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Appointment } from "@/types/appointment";
 import { STATUS_CONFIG } from "./AppointmentCard";
-import { format } from "date-fns";
 
 interface Props {
   appointments: Appointment[];
@@ -31,6 +30,9 @@ const COLUMNS: { status: Appointment["status"]; label: string; icon: typeof Cloc
 ];
 
 const AppointmentKanbanView = ({ appointments, onStatusChange, onEdit, onDelete }: Props) => {
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
   const columnData = useMemo(() => {
     return COLUMNS.map((col) => ({
       ...col,
@@ -38,38 +40,68 @@ const AppointmentKanbanView = ({ appointments, onStatusChange, onEdit, onDelete 
     }));
   }, [appointments]);
 
-  const handleDragStart = (e: React.DragEvent, aptId: string) => {
-    e.dataTransfer.setData("text/plain", aptId);
+  const handleDragStart = useCallback((e: React.DragEvent, apt: Appointment) => {
+    e.dataTransfer.setData("text/plain", apt.id);
+    e.dataTransfer.setData("application/x-status", apt.status);
     e.dataTransfer.effectAllowed = "move";
-  };
+    setDraggingId(apt.id);
+  }, []);
 
-  const handleDrop = (e: React.DragEvent, targetStatus: Appointment["status"]) => {
+  const handleDragEnd = useCallback(() => {
+    setDraggingId(null);
+    setDragOverStatus(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetStatus: Appointment["status"]) => {
     e.preventDefault();
     const aptId = e.dataTransfer.getData("text/plain");
-    if (aptId) {
+    const sourceStatus = e.dataTransfer.getData("application/x-status");
+    setDragOverStatus(null);
+    setDraggingId(null);
+    if (aptId && sourceStatus !== targetStatus) {
       onStatusChange(aptId, targetStatus);
     }
-  };
+  }, [onStatusChange]);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent, status: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
+    setDragOverStatus(status);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Only clear if leaving the column entirely (not entering a child)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverStatus(null);
+    }
+  }, []);
+
+  const getColumnHighlightClass = (status: string) => {
+    if (dragOverStatus !== status) return "";
+    switch (status) {
+      case "pending": return "ring-2 ring-accent/50 bg-accent/10 scale-[1.01]";
+      case "confirmed": return "ring-2 ring-success/50 bg-success/10 scale-[1.01]";
+      case "completed": return "ring-2 ring-primary/50 bg-primary/10 scale-[1.01]";
+      case "cancelled": return "ring-2 ring-destructive/50 bg-destructive/10 scale-[1.01]";
+      default: return "ring-2 ring-primary/50 bg-primary/10";
+    }
   };
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {columnData.map((col) => {
-        const statusCfg = STATUS_CONFIG[col.status];
         const ColIcon = col.icon;
+        const isHighlighted = dragOverStatus === col.status;
         return (
           <div
             key={col.status}
-            onDragOver={handleDragOver}
+            onDragOver={(e) => handleDragOver(e, col.status)}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, col.status)}
-            className="bg-muted/30 rounded-xl border border-border/50 min-h-[300px] flex flex-col"
+            className={`bg-muted/30 rounded-xl border border-border/50 min-h-[300px] flex flex-col transition-all duration-200 ${getColumnHighlightClass(col.status)}`}
           >
             {/* Column header */}
-            <div className="flex items-center gap-2 p-3 border-b border-border/50">
+            <div className={`flex items-center gap-2 p-3 border-b transition-colors duration-200 ${isHighlighted ? "border-transparent" : "border-border/50"}`}>
               <ColIcon className={`w-4 h-4 ${col.status === "pending" ? "text-accent" : col.status === "confirmed" ? "text-success" : col.status === "completed" ? "text-primary" : "text-destructive"}`} />
               <span className="text-sm font-bold">{col.label}</span>
               <span className="ml-auto text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
@@ -83,15 +115,17 @@ const AppointmentKanbanView = ({ appointments, onStatusChange, onEdit, onDelete 
                 const now = new Date();
                 const aptDateTime = new Date(`${apt.date}T${apt.time}`);
                 const isOverdue = aptDateTime < now && apt.status !== "cancelled" && apt.status !== "completed";
+                const isDragging = draggingId === apt.id;
 
                 return (
                   <div
                     key={apt.id}
                     draggable
-                    onDragStart={(e) => handleDragStart(e, apt.id)}
-                    className={`bg-card rounded-lg p-3 shadow-sm border border-border/30 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow ${
+                    onDragStart={(e) => handleDragStart(e, apt)}
+                    onDragEnd={handleDragEnd}
+                    className={`bg-card rounded-lg p-3 shadow-sm border border-border/30 cursor-grab active:cursor-grabbing hover:shadow-md transition-all duration-150 ${
                       isOverdue ? "border-l-2 border-l-destructive" : ""
-                    }`}
+                    } ${isDragging ? "opacity-40 scale-95 rotate-1" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
@@ -140,8 +174,8 @@ const AppointmentKanbanView = ({ appointments, onStatusChange, onEdit, onDelete 
                 );
               })}
               {col.items.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-8 opacity-50">
-                  Arraste cards aqui
+                <p className={`text-xs text-center py-8 transition-colors duration-200 ${isHighlighted ? "text-foreground/60 font-medium" : "text-muted-foreground opacity-50"}`}>
+                  {isHighlighted ? "Solte aqui ↓" : "Arraste cards aqui"}
                 </p>
               )}
             </div>
