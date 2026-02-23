@@ -25,7 +25,7 @@ const Index = () => {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activated, setActivated] = useState(false);
-  const [activationResult, setActivationResult] = useState<{ qr_code?: string; pairing_code?: string } | null>(null);
+  
   const isMobile = useIsMobile();
   const [configId, setConfigId] = useState<string | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -152,7 +152,6 @@ const Index = () => {
           return;
         }
         console.log("Subscription activated:", result);
-        setActivationResult({ qr_code: result?.qr_code, pairing_code: result?.pairing_code });
       } catch (e: any) {
         console.error("Activate error:", e);
         toast({ title: "Erro na ativação", description: e.message, variant: "destructive" });
@@ -176,7 +175,7 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-lg">
-          <SuccessScreen data={data} pairingCode={activationResult?.pairing_code} qrCode={activationResult?.qr_code} isMobile={isMobile} />
+          <SuccessScreen data={data} />
         </div>
       </div>
     );
