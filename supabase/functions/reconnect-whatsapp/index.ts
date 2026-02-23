@@ -89,7 +89,6 @@ Deno.serve(async (req) => {
     await new Promise(r => setTimeout(r, 1500));
 
     // Build webhook URL for this project
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const webhookUrl = `${supabaseUrl}/functions/v1/evolution-webhook`;
 
     // Create fresh instance with webhook configured
