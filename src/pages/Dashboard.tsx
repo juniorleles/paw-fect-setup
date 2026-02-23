@@ -444,28 +444,28 @@ const Dashboard = () => {
         </Card>
 
         {/* Faturamento */}
-        <Card className="border-none shadow-md bg-card">
+        <Card className="border-none shadow-md bg-card overflow-hidden">
           <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
                 <DollarSign className="w-5 h-5 text-success" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground font-medium">Faturamento</p>
-                <div className="flex items-baseline gap-3">
-                  <div>
-                    <span className="text-2xl font-bold">{formatCurrency(revenueToday)}</span>
-                    <span className="text-xs text-muted-foreground ml-1">hoje</span>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl sm:text-2xl font-bold truncate">{formatCurrency(revenueToday)}</span>
+                    <span className="text-xs text-muted-foreground">hoje</span>
                   </div>
                   <span className="text-muted-foreground/30">|</span>
-                  <div>
-                    <span className="text-lg font-semibold text-muted-foreground">{formatCurrency(revenueMonth)}</span>
-                    <span className="text-xs text-muted-foreground ml-1">mês</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-base sm:text-lg font-semibold text-muted-foreground truncate">{formatCurrency(revenueMonth)}</span>
+                    <span className="text-xs text-muted-foreground">mês</span>
                   </div>
                 </div>
                 {ticketMedioToday > 0 && (
                   <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
+                    <TrendingUp className="w-3 h-3 flex-shrink-0" />
                     Ticket médio: {formatCurrency(ticketMedioToday)}
                   </p>
                 )}
