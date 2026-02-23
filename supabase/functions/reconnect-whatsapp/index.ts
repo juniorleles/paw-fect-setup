@@ -66,60 +66,54 @@ Deno.serve(async (req) => {
 
     const userPhone = config?.phone?.replace(/\D/g, "") || null;
 
-    // First try to logout existing session to force new QR
+    // Step 1: Delete existing instance to get a clean state
     try {
-      await fetch(`${baseUrl}/instance/logout/${instanceName}`, {
+      await fetch(`${baseUrl}/instance/delete/${instanceName}`, {
         method: "DELETE",
         headers: evoHeaders,
       });
-    } catch { /* ignore */ }
+    } catch { /* ignore - instance may not exist */ }
 
-    // Connect to get new QR code and pairing code
+    // Small delay to let the server clean up
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Step 2: Create fresh instance
     let qrCode = null;
     let pairingCode = null;
-    const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
-      method: "GET",
+
+    const createRes = await fetch(`${baseUrl}/instance/create`, {
+      method: "POST",
       headers: evoHeaders,
+      body: JSON.stringify({
+        instanceName,
+        integration: "WHATSAPP-BAILEYS",
+        qrcode: true,
+        number: userPhone,
+      }),
     });
 
-    if (connectRes.ok) {
+    if (createRes.ok) {
       try {
-        const parsed = JSON.parse(await connectRes.text());
-        qrCode = parsed?.base64 || null;
-        pairingCode = parsed?.pairingCode || null;
+        const parsed = JSON.parse(await createRes.text());
+        qrCode = parsed?.qrcode?.base64 || null;
+        pairingCode = parsed?.qrcode?.pairingCode || null;
       } catch { /* ignore */ }
-    } else {
-      // Instance may not exist, create it
-      const createRes = await fetch(`${baseUrl}/instance/create`, {
-        method: "POST",
-        headers: evoHeaders,
-        body: JSON.stringify({
-          instanceName,
-          integration: "WHATSAPP-BAILEYS",
-          qrcode: true,
-          number: userPhone,
-        }),
-      });
-
-      if (createRes.ok) {
-        try {
-          const parsed = JSON.parse(await createRes.text());
-          qrCode = parsed?.qrcode?.base64 || null;
-          pairingCode = parsed?.qrcode?.pairingCode || null;
-        } catch { /* ignore */ }
-      }
     }
 
-    // If we have QR but no pairing code, try to get pairing code separately
+    // Step 3: If no pairing code yet but we have a phone, call connect with number as query param
     if (!pairingCode && userPhone) {
+      // Wait a bit for the instance to initialize
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       try {
-        const pairRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
-          method: "GET",
-          headers: evoHeaders,
-        });
-        if (pairRes.ok) {
-          const parsed = JSON.parse(await pairRes.text());
+        const connectRes = await fetch(
+          `${baseUrl}/instance/connect/${instanceName}?number=${userPhone}`,
+          { method: "GET", headers: evoHeaders }
+        );
+        if (connectRes.ok) {
+          const parsed = JSON.parse(await connectRes.text());
           pairingCode = parsed?.pairingCode || pairingCode;
+          qrCode = parsed?.base64 || qrCode;
         }
       } catch { /* ignore */ }
     }
