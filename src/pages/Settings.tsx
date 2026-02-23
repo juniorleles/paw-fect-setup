@@ -71,6 +71,7 @@ const Settings = () => {
       .update({
         phone: data.phone,
         phone_verified: data.phoneVerified,
+        niche: data.niche,
         shop_name: data.shopName,
         address: data.address,
         neighborhood: data.neighborhood,
