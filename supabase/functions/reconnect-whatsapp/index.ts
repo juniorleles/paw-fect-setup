@@ -52,6 +52,20 @@ Deno.serve(async (req) => {
       "Content-Type": "application/json",
     };
 
+    // Fetch user phone for pairing code
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: config } = await serviceClient
+      .from("pet_shop_configs")
+      .select("phone")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const userPhone = config?.phone?.replace(/\D/g, "") || null;
+
     // First try to logout existing session to force new QR
     try {
       await fetch(`${baseUrl}/instance/logout/${instanceName}`, {
@@ -83,6 +97,7 @@ Deno.serve(async (req) => {
           instanceName,
           integration: "WHATSAPP-BAILEYS",
           qrcode: true,
+          number: userPhone,
         }),
       });
 
@@ -93,6 +108,20 @@ Deno.serve(async (req) => {
           pairingCode = parsed?.qrcode?.pairingCode || null;
         } catch { /* ignore */ }
       }
+    }
+
+    // If we have QR but no pairing code, try to get pairing code separately
+    if (!pairingCode && userPhone) {
+      try {
+        const pairRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
+          method: "GET",
+          headers: evoHeaders,
+        });
+        if (pairRes.ok) {
+          const parsed = JSON.parse(await pairRes.text());
+          pairingCode = parsed?.pairingCode || pairingCode;
+        }
+      } catch { /* ignore */ }
     }
 
     // Update status to pending

@@ -98,20 +98,26 @@ const WhatsAppStatusBadge = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            {isMobile && pairingCode ? (
-              <>
+            {isMobile ? (
+              pairingCode ? (
+                <>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Abra o WhatsApp, vá em <strong>Dispositivos conectados</strong> → <strong>Conectar dispositivo</strong> → <strong>Conectar com número de telefone</strong> e digite o código abaixo.
+                  </p>
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-secondary border border-border">
+                    <span className="text-3xl font-mono font-bold tracking-[0.3em] text-foreground">
+                      {pairingCode}
+                    </span>
+                    <Button variant="ghost" size="icon" onClick={handleCopyCode} className="shrink-0">
+                      {copied ? <Check className="w-5 h-5 text-success" /> : <Copy className="w-5 h-5" />}
+                    </Button>
+                  </div>
+                </>
+              ) : (
                 <p className="text-sm text-muted-foreground text-center">
-                  Abra o WhatsApp, vá em <strong>Dispositivos conectados</strong> → <strong>Conectar dispositivo</strong> → <strong>Conectar com número de telefone</strong> e digite o código abaixo.
+                  Não foi possível gerar o código de pareamento. Tente novamente ou acesse pelo computador para escanear o QR Code.
                 </p>
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-secondary border border-border">
-                  <span className="text-3xl font-mono font-bold tracking-[0.3em] text-foreground">
-                    {pairingCode}
-                  </span>
-                  <Button variant="ghost" size="icon" onClick={handleCopyCode} className="shrink-0">
-                    {copied ? <Check className="w-5 h-5 text-success" /> : <Copy className="w-5 h-5" />}
-                  </Button>
-                </div>
-              </>
+              )
             ) : (
               <>
                 <p className="text-sm text-muted-foreground text-center">
