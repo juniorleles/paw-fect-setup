@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,7 @@ interface Props {
   onOpenChange?: (open: boolean) => void;
 }
 
-const AppointmentDialog = ({
+const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
   services,
   onSave,
   editingAppointment,
@@ -40,7 +40,7 @@ const AppointmentDialog = ({
   trigger,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
-}: Props) => {
+}, ref) => {
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
@@ -216,6 +216,8 @@ const AppointmentDialog = ({
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+AppointmentDialog.displayName = "AppointmentDialog";
 
 export default AppointmentDialog;
