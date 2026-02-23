@@ -175,7 +175,7 @@ const WhatsAppStatusBadge = () => {
                 <p className="text-sm font-medium text-muted-foreground text-center">
                   O código expirou
                 </p>
-                <Button onClick={handleReconnect} disabled={reconnecting} className="gap-2">
+                <Button onClick={() => { if (status === "connected") { setDialogOpen(false); clearTimer(); toast({ title: "WhatsApp conectado!", description: "Sua secretária digital está ativa." }); } else { handleReconnect(); } }} disabled={reconnecting} className="gap-2">
                   {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                   Gerar novo código
                 </Button>
