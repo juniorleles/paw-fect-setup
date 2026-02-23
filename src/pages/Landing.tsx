@@ -101,7 +101,7 @@ const Landing = () => {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/landing" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <Briefcase className="w-7 h-7 text-primary" />
             <span className="text-xl font-display font-bold">Secretária <span className="text-primary">Digital</span></span>
           </Link>

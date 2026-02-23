@@ -66,10 +66,11 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/landing" element={<Landing />} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/landing" element={<Navigate to="/" replace />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
             <Route path="/appointments" element={<DashboardRoute><Appointments /></DashboardRoute>} />
             <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
