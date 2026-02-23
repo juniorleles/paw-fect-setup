@@ -89,6 +89,30 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          name: string
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          name: string
+          phone: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string
+        }
+        Relationships: []
+      }
       pet_shop_configs: {
         Row: {
           activated: boolean
