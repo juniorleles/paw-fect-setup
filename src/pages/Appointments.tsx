@@ -13,7 +13,7 @@ import AppointmentStatsBar from "@/components/appointments/AppointmentStatsBar";
 import AppointmentFilters, { type ViewMode } from "@/components/appointments/AppointmentFilters";
 import AppointmentListView from "@/components/appointments/AppointmentListView";
 import AppointmentCalendarView from "@/components/appointments/AppointmentCalendarView";
-import AppointmentKanbanView from "@/components/appointments/AppointmentKanbanView";
+
 
 const Appointments = () => {
   const { user } = useAuth();
@@ -202,14 +202,6 @@ const Appointments = () => {
         />
       )}
 
-      {viewMode === "kanban" && (
-        <AppointmentKanbanView
-          appointments={filteredAppointments}
-          onStatusChange={handleStatusChange}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
 
       {/* Load more */}
       {hasMore && (
