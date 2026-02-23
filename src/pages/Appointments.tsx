@@ -13,6 +13,8 @@ import AppointmentStatsBar from "@/components/appointments/AppointmentStatsBar";
 import AppointmentFilters, { type ViewMode } from "@/components/appointments/AppointmentFilters";
 import AppointmentListView from "@/components/appointments/AppointmentListView";
 import AppointmentCalendarView from "@/components/appointments/AppointmentCalendarView";
+import AvailabilityCard from "@/components/appointments/AvailabilityCard";
+import type { DaySchedule } from "@/types/onboarding";
 
 
 const Appointments = () => {
@@ -31,6 +33,7 @@ const Appointments = () => {
   } = useAppointments();
 
   const [services, setServices] = useState<Service[]>([]);
+  const [businessHours, setBusinessHours] = useState<DaySchedule[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -51,6 +54,7 @@ const Appointments = () => {
         .limit(1);
       if (configs && configs.length > 0) {
         setServices(configs[0].services as unknown as Service[]);
+        setBusinessHours(configs[0].business_hours as unknown as DaySchedule[]);
       }
       setLoadingConfig(false);
     };
@@ -157,6 +161,11 @@ const Appointments = () => {
         </div>
         <AppointmentDialog services={services} onSave={addAppointment} />
       </div>
+
+      {/* Availability */}
+      {businessHours.length > 0 && (
+        <AvailabilityCard appointments={appointments} businessHours={businessHours} />
+      )}
 
       {/* Stats */}
       <AppointmentStatsBar appointments={appointments} />
