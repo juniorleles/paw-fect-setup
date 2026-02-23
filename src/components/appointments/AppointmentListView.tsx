@@ -1,7 +1,8 @@
-import { useMemo, forwardRef } from "react";
+import { useMemo, forwardRef, useCallback } from "react";
 import { PawPrint } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { GroupedVirtuoso } from "react-virtuoso";
 import type { Appointment } from "@/types/appointment";
 import AppointmentCard from "./AppointmentCard";
 
@@ -25,16 +26,53 @@ const formatDateLabel = (dateStr: string) => {
   }
 };
 
+const VIRTUOSO_THRESHOLD = 50;
+
 const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, onStatusChange, onEdit, onDelete, hasActiveFilters }, ref) => {
-  const groupedAppointments = useMemo(() => {
-    const groups = new Map<string, Appointment[]>();
+  const { groups, groupCounts, groupLabels, flatAppointments } = useMemo(() => {
+    const grouped = new Map<string, Appointment[]>();
     appointments.forEach((apt) => {
-      const list = groups.get(apt.date) || [];
+      const list = grouped.get(apt.date) || [];
       list.push(apt);
-      groups.set(apt.date, list);
+      grouped.set(apt.date, list);
     });
-    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const sorted = Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return {
+      groups: sorted,
+      groupCounts: sorted.map(([, apts]) => apts.length),
+      groupLabels: sorted.map(([date, apts]) => ({ date, count: apts.length })),
+      flatAppointments: sorted.flatMap(([, apts]) => apts),
+    };
   }, [appointments]);
+
+  const renderGroupHeader = useCallback((index: number) => {
+    const { date, count } = groupLabels[index];
+    return (
+      <div className="flex items-center gap-3 mb-3 pt-4 first:pt-0 bg-background sticky top-0 z-10 pb-1">
+        <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wide capitalize">
+          {formatDateLabel(date)}
+        </h3>
+        <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
+          {count}
+        </span>
+        <div className="flex-1 h-px bg-border/50" />
+      </div>
+    );
+  }, [groupLabels]);
+
+  const renderItem = useCallback((index: number) => {
+    const apt = flatAppointments[index];
+    return (
+      <div className="pb-2">
+        <AppointmentCard
+          appointment={apt}
+          onStatusChange={onStatusChange}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      </div>
+    );
+  }, [flatAppointments, onStatusChange, onEdit, onDelete]);
 
   if (appointments.length === 0) {
     return (
@@ -50,32 +88,47 @@ const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, o
     );
   }
 
+  // Use simple rendering for small lists, virtuoso for large ones
+  if (appointments.length < VIRTUOSO_THRESHOLD) {
+    return (
+      <div ref={ref} className="space-y-6">
+        {groups.map(([date, apts]) => (
+          <div key={date}>
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wide capitalize">
+                {formatDateLabel(date)}
+              </h3>
+              <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
+                {apts.length}
+              </span>
+              <div className="flex-1 h-px bg-border/50" />
+            </div>
+            <div className="space-y-2">
+              {apts.map((apt) => (
+                <AppointmentCard
+                  key={apt.id}
+                  appointment={apt}
+                  onStatusChange={onStatusChange}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div ref={ref} className="space-y-6">
-      {groupedAppointments.map(([date, apts]) => (
-        <div key={date}>
-          <div className="flex items-center gap-3 mb-3">
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wide capitalize">
-              {formatDateLabel(date)}
-            </h3>
-            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
-              {apts.length}
-            </span>
-            <div className="flex-1 h-px bg-border/50" />
-          </div>
-          <div className="space-y-2">
-            {apts.map((apt) => (
-              <AppointmentCard
-                key={apt.id}
-                appointment={apt}
-                onStatusChange={onStatusChange}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+    <div ref={ref}>
+      <GroupedVirtuoso
+        useWindowScroll
+        groupCounts={groupCounts}
+        groupContent={renderGroupHeader}
+        itemContent={renderItem}
+        overscan={200}
+      />
     </div>
   );
 });
