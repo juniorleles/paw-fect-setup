@@ -88,11 +88,25 @@ Deno.serve(async (req) => {
     // Small delay for clean state
     await new Promise(r => setTimeout(r, 1500));
 
-    // Create fresh instance (always with qrcode:true for initial setup)
+    // Build webhook URL for this project
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const webhookUrl = `${supabaseUrl}/functions/v1/evolution-webhook`;
+
+    // Create fresh instance with webhook configured
     const createBody: Record<string, unknown> = {
       instanceName,
       integration: "WHATSAPP-BAILEYS",
       qrcode: true,
+      webhook: {
+        url: webhookUrl,
+        byEvents: false,
+        base64: false,
+        events: [
+          "CONNECTION_UPDATE",
+          "MESSAGES_UPSERT",
+          "QRCODE_UPDATED",
+        ],
+      },
     };
 
     console.log("Creating instance with body:", JSON.stringify(createBody));
