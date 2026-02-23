@@ -22,10 +22,12 @@ import {
   BellOff,
   Zap,
   Timer,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { format, differenceInMinutes } from "date-fns";
+import { format, differenceInMinutes, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   AlertDialog,
@@ -68,6 +70,36 @@ const Dashboard = () => {
   const todayCount = appointments.filter((a) => a.date === todayStrForCounts && a.status !== "cancelled").length;
   const confirmedCount = appointments.filter((a) => a.status === "confirmed" || a.status === "completed").length;
   const pendingCount = appointments.filter((a) => a.status === "pending").length;
+
+  // Completed & Revenue stats
+  const { completedToday, completedMonth, revenueToday, revenueMonth, ticketMedioToday } = useMemo(() => {
+    const today = todayStrForCounts;
+    const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
+    const monthEnd = format(endOfMonth(new Date()), "yyyy-MM-dd");
+
+    const priceMap = new Map(data.services.map((s) => [s.name, s.price]));
+
+    const getPrice = (serviceName: string) => priceMap.get(serviceName) ?? 0;
+
+    const completedApts = appointments.filter((a) => a.status === "completed");
+    const cToday = completedApts.filter((a) => a.date === today);
+    const cMonth = completedApts.filter((a) => a.date >= monthStart && a.date <= monthEnd);
+
+    const rToday = cToday.reduce((sum, a) => sum + getPrice(a.service), 0);
+    const rMonth = cMonth.reduce((sum, a) => sum + getPrice(a.service), 0);
+    const ticket = cToday.length > 0 ? rToday / cToday.length : 0;
+
+    return {
+      completedToday: cToday.length,
+      completedMonth: cMonth.length,
+      revenueToday: rToday,
+      revenueMonth: rMonth,
+      ticketMedioToday: ticket,
+    };
+  }, [appointments, todayStrForCounts, data.services]);
+
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const [editingApt, setEditingApt] = useState<Appointment | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -382,6 +414,65 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Completed & Revenue Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Concluídos */}
+        <Card className="border-none shadow-md bg-card">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground font-medium">Concluídos</p>
+                <div className="flex items-baseline gap-3">
+                  <div>
+                    <span className="text-2xl font-bold">{completedToday}</span>
+                    <span className="text-xs text-muted-foreground ml-1">hoje</span>
+                  </div>
+                  <span className="text-muted-foreground/30">|</span>
+                  <div>
+                    <span className="text-lg font-semibold text-muted-foreground">{completedMonth}</span>
+                    <span className="text-xs text-muted-foreground ml-1">mês</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Faturamento */}
+        <Card className="border-none shadow-md bg-card">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-success" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground font-medium">Faturamento</p>
+                <div className="flex items-baseline gap-3">
+                  <div>
+                    <span className="text-2xl font-bold">{formatCurrency(revenueToday)}</span>
+                    <span className="text-xs text-muted-foreground ml-1">hoje</span>
+                  </div>
+                  <span className="text-muted-foreground/30">|</span>
+                  <div>
+                    <span className="text-lg font-semibold text-muted-foreground">{formatCurrency(revenueMonth)}</span>
+                    <span className="text-xs text-muted-foreground ml-1">mês</span>
+                  </div>
+                </div>
+                {ticketMedioToday > 0 && (
+                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    Ticket médio: {formatCurrency(ticketMedioToday)}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
