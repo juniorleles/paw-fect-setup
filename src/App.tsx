@@ -11,6 +11,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import Appointments from "./pages/Appointments";
+import Leads from "./pages/Leads";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 import DashboardLayout from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/onboarding" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
             <Route path="/appointments" element={<DashboardRoute><Appointments /></DashboardRoute>} />
+            <Route path="/leads" element={<DashboardRoute><Leads /></DashboardRoute>} />
             <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
             <Route path="/subscription-cancelled" element={<ProtectedRoute><SubscriptionCancelled /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
