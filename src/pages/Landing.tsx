@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { NICHE_LABELS } from "@/types/onboarding";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 const FEATURES = [
   { icon: MessageSquare, title: "Atendimento 24/7", desc: "Sua secretária responde clientes via WhatsApp a qualquer hora, sem pausas." },
@@ -72,15 +73,24 @@ const Landing = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
     setSending(true);
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.from("leads").insert({
+        name: name.trim(),
+        phone: phone.trim(),
+        message: message.trim() || null,
+      });
+      if (error) throw error;
       toast({ title: "Mensagem enviada!", description: "Entraremos em contato em breve." });
       setName(""); setPhone(""); setMessage("");
+    } catch {
+      toast({ title: "Erro ao enviar", description: "Tente novamente.", variant: "destructive" });
+    } finally {
       setSending(false);
-    }, 1000);
+    }
   };
 
   const nicheKeys = Object.keys(NICHE_LABELS) as (keyof typeof NICHE_LABELS)[];
