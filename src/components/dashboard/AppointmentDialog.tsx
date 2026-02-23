@@ -165,7 +165,7 @@ const AppointmentDialog = ({
               <SelectContent>
                 {services.map((s) => (
                   <SelectItem key={s.id} value={s.name}>
-                    {s.name} — R$ {s.price.toFixed(2)}
+                    {s.name} — R$ {Number(s.price).toFixed(2)}
                   </SelectItem>
                 ))}
               </SelectContent>
