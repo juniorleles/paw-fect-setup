@@ -103,6 +103,17 @@ const Dashboard = () => {
           voiceTone: c.voice_tone as OnboardingData["voiceTone"],
           assistantName: c.assistant_name,
         });
+
+        // Ensure subscription exists (covers case where onboarding activation failed)
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!sub) {
+          await supabase.from("subscriptions").insert({ user_id: user.id, status: "active" });
+        }
       }
       setLoadingConfig(false);
     };
