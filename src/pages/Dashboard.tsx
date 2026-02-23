@@ -64,10 +64,12 @@ const Dashboard = () => {
     addAppointment,
     updateAppointment,
     deleteAppointment,
-    todayCount,
-    confirmedCount,
-    pendingCount,
   } = useAppointments();
+
+  const todayStrForCounts = new Date().toISOString().split("T")[0];
+  const todayCount = appointments.filter((a) => a.date === todayStrForCounts && a.status !== "cancelled").length;
+  const confirmedCount = appointments.filter((a) => a.status === "confirmed" || a.status === "completed").length;
+  const pendingCount = appointments.filter((a) => a.status === "pending").length;
 
   const [editingApt, setEditingApt] = useState<Appointment | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
