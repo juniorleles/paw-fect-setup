@@ -35,11 +35,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse request body for mobile flag
+    // Parse request body
     let isMobile = false;
+    let isDisconnect = false;
     try {
       const body = await req.json();
       isMobile = body?.mobile === true;
+      isDisconnect = body?.disconnect === true;
     } catch { /* no body or invalid json */ }
 
     const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
@@ -63,6 +65,33 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Handle disconnect
+    if (isDisconnect) {
+      try {
+        await fetch(`${baseUrl}/instance/logout/${instanceName}`, {
+          method: "DELETE",
+          headers: evoHeaders,
+        });
+      } catch { /* instance might not exist */ }
+      try {
+        await fetch(`${baseUrl}/instance/delete/${instanceName}`, {
+          method: "DELETE",
+          headers: evoHeaders,
+        });
+      } catch { /* ignore */ }
+
+      await serviceClient
+        .from("pet_shop_configs")
+        .update({ whatsapp_status: "disconnected" })
+        .eq("user_id", user.id);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
 
     // Get user phone for pairing code
     const { data: config } = await serviceClient

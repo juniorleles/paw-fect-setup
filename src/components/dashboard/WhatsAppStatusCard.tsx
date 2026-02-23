@@ -3,13 +3,17 @@ import { useWhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Zap, Phone } from "lucide-react";
+import { Zap, Phone, LogOut, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import WhatsAppStatusBadge from "./WhatsAppStatusBadge";
 
 const WhatsAppStatusCard = () => {
   const { user } = useAuth();
   const whatsappStatus = useWhatsAppStatus();
   const [phone, setPhone] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
@@ -23,6 +27,26 @@ const WhatsAppStatusCard = () => {
     };
     fetchPhone();
   }, [user]);
+
+  const handleDisconnect = async () => {
+    if (!user) return;
+    setDisconnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reconnect-whatsapp", {
+        method: "POST",
+        body: { disconnect: true },
+      });
+      if (error || data?.error) {
+        toast({ title: "Erro ao desconectar", description: data?.error || error?.message, variant: "destructive" });
+      } else {
+        toast({ title: "WhatsApp desconectado com sucesso" });
+      }
+    } catch {
+      toast({ title: "Erro ao desconectar", variant: "destructive" });
+    } finally {
+      setDisconnecting(false);
+    }
+  };
 
   return (
     <Card
@@ -84,9 +108,21 @@ const WhatsAppStatusCard = () => {
 
         {/* Connected phone */}
         {whatsappStatus === "connected" && phone && (
-          <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-success/10">
-            <Phone className="w-4 h-4 text-success" />
-            <span className="text-sm font-medium text-success">{phone}</span>
+          <div className="mt-3 flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-success/10">
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-success" />
+              <span className="text-sm font-medium text-success">{phone}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="gap-1.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 h-7 px-2"
+            >
+              {disconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
+              Desconectar
+            </Button>
           </div>
         )}
 
