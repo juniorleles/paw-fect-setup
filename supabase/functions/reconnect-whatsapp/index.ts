@@ -71,7 +71,11 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const userPhone = config?.phone?.replace(/\D/g, "") || null;
+    let userPhone = config?.phone?.replace(/\D/g, "") || null;
+    // Ensure phone has country code (Brazil = 55)
+    if (userPhone && !userPhone.startsWith("55")) {
+      userPhone = "55" + userPhone;
+    }
 
     // Delete existing instance for a clean state
     try {
@@ -82,18 +86,21 @@ Deno.serve(async (req) => {
     } catch { /* instance might not exist */ }
 
     // Small delay for clean state
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 1500));
 
-    // Create fresh instance
+    // Create fresh instance (always with qrcode:true for initial setup)
+    const createBody: Record<string, unknown> = {
+      instanceName,
+      integration: "WHATSAPP-BAILEYS",
+      qrcode: true,
+    };
+
+    console.log("Creating instance with body:", JSON.stringify(createBody));
+
     const createRes = await fetch(`${baseUrl}/instance/create`, {
       method: "POST",
       headers: evoHeaders,
-      body: JSON.stringify({
-        instanceName,
-        integration: "WHATSAPP-BAILEYS",
-        qrcode: !isMobile,
-        ...(userPhone ? { number: userPhone } : {}),
-      }),
+      body: JSON.stringify(createBody),
     });
 
     const createData = await createRes.json();
@@ -105,29 +112,39 @@ Deno.serve(async (req) => {
       .update({ whatsapp_status: "pending" })
       .eq("user_id", user.id);
 
-    // If mobile, request pairing code
+    // For mobile, request pairing code via connect endpoint with number query param
     if (isMobile && userPhone) {
-      await new Promise(r => setTimeout(r, 2000));
-      const pairingRes = await fetch(
-        `${baseUrl}/instance/connect/${instanceName}`,
-        {
-          method: "GET",
-          headers: evoHeaders,
-        }
-      );
-      const pairingData = await pairingRes.json();
-      console.log("Pairing response:", JSON.stringify(pairingData));
+      await new Promise(r => setTimeout(r, 3000));
+      
+      // Pass phone number as query parameter to get pairing code
+      const connectUrl = `${baseUrl}/instance/connect/${instanceName}?number=${userPhone}`;
+      console.log("Requesting pairing code from:", connectUrl);
+      
+      const connectRes = await fetch(connectUrl, {
+        method: "GET",
+        headers: evoHeaders,
+      });
+      const connectData = await connectRes.json();
+      console.log("Connect response (pairing):", JSON.stringify(connectData));
 
-      // Try to extract pairing code from response
-      const pairingCode = pairingData?.pairingCode || pairingData?.code || null;
+      const pairingCode = connectData?.pairingCode || null;
+      
+      if (pairingCode) {
+        return new Response(
+          JSON.stringify({ success: true, pairingCode, mode: "pairing" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
+      // Fallback: return QR code for mobile
+      const qrBase64 = connectData?.base64 || connectData?.qrcode?.base64 || null;
       return new Response(
-        JSON.stringify({ success: true, pairingCode, mode: "pairing" }),
+        JSON.stringify({ success: true, qrCode: qrBase64, mode: "qr", note: "Pairing code not available, showing QR" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // For desktop, get QR code
+    // For desktop, get QR code from connect
     await new Promise(r => setTimeout(r, 2000));
     const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
       method: "GET",

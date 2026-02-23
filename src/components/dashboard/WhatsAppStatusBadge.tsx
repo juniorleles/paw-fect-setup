@@ -59,7 +59,7 @@ const WhatsAppStatusBadge = () => {
         return;
       }
 
-      if (data?.pairingCode) {
+      if (data?.pairingCode && data.pairingCode.length <= 20) {
         setPairingCode(data.pairingCode);
         setDialogOpen(true);
       } else if (data?.qrCode) {
@@ -123,7 +123,7 @@ const WhatsAppStatusBadge = () => {
           <div className="flex flex-col items-center gap-4 py-4">
             {pairingCode ? (
               <>
-                <div className="text-3xl font-mono font-bold tracking-[0.3em] text-center px-4 py-6 rounded-xl bg-secondary">
+                <div className="text-xl sm:text-3xl font-mono font-bold tracking-[0.15em] sm:tracking-[0.3em] text-center px-3 py-5 rounded-xl bg-secondary break-all">
                   {pairingCode}
                 </div>
                 <Button
