@@ -1,0 +1,1 @@
+ALTER TABLE public.pet_shop_configs ADD COLUMN niche text NOT NULL DEFAULT 'petshop';

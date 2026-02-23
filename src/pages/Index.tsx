@@ -73,6 +73,7 @@ const Index = () => {
       user_id: user.id,
       phone: updatedData.phone,
       phone_verified: updatedData.phoneVerified,
+      niche: updatedData.niche,
       shop_name: updatedData.shopName,
       address: updatedData.address,
       neighborhood: updatedData.neighborhood,

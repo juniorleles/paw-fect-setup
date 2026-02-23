@@ -100,6 +100,7 @@ export type Database = {
           evolution_instance_name: string
           id: string
           neighborhood: string
+          niche: string
           phone: string
           phone_verified: boolean
           services: Json
@@ -120,6 +121,7 @@ export type Database = {
           evolution_instance_name?: string
           id?: string
           neighborhood?: string
+          niche?: string
           phone?: string
           phone_verified?: boolean
           services?: Json
@@ -140,6 +142,7 @@ export type Database = {
           evolution_instance_name?: string
           id?: string
           neighborhood?: string
+          niche?: string
           phone?: string
           phone_verified?: boolean
           services?: Json
