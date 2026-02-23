@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWhatsAppStatus, type WhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { Button } from "@/components/ui/button";
 import { Smartphone, RefreshCw, Loader2, Copy, CheckCircle2 } from "lucide-react";
@@ -83,9 +83,11 @@ const WhatsAppStatusBadge = () => {
   };
 
   // Close dialog when status changes to connected
-  if (status === "connected" && dialogOpen) {
-    setDialogOpen(false);
-  }
+  useEffect(() => {
+    if (status === "connected" && dialogOpen) {
+      setDialogOpen(false);
+    }
+  }, [status, dialogOpen]);
 
   return (
     <>
