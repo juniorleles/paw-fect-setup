@@ -125,11 +125,6 @@ Deno.serve(async (req) => {
     }
 
     // Update status to pending
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     await serviceClient
       .from("pet_shop_configs")
       .update({ whatsapp_status: "pending" })
