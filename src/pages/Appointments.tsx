@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { CalendarDays, Plus, Loader2 } from "lucide-react";
+import { CalendarDays, Plus, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,10 @@ const Appointments = () => {
   const {
     appointments,
     loading: loadingApts,
+    loadingMore,
+    hasMore,
+    totalCount,
+    loadMore,
     addAppointment,
     updateAppointment,
     deleteAppointment,
@@ -142,7 +146,10 @@ const Appointments = () => {
             Agendamentos
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {appointments.length} total
+            {totalCount !== null ? totalCount : appointments.length} total
+            {appointments.length !== (totalCount ?? appointments.length) && (
+              <span className="text-muted-foreground/70"> · {appointments.length} carregados</span>
+            )}
             {filteredAppointments.length !== appointments.length && (
               <span className="text-primary font-medium"> · {filteredAppointments.length} filtrado{filteredAppointments.length !== 1 ? "s" : ""}</span>
             )}
@@ -202,6 +209,25 @@ const Appointments = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
+      )}
+
+      {/* Load more */}
+      {hasMore && (
+        <div className="flex justify-center pt-2 pb-4">
+          <Button
+            variant="outline"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="gap-2"
+          >
+            {loadingMore ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+            {loadingMore ? "Carregando..." : "Carregar agendamentos anteriores"}
+          </Button>
+        </div>
       )}
 
       {/* Edit dialog */}
