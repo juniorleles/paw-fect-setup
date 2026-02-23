@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { NICHE_LABELS } from "@/types/onboarding";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import heroIllustration from "@/assets/hero-illustration.png";
 
 const FEATURES = [
   { icon: MessageSquare, title: "Atendimento 24/7", desc: "Sua secretária responde clientes via WhatsApp a qualquer hora, sem pausas." },
@@ -133,31 +134,62 @@ const Landing = () => {
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden pt-20 pb-24 px-4">
+      <section className="relative overflow-hidden pt-16 pb-24 px-4">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.6 }} className="relative max-w-4xl mx-auto text-center">
-          <Badge variant="secondary" className="mb-4 text-sm px-4 py-1.5">
-            <Zap className="w-3.5 h-3.5 mr-1.5" /> Inteligência Artificial no WhatsApp
-          </Badge>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6">
-            Sua <span className="text-primary">Secretária Digital</span> que nunca tira folga
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Automatize agendamentos, atenda clientes 24/7 pelo WhatsApp e reduza faltas com lembretes inteligentes. Para qualquer tipo de negócio.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="#contact">
-              <Button size="lg" className="h-14 px-8 text-base font-bold shadow-lg">
-                Quero Experimentar <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </a>
-            <a href="#features">
-              <Button variant="outline" size="lg" className="h-14 px-8 text-base">
-                Como Funciona
-              </Button>
-            </a>
-          </div>
-        </motion.div>
+        <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.6 }} className="text-center lg:text-left">
+            <Badge variant="secondary" className="mb-4 text-sm px-4 py-1.5">
+              <Zap className="w-3.5 h-3.5 mr-1.5" /> Inteligência Artificial no WhatsApp
+            </Badge>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight mb-6">
+              Sua <span className="text-primary">Secretária Digital</span> que nunca tira folga
+            </h1>
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 mb-8">
+              Automatize agendamentos, atenda clientes 24/7 pelo WhatsApp e reduza faltas com lembretes inteligentes. Para qualquer tipo de negócio.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <a href="#contact">
+                <Button size="lg" className="h-14 px-8 text-base font-bold shadow-lg">
+                  Quero Experimentar <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </a>
+              <a href="#features">
+                <Button variant="outline" size="lg" className="h-14 px-8 text-base">
+                  Como Funciona
+                </Button>
+              </a>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="relative hidden lg:flex justify-center"
+          >
+            <motion.img
+              src={heroIllustration}
+              alt="Secretária Digital - Atendimento automático pelo WhatsApp"
+              className="w-[420px] rounded-3xl shadow-2xl"
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              className="absolute -top-4 -right-4 w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-lg backdrop-blur-sm"
+              animate={{ y: [0, -8, 0], rotate: [0, 5, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            >
+              <CalendarDays className="w-8 h-8 text-primary" />
+            </motion.div>
+            <motion.div
+              className="absolute -bottom-2 -left-4 w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center shadow-lg backdrop-blur-sm"
+              animate={{ y: [0, 8, 0], rotate: [0, -5, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            >
+              <MessageSquare className="w-7 h-7 text-accent" />
+            </motion.div>
+          </motion.div>
+        </div>
       </section>
 
       {/* Features */}
