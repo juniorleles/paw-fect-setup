@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OnboardingData, BRAZILIAN_STATES } from "@/types/onboarding";
+import { OnboardingData, BRAZILIAN_STATES, NICHE_LABELS, BusinessNiche } from "@/types/onboarding";
 import { Store } from "lucide-react";
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
   errors: Record<string, string>;
 }
 
+const nicheKeys = Object.keys(NICHE_LABELS) as BusinessNiche[];
+
 const StepPetShopData = ({ data, onChange, errors }: Props) => {
   return (
     <Card className="border-none shadow-xl bg-card">
@@ -18,17 +20,31 @@ const StepPetShopData = ({ data, onChange, errors }: Props) => {
         <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-3">
           <Store className="w-8 h-8 text-primary" />
         </div>
-        <CardTitle className="text-2xl font-display">Dados do Pet Shop</CardTitle>
+        <CardTitle className="text-2xl font-display">Dados do Estabelecimento</CardTitle>
         <CardDescription className="text-base">
-          Informações básicas do seu estabelecimento
+          Informações básicas do seu negócio
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <div className="space-y-2">
+          <Label className="font-semibold">Tipo de negócio *</Label>
+          <Select value={data.niche} onValueChange={(v) => onChange({ niche: v as BusinessNiche })}>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              {nicheKeys.map((key) => (
+                <SelectItem key={key} value={key}>{NICHE_LABELS[key]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="shopName" className="font-semibold">Nome Fantasia *</Label>
           <Input
             id="shopName"
-            placeholder="Ex: Pet House"
+            placeholder="Ex: Studio Maria, Clínica Saúde..."
             value={data.shopName}
             onChange={(e) => onChange({ shopName: e.target.value })}
             className="h-11"

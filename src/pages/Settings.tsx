@@ -42,6 +42,7 @@ const Settings = () => {
         setData({
           phone: c.phone,
           phoneVerified: c.phone_verified,
+          niche: (c as any).niche ?? "petshop",
           shopName: c.shop_name,
           address: c.address,
           neighborhood: c.neighborhood,

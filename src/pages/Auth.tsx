@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { PawPrint, Loader2 } from "lucide-react";
+import { Briefcase, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,9 +78,9 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 mb-2">
-            <PawPrint className="w-8 h-8 text-primary" />
+            <Briefcase className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-display font-bold text-foreground">
-              Secretária <span className="text-primary">Pet</span>
+              Secretária <span className="text-primary">Digital</span>
             </h1>
           </div>
         </div>
@@ -89,7 +89,7 @@ const Auth = () => {
           {resetEmailSent ? (
             <CardContent className="pt-8 pb-8 text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <PawPrint className="w-8 h-8 text-primary" />
+                <Briefcase className="w-8 h-8 text-primary" />
               </div>
               <CardTitle className="text-2xl font-display">E-mail enviado!</CardTitle>
               <CardDescription>

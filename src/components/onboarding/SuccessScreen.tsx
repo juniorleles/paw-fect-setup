@@ -109,7 +109,7 @@ const SuccessScreen = ({ data }: Props) => {
           <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 max-w-sm mx-auto">
             <p className="text-sm italic text-foreground">
               "Olá! Eu sou a <strong>{data.assistantName}</strong>, secretária digital do{" "}
-              <strong>{data.shopName}</strong>. Estou aqui pra te ajudar a agendar os melhores serviços pro seu pet! 🐾"
+              <strong>{data.shopName}</strong>. Estou aqui pra te ajudar a agendar os melhores serviços! ✨"
             </p>
           </div>
 

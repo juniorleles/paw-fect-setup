@@ -15,7 +15,7 @@ const tones = [
     key: "formal" as const,
     label: "Formal",
     icon: Briefcase,
-    example: "Bom dia! Seja bem-vindo(a) ao nosso pet shop. Como posso ajudá-lo(a) hoje?",
+    example: "Bom dia! Seja bem-vindo(a) ao nosso estabelecimento. Como posso ajudá-lo(a) hoje?",
     color: "bg-blue-50 border-blue-200 text-blue-800",
     activeColor: "bg-blue-100 border-blue-400 ring-2 ring-blue-300",
   },
@@ -23,7 +23,7 @@ const tones = [
     key: "friendly" as const,
     label: "Amigável",
     icon: Heart,
-    example: "Oi! 😊 Que bom ter você aqui! Como posso te ajudar com seu pet?",
+    example: "Oi! 😊 Que bom ter você aqui! Como posso te ajudar hoje?",
     color: "bg-pink-50 border-pink-200 text-pink-800",
     activeColor: "bg-pink-100 border-pink-400 ring-2 ring-pink-300",
   },
@@ -31,7 +31,7 @@ const tones = [
     key: "fun" as const,
     label: "Divertido",
     icon: PartyPopper,
-    example: "E aí, humano! 🐾 Seu pet mandou avisar que tá precisando de um banho! Bora agendar?",
+    example: "E aí! 🎉 Tá na hora de agendar aquele serviço! Bora marcar?",
     color: "bg-amber-50 border-amber-200 text-amber-800",
     activeColor: "bg-amber-100 border-amber-400 ring-2 ring-amber-300",
   },
@@ -95,7 +95,7 @@ const StepPersonalization = ({ data, onChange, errors }: Props) => {
             <Label className="font-semibold text-xs text-muted-foreground">PREVIEW NO WHATSAPP</Label>
             <div className="bg-card rounded-xl p-3 shadow-sm">
               <p className="text-sm font-bold text-primary">{data.assistantName}</p>
-              <p className="text-sm mt-1">{activeTone.example.replace("nosso pet shop", data.shopName || "nosso pet shop")}</p>
+              <p className="text-sm mt-1">{activeTone.example.replace("nosso estabelecimento", data.shopName || "nosso estabelecimento")}</p>
             </div>
           </div>
         )}
