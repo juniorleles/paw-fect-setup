@@ -138,23 +138,39 @@ const Index = () => {
 
     // Activate subscription and create per-user Evolution instance
     if (user) {
+      // Check if we have a valid session (email might not be confirmed yet)
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.access_token) {
+        console.warn("No valid session - skipping activate-subscription call. User may need to confirm email.");
+        // Still show success - the subscription will be activated on first dashboard load
+        setActivated(true);
+        toast({ title: "Secretária configurada!", description: "Confirme seu e-mail para ativar completamente." });
+        return;
+      }
+
       try {
         const { data: result, error } = await supabase.functions.invoke("activate-subscription", {
           method: "POST",
         });
         if (error) {
           console.error("Activate subscription error:", error);
-          toast({ title: "Erro na ativação", description: error.message, variant: "destructive" });
+          // Don't block the user - they can reconnect from the dashboard
+          toast({ title: "Aviso", description: "Configuração salva. Conecte o WhatsApp pelo Dashboard.", variant: "default" });
+          setActivated(true);
           return;
         }
         if (result?.error) {
-          toast({ title: "Erro na ativação", description: result.error, variant: "destructive" });
+          console.error("Activate result error:", result.error);
+          toast({ title: "Aviso", description: "Configuração salva. Conecte o WhatsApp pelo Dashboard.", variant: "default" });
+          setActivated(true);
           return;
         }
         console.log("Subscription activated:", result);
       } catch (e: any) {
         console.error("Activate error:", e);
-        toast({ title: "Erro na ativação", description: e.message, variant: "destructive" });
+        // Don't block - let user proceed
+        toast({ title: "Aviso", description: "Configuração salva. Conecte o WhatsApp pelo Dashboard.", variant: "default" });
+        setActivated(true);
         return;
       }
     }
