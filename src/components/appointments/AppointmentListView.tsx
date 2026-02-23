@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, forwardRef } from "react";
 import { PawPrint } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,7 +25,7 @@ const formatDateLabel = (dateStr: string) => {
   }
 };
 
-const AppointmentListView = ({ appointments, onStatusChange, onEdit, onDelete, hasActiveFilters }: Props) => {
+const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, onStatusChange, onEdit, onDelete, hasActiveFilters }, ref) => {
   const groupedAppointments = useMemo(() => {
     const groups = new Map<string, Appointment[]>();
     appointments.forEach((apt) => {
@@ -38,7 +38,7 @@ const AppointmentListView = ({ appointments, onStatusChange, onEdit, onDelete, h
 
   if (appointments.length === 0) {
     return (
-      <div className="bg-card rounded-xl border border-border/50 shadow-sm py-16">
+      <div ref={ref} className="bg-card rounded-xl border border-border/50 shadow-sm py-16">
         <div className="text-center text-muted-foreground">
           <PawPrint className="w-12 h-12 mx-auto mb-3 opacity-20" />
           <p className="font-display text-lg font-medium">Nenhum agendamento encontrado</p>
@@ -51,7 +51,7 @@ const AppointmentListView = ({ appointments, onStatusChange, onEdit, onDelete, h
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={ref} className="space-y-6">
       {groupedAppointments.map(([date, apts]) => (
         <div key={date}>
           <div className="flex items-center gap-3 mb-3">
@@ -78,6 +78,8 @@ const AppointmentListView = ({ appointments, onStatusChange, onEdit, onDelete, h
       ))}
     </div>
   );
-};
+});
+
+AppointmentListView.displayName = "AppointmentListView";
 
 export default AppointmentListView;
