@@ -8,7 +8,7 @@ import StepServices from "@/components/onboarding/StepServices";
 import StepPersonalization from "@/components/onboarding/StepPersonalization";
 import SuccessScreen from "@/components/onboarding/SuccessScreen";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
-import { ArrowLeft, ArrowRight, Zap, PawPrint, LogOut, Loader2, Copy, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Zap, Briefcase, LogOut, Loader2, Copy, Check } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +46,7 @@ const Index = () => {
         setData({
           phone: c.phone,
           phoneVerified: c.phone_verified,
+          niche: (c as any).niche ?? "petshop",
           shopName: c.shop_name,
           address: c.address,
           neighborhood: c.neighborhood,
@@ -203,9 +204,9 @@ const Index = () => {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 mb-2">
-            <PawPrint className="w-8 h-8 text-primary" />
+            <Briefcase className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-display font-bold text-foreground">
-              Secretária <span className="text-primary">Pet</span>
+              Secretária <span className="text-primary">Digital</span>
             </h1>
           </div>
           <p className="text-muted-foreground">Configure sua secretária digital em minutos</p>

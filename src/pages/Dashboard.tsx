@@ -14,7 +14,7 @@ import {
   Users,
   Bot,
   Loader2,
-  PawPrint,
+  Briefcase,
   Pencil,
   Trash2,
   CheckCircle2,
@@ -125,6 +125,7 @@ const Dashboard = () => {
         setData({
           phone: c.phone,
           phoneVerified: c.phone_verified,
+          niche: (c as any).niche ?? "petshop",
           shopName: c.shop_name,
           address: c.address,
           neighborhood: c.neighborhood,
@@ -278,7 +279,7 @@ const Dashboard = () => {
             {isUrgent ? (
               <Zap className="w-4 h-4 text-accent" />
             ) : (
-              <PawPrint className="w-4 h-4 text-primary" />
+              <CalendarDays className="w-4 h-4 text-primary" />
             )}
           </button>
           <div className="min-w-0">
@@ -352,8 +353,8 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
-            <PawPrint className="w-7 h-7 text-primary" />
-            {data.shopName || "Meu Pet Shop"}
+            <Briefcase className="w-7 h-7 text-primary" />
+            {data.shopName || "Meu Negócio"}
           </h1>
           <p className="text-muted-foreground mt-1">
             Secretária <span className="font-semibold text-primary">{data.assistantName}</span> está ativa
@@ -499,7 +500,7 @@ const Dashboard = () => {
           <CardContent className="space-y-4">
             {upcomingAppointments.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <PawPrint className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <CalendarDays className="w-10 h-10 mx-auto mb-3 opacity-30" />
                 <p className="font-medium">Nenhum agendamento</p>
                 <p className="text-sm">Clique em "Novo Agendamento" para começar</p>
               </div>
