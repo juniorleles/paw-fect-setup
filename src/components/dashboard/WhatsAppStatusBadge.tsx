@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useWhatsAppStatus, type WhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { Button } from "@/components/ui/button";
-import { Smartphone, RefreshCw, Loader2, Copy, CheckCircle2 } from "lucide-react";
+import { Smartphone, RefreshCw, Loader2, Copy, CheckCircle2, Timer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+
+const QR_EXPIRY_SECONDS = 45;
 
 const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; textClass: string }> = {
   connected: {
@@ -41,12 +44,42 @@ const WhatsAppStatusBadge = () => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(QR_EXPIRY_SECONDS);
+  const [expired, setExpired] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const startTimer = useCallback(() => {
+    clearTimer();
+    setSecondsLeft(QR_EXPIRY_SECONDS);
+    setExpired(false);
+    timerRef.current = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearTimer();
+          setExpired(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [clearTimer]);
+
+  // Cleanup timer on unmount
+  useEffect(() => () => clearTimer(), [clearTimer]);
 
   const handleReconnect = async () => {
     setReconnecting(true);
     setQrCode(null);
     setPairingCode(null);
     setCopied(false);
+    setExpired(false);
 
     try {
       const { data, error } = await supabase.functions.invoke("reconnect-whatsapp", {
@@ -62,9 +95,11 @@ const WhatsAppStatusBadge = () => {
       if (data?.pairingCode && data.pairingCode.length <= 20) {
         setPairingCode(data.pairingCode);
         setDialogOpen(true);
+        startTimer();
       } else if (data?.qrCode) {
         setQrCode(data.qrCode);
         setDialogOpen(true);
+        startTimer();
       } else {
         toast({ title: "Reconexão iniciada", description: "O status será atualizado automaticamente." });
       }
@@ -86,8 +121,17 @@ const WhatsAppStatusBadge = () => {
   useEffect(() => {
     if (status === "connected" && dialogOpen) {
       setDialogOpen(false);
+      clearTimer();
+      toast({ title: "WhatsApp conectado!", description: "Sua secretária digital está ativa." });
     }
-  }, [status, dialogOpen]);
+  }, [status, dialogOpen, clearTimer, toast]);
+
+  // Stop timer when dialog closes
+  useEffect(() => {
+    if (!dialogOpen) clearTimer();
+  }, [dialogOpen, clearTimer]);
+
+  const progressPercent = (secondsLeft / QR_EXPIRY_SECONDS) * 100;
 
   return (
     <>
@@ -123,7 +167,20 @@ const WhatsAppStatusBadge = () => {
           </DialogHeader>
 
           <div className="flex flex-col items-center gap-4 py-4">
-            {pairingCode ? (
+            {expired ? (
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                  <Timer className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground text-center">
+                  O código expirou
+                </p>
+                <Button onClick={handleReconnect} disabled={reconnecting} className="gap-2">
+                  {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  Gerar novo código
+                </Button>
+              </div>
+            ) : pairingCode ? (
               <>
                 <div className="text-xl sm:text-3xl font-mono font-bold tracking-[0.15em] sm:tracking-[0.3em] text-center px-3 py-5 rounded-xl bg-secondary break-all">
                   {pairingCode}
@@ -168,6 +225,20 @@ const WhatsAppStatusBadge = () => {
               </>
             ) : (
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            )}
+
+            {/* Timer bar */}
+            {!expired && (qrCode || pairingCode) && (
+              <div className="w-full space-y-1.5">
+                <Progress
+                  value={progressPercent}
+                  className="h-1.5"
+                />
+                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                  <Timer className="w-3 h-3" />
+                  <span>Expira em {secondsLeft}s</span>
+                </div>
+              </div>
             )}
           </div>
         </DialogContent>
