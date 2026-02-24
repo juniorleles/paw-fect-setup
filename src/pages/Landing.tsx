@@ -7,7 +7,6 @@ import NichesSection from "@/components/landing/NichesSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import PricingSection from "@/components/landing/PricingSection";
 import FaqSection from "@/components/landing/FaqSection";
-import ContactSection from "@/components/landing/ContactSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 
 const Landing = () => (
@@ -21,7 +20,6 @@ const Landing = () => (
     <TestimonialsSection />
     <PricingSection />
     <FaqSection />
-    <ContactSection />
     <LandingFooter />
   </div>
 );
