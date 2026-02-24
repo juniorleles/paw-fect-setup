@@ -7,7 +7,7 @@ const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 
 const FAQ_ITEMS = [
   { q: "Preciso de conhecimento técnico?", a: "Não! O processo de configuração é guiado em 5 etapas simples e leva menos de 10 minutos." },
-  { q: "Funciona para qualquer tipo de negócio?", a: "Sim! Atendemos salões, barbearias, clínicas, consultórios, estéticas, veterinárias e muito mais." },
+  { q: "Funciona para qualquer tipo de negócio?", a: "Sim! Atendemos salões, barbearias, clínicas, pet shops, consultórios, estéticas, veterinárias e muito mais." },
   { q: "O atendimento é realmente automático?", a: "Sim. A IA responde perguntas, informa preços, agenda serviços e envia lembretes sem precisar de ninguém." },
   { q: "Posso personalizar as respostas?", a: "Claro! Você escolhe o tom de voz e o nome da sua secretária. As respostas se adaptam ao seu negócio." },
   { q: "Posso cancelar a qualquer momento?", a: "Sim, sem multa e sem burocracia. Cancele diretamente pelo painel." },
