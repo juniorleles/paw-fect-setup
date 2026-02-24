@@ -170,4 +170,5 @@ export const STEP_LABELS = [
   "Horários",
   "Serviços",
   "Personalizar",
+  "Testar IA",
 ];
