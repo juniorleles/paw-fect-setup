@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PLANS, StripePlanKey } from "@/config/stripe";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,10 +32,12 @@ import {
   RotateCcw,
   XCircle,
   MessageSquare,
+  ExternalLink,
+  Settings,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { format, differenceInDays, addDays } from "date-fns";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface SubscriptionData {
@@ -51,11 +54,6 @@ interface SubscriptionData {
   created_at: string;
 }
 
-interface UsageData {
-  messages_used: number;
-  messages_limit: number;
-}
-
 interface PaymentRecord {
   id: string;
   description: string;
@@ -65,8 +63,8 @@ interface PaymentRecord {
 }
 
 const PLANS = {
-  starter: { name: "Starter", price: 67, limit: 1000 },
-  professional: { name: "Profissional", price: 167, limit: 3000 },
+  starter: { name: "Starter", price: STRIPE_PLANS.starter.price, limit: STRIPE_PLANS.starter.limit },
+  professional: { name: "Profissional", price: STRIPE_PLANS.professional.price, limit: STRIPE_PLANS.professional.limit },
 };
 
 const MyAccount = () => {
@@ -74,15 +72,35 @@ const MyAccount = () => {
   const { cancel, cancelling, reactivate, reactivating } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [sub, setSub] = useState<SubscriptionData | null>(null);
-  const [usage, setUsage] = useState<UsageData | null>(null);
+  const [messagesUsed, setMessagesUsed] = useState(0);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  // Check subscription status from Stripe on load
+  const syncSubscription = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("check-subscription");
+      if (error) console.error("check-subscription error:", error);
+      if (data?.subscribed) {
+        console.log("Stripe subscription synced:", data);
+      }
+    } catch (e) {
+      console.error("check-subscription call failed:", e);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
+      // Sync from Stripe first
+      await syncSubscription();
+
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
@@ -107,17 +125,59 @@ const MyAccount = () => {
           .limit(10),
       ]);
 
-      const subData = (subRes.data as unknown as SubscriptionData) ?? null;
-      const currentPlanKey = (subData?.plan as keyof typeof PLANS) ?? "starter";
-      const limit = PLANS[currentPlanKey]?.limit ?? PLANS.starter.limit;
-
-      setSub(subData);
-      setUsage({ messages_used: messagesRes.count ?? 0, messages_limit: limit });
+      setSub((subRes.data as unknown as SubscriptionData) ?? null);
+      setMessagesUsed(messagesRes.count ?? 0);
       setPayments((payRes.data as unknown as PaymentRecord[]) ?? []);
       setLoading(false);
     };
     load();
-  }, [user]);
+  }, [user, syncSubscription]);
+
+  // Show success toast after checkout
+  useEffect(() => {
+    const checkoutStatus = searchParams.get("checkout");
+    if (checkoutStatus === "success") {
+      toast({ title: "Pagamento realizado! 🎉", description: "Sua assinatura foi ativada com sucesso." });
+      // Clean URL
+      window.history.replaceState({}, "", "/my-account");
+    }
+  }, [searchParams, toast]);
+
+  const handleCheckout = async (planKey: StripePlanKey) => {
+    setCheckoutLoading(planKey);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId: STRIPE_PLANS[planKey].price_id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao iniciar pagamento", description: e.message, variant: "destructive" });
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      } else {
+        throw new Error("No portal URL returned");
+      }
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -141,9 +201,7 @@ const MyAccount = () => {
 
   const currentPlan = (sub?.plan as keyof typeof PLANS) ?? "starter";
   const planInfo = PLANS[currentPlan] ?? PLANS.starter;
-
-  const messagesUsed = usage?.messages_used ?? 0;
-  const messagesLimit = usage?.messages_limit ?? planInfo.limit;
+  const messagesLimit = planInfo.limit;
   const usagePercent = messagesLimit > 0 ? (messagesUsed / messagesLimit) * 100 : 0;
 
   const nextBillingDate = sub?.current_period_end
@@ -236,12 +294,21 @@ const MyAccount = () => {
                 {isCancelled && "Assinatura cancelada"}
               </p>
             </div>
-            {isTrialing && (
-              <Button className="font-bold" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
-                <Zap className="w-4 h-4 mr-2" />
-                Contratar plano agora
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {isTrialing && (
+                <Button className="font-bold" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Contratar plano agora
+                </Button>
+              )}
+              {(isActive || isTrialing) && (
+                <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
+                  {portalLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Settings className="w-4 h-4 mr-2" />}
+                  Gerenciar assinatura
+                  <ExternalLink className="w-3 h-3 ml-1" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Trial progress */}
@@ -292,12 +359,12 @@ const MyAccount = () => {
         <h2 className="text-lg font-display font-bold">Planos disponíveis</h2>
         <div className="grid sm:grid-cols-3 gap-4">
           {/* Starter */}
-          <Card className={`border-2 ${currentPlan === "starter" ? "border-primary shadow-lg" : "border-transparent"}`}>
+          <Card className={`border-2 ${currentPlan === "starter" && !isCancelled ? "border-primary shadow-lg" : "border-transparent"}`}>
             <CardContent className="p-5 flex flex-col h-full">
               <Badge className="w-fit mb-2 bg-destructive text-destructive-foreground text-xs">🔥 Fundador</Badge>
               <h3 className="font-display font-bold text-lg">Starter</h3>
               <div className="mb-1">
-                <span className="text-3xl font-bold">R$ 67</span>
+                <span className="text-3xl font-bold">R$ {STRIPE_PLANS.starter.price}</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
               <p className="text-xs text-primary font-medium mb-3">7 dias grátis</p>
@@ -312,18 +379,26 @@ const MyAccount = () => {
               {currentPlan === "starter" && !isCancelled ? (
                 <Button variant="outline" disabled className="w-full">Plano atual</Button>
               ) : (
-                <Button variant="outline" className="w-full">Assinar Starter</Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => handleCheckout("starter")}
+                  disabled={checkoutLoading === "starter"}
+                >
+                  {checkoutLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Assinar Starter
+                </Button>
               )}
             </CardContent>
           </Card>
 
           {/* Profissional */}
-          <Card className={`border-2 ${currentPlan === "professional" ? "border-primary shadow-lg" : "border-primary/50"} scale-[1.02]`}>
+          <Card className={`border-2 ${currentPlan === "professional" && !isCancelled ? "border-primary shadow-lg" : "border-primary/50"} scale-[1.02]`}>
             <CardContent className="p-5 flex flex-col h-full">
               <Badge className="w-fit mb-2 bg-primary text-primary-foreground text-xs">⭐ Mais Popular</Badge>
               <h3 className="font-display font-bold text-lg">Profissional</h3>
               <div className="mb-1">
-                <span className="text-3xl font-bold">R$ 167</span>
+                <span className="text-3xl font-bold">R$ {STRIPE_PLANS.professional.price}</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
               <p className="text-xs text-primary font-medium mb-3">7 dias grátis</p>
@@ -337,13 +412,15 @@ const MyAccount = () => {
               </ul>
               {currentPlan === "professional" && !isCancelled ? (
                 <Button disabled className="w-full">Plano atual</Button>
-              ) : currentPlan === "starter" ? (
-                <Button className="w-full">
-                  <Star className="w-4 h-4 mr-1" />
-                  Fazer upgrade
-                </Button>
               ) : (
-                <Button className="w-full">Assinar Profissional</Button>
+                <Button
+                  className="w-full"
+                  onClick={() => handleCheckout("professional")}
+                  disabled={checkoutLoading === "professional"}
+                >
+                  {checkoutLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
+                  {currentPlan === "starter" && !isCancelled ? "Fazer upgrade" : "Assinar Profissional"}
+                </Button>
               )}
             </CardContent>
           </Card>
@@ -366,13 +443,13 @@ const MyAccount = () => {
                   </li>
                 ))}
               </ul>
-              <Button variant="outline" className="w-full">Entrar na lista de espera</Button>
+              <Button variant="outline" className="w-full" disabled>Entrar na lista de espera</Button>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* 4. Forma de pagamento */}
+      {/* 4. Forma de pagamento - agora via Stripe Portal */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -381,22 +458,20 @@ const MyAccount = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {sub?.payment_method ? (
+          {isActive || isTrialing ? (
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-7 rounded bg-muted flex items-center justify-center text-xs font-bold">
-                  {sub.payment_method === "pix" ? "PIX" : sub.payment_method === "card" ? "💳" : "📄"}
-                </div>
-                <span className="text-sm capitalize">{sub.payment_method === "pix" ? "PIX (recomendado)" : sub.payment_method === "card" ? "Cartão de crédito" : "Boleto"}</span>
-              </div>
-              <Button variant="outline" size="sm">Alterar</Button>
+              <p className="text-sm text-muted-foreground">Gerencie sua forma de pagamento pelo Stripe</p>
+              <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
+                {portalLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ExternalLink className="w-4 h-4 mr-2" />}
+                Gerenciar pagamento
+              </Button>
             </div>
           ) : (
             <div className="text-center py-4 space-y-3">
-              <p className="text-sm text-muted-foreground">Nenhuma forma de pagamento cadastrada</p>
-              <Button variant="outline">
+              <p className="text-sm text-muted-foreground">Assine um plano para configurar pagamento</p>
+              <Button variant="outline" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
                 <CreditCard className="w-4 h-4 mr-2" />
-                Adicionar forma de pagamento
+                Ver planos
               </Button>
             </div>
           )}
@@ -452,35 +527,42 @@ const MyAccount = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {(isActive || isTrialing) && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/5">
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Cancelar assinatura
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {isTrialing
-                      ? "Ao cancelar durante o trial, seu acesso será encerrado imediatamente."
-                      : "Ao cancelar, você perde acesso premium ao final do período pago."}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Voltar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleCancel}
-                    disabled={cancelling}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {cancelling && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                    Confirmar cancelamento
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
+                {portalLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Settings className="w-4 h-4 mr-2" />}
+                Portal do cliente
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/5">
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cancelar assinatura
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {isTrialing
+                        ? "Ao cancelar durante o trial, seu acesso será encerrado imediatamente."
+                        : "Ao cancelar, você perde acesso premium ao final do período pago."}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleCancel}
+                      disabled={cancelling}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {cancelling && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                      Confirmar cancelamento
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           )}
           {isCancelled && (
             <Button onClick={handleReactivate} disabled={reactivating}>
