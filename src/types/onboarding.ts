@@ -5,8 +5,6 @@ export type BusinessNiche =
   | "barbearia"
   | "estetica"
   | "escritorio"
-  | "academia"
-  | "restaurante"
   | "veterinaria"
   | "outros";
 
@@ -17,8 +15,6 @@ export const NICHE_LABELS: Record<BusinessNiche, string> = {
   barbearia: "Barbearia",
   estetica: "Estética",
   escritorio: "Escritório / Consultório",
-  academia: "Academia",
-  restaurante: "Restaurante",
   veterinaria: "Veterinária",
   outros: "Outros Serviços",
 };
@@ -132,20 +128,6 @@ export const NICHE_SUGGESTIONS: Record<BusinessNiche, Omit<Service, "id">[]> = {
     { name: "Reunião de Acompanhamento", price: 150, duration: 30, category: "Atendimento" },
     { name: "Avaliação", price: 200, duration: 45, category: "Análise" },
     { name: "Sessão", price: 180, duration: 50, category: "Atendimento" },
-  ],
-  academia: [
-    { name: "Avaliação Física", price: 100, duration: 45, category: "Avaliação" },
-    { name: "Personal Trainer (sessão)", price: 120, duration: 60, category: "Treino" },
-    { name: "Aula em Grupo", price: 40, duration: 50, category: "Aulas" },
-    { name: "Pilates", price: 80, duration: 50, category: "Aulas" },
-    { name: "Plano Mensal", price: 150, duration: 0, category: "Planos" },
-  ],
-  restaurante: [
-    { name: "Reserva de Mesa", price: 0, duration: 120, category: "Reservas" },
-    { name: "Evento Privado", price: 500, duration: 180, category: "Eventos" },
-    { name: "Buffet por Pessoa", price: 80, duration: 90, category: "Buffet" },
-    { name: "Encomenda de Bolo", price: 120, duration: 0, category: "Encomendas" },
-    { name: "Catering", price: 1000, duration: 0, category: "Eventos" },
   ],
   veterinaria: [
     { name: "Consulta Veterinária", price: 150, duration: 30, category: "Consultas" },

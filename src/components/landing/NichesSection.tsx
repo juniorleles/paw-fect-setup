@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Briefcase, PawPrint, Stethoscope, Scissors, Sparkles,
-  Building2, Dumbbell, UtensilsCrossed,
+  Building2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { NICHE_LABELS } from "@/types/onboarding";
@@ -11,8 +11,7 @@ const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 const NICHE_ICONS: Record<string, React.ElementType> = {
   petshop: PawPrint, clinica: Stethoscope, salao: Scissors,
   barbearia: Scissors, estetica: Sparkles, escritorio: Building2,
-  academia: Dumbbell, restaurante: UtensilsCrossed, veterinaria: Stethoscope,
-  outros: Briefcase,
+  veterinaria: Stethoscope, outros: Briefcase,
 };
 
 const NichesSection = () => {
