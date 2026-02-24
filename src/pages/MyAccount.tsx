@@ -147,7 +147,7 @@ const MyAccount = () => {
     setCheckoutLoading(planKey);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId: STRIPE_PLANS[planKey].price_id },
+        body: { planKey },
       });
       if (error) throw error;
       if (data?.url) {
