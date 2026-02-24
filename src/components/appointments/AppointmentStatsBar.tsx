@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { CalendarDays, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { Appointment } from "@/types/appointment";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   appointments: Appointment[];
@@ -37,68 +38,95 @@ const AppointmentStatsBar = ({ appointments }: Props) => {
   }, [appointments]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div className="flex items-center gap-3 bg-card rounded-xl p-3 shadow-sm border border-border/50">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <CalendarDays className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <p className="text-2xl font-bold text-foreground leading-none">{stats.total}</p>
-          <p className="text-xs text-muted-foreground">Total</p>
-        </div>
-      </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-3 bg-card rounded-xl p-3 shadow-sm border border-border/50 cursor-default">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <CalendarDays className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground leading-none">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">Total</p>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent><p>Total de agendamentos ativos (exclui cancelados)</p></TooltipContent>
+        </Tooltip>
 
-      <div className="flex items-center gap-3 bg-card rounded-xl p-3 shadow-sm border border-border/50">
-        <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-          <CheckCircle2 className="w-5 h-5 text-success" />
-        </div>
-        <div>
-          <p className="text-2xl font-bold text-foreground leading-none">{stats.confirmed}</p>
-          <p className="text-xs text-muted-foreground">Confirmados</p>
-        </div>
-      </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-3 bg-card rounded-xl p-3 shadow-sm border border-border/50 cursor-default">
+              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-success" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground leading-none">{stats.confirmed}</p>
+                <p className="text-xs text-muted-foreground">Confirmados</p>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent><p>Confirmados ou concluídos cujo horário ainda não passou</p></TooltipContent>
+        </Tooltip>
 
-      <div className="flex items-center gap-3 bg-card rounded-xl p-3 shadow-sm border border-border/50">
-        <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-          <Clock className="w-5 h-5 text-accent" />
-        </div>
-        <div>
-          <p className="text-2xl font-bold text-foreground leading-none">{stats.pending}</p>
-          <p className="text-xs text-muted-foreground">Pendentes</p>
-        </div>
-      </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-3 bg-card rounded-xl p-3 shadow-sm border border-border/50 cursor-default">
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground leading-none">{stats.pending}</p>
+                <p className="text-xs text-muted-foreground">Pendentes</p>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent><p>Aguardando confirmação e ainda dentro do horário</p></TooltipContent>
+        </Tooltip>
 
-      {stats.overdue > 0 ? (
-        <div className="flex items-center gap-3 bg-destructive/5 rounded-xl p-3 shadow-sm border border-destructive/20">
-          <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-            <AlertTriangle className="w-5 h-5 text-destructive" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-destructive leading-none">{stats.overdue}</p>
-            <p className="text-xs text-muted-foreground">Atrasados</p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 bg-card rounded-xl p-3 shadow-sm border border-border/50">
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-            <Clock className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div>
-            {stats.upcoming ? (
-              <>
-                <p className="text-2xl font-bold text-foreground leading-none">{stats.upcoming.time.slice(0, 5)}</p>
-                <p className="text-xs text-muted-foreground truncate max-w-[100px]">Próximo</p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-medium text-muted-foreground">—</p>
-                <p className="text-xs text-muted-foreground">Sem próximos</p>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+        {stats.overdue > 0 ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-3 bg-destructive/5 rounded-xl p-3 shadow-sm border border-destructive/20 cursor-default">
+                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-destructive leading-none">{stats.overdue}</p>
+                  <p className="text-xs text-muted-foreground">Atrasados</p>
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent><p>Horário já passou e não foram concluídos</p></TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-3 bg-card rounded-xl p-3 shadow-sm border border-border/50 cursor-default">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div>
+                  {stats.upcoming ? (
+                    <>
+                      <p className="text-2xl font-bold text-foreground leading-none">{stats.upcoming.time.slice(0, 5)}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[100px]">Próximo</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-muted-foreground">—</p>
+                      <p className="text-xs text-muted-foreground">Sem próximos</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent><p>{stats.upcoming ? "Próximo agendamento do período" : "Nenhum agendamento futuro no período"}</p></TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
 
