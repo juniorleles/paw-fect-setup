@@ -12,8 +12,6 @@ import { Loader2, Save, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSubscription } from "@/hooks/useSubscription";
-import CancelSubscriptionDialog from "@/components/CancelSubscriptionDialog";
 import { Badge } from "@/components/ui/badge";
 import WhatsAppStatusCard from "@/components/dashboard/WhatsAppStatusCard";
 
@@ -21,7 +19,6 @@ const Settings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { status: subStatus, cancel, cancelling } = useSubscription();
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [configId, setConfigId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,16 +92,6 @@ const Settings = () => {
     );
   }
 
-  const handleCancelSubscription = async () => {
-    const { error } = await cancel();
-    if (error) {
-      toast({ title: "Erro ao cancelar", description: error, variant: "destructive" });
-      return;
-    }
-    toast({ title: "Assinatura cancelada", description: "Seu número foi desconectado da automação." });
-    navigate("/subscription-cancelled");
-  };
-
   const noErrors: Record<string, string> = {};
 
   return (
@@ -115,12 +102,6 @@ const Settings = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-display font-bold text-foreground">Configurações</h1>
-          {subStatus === "active" && (
-            <Badge className="bg-success/10 text-success border-success/20">Assinatura Ativa</Badge>
-          )}
-          {subStatus === "cancelled" && (
-            <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">Cancelada</Badge>
-          )}
         </div>
         <Button onClick={handleSave} disabled={saving} className="font-bold">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
@@ -128,12 +109,6 @@ const Settings = () => {
         </Button>
       </div>
 
-      {/* Cancel subscription section */}
-      {subStatus === "active" && (
-        <div className="pt-2">
-          <CancelSubscriptionDialog onConfirm={handleCancelSubscription} cancelling={cancelling} />
-        </div>
-      )}
 
       <Tabs defaultValue="shop" className="w-full">
         <TabsList className="grid grid-cols-5 w-full">
