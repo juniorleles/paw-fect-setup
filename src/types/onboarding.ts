@@ -1,5 +1,4 @@
 export type BusinessNiche =
-  | "petshop"
   | "clinica"
   | "salao"
   | "barbearia"
@@ -9,7 +8,6 @@ export type BusinessNiche =
   | "outros";
 
 export const NICHE_LABELS: Record<BusinessNiche, string> = {
-  petshop: "Pet Shop",
   clinica: "Clínica",
   salao: "Salão de Beleza",
   barbearia: "Barbearia",
@@ -62,7 +60,7 @@ export interface Service {
 export const INITIAL_DATA: OnboardingData = {
   phone: "",
   phoneVerified: false,
-  niche: "petshop",
+  niche: "salao",
   shopName: "",
   address: "",
   neighborhood: "",
@@ -88,13 +86,6 @@ export const BRAZILIAN_STATES = [
 ];
 
 export const NICHE_SUGGESTIONS: Record<BusinessNiche, Omit<Service, "id">[]> = {
-  petshop: [
-    { name: "Banho", price: 60, duration: 60, category: "Higiene" },
-    { name: "Tosa", price: 80, duration: 90, category: "Higiene" },
-    { name: "Banho e Tosa", price: 120, duration: 120, category: "Higiene" },
-    { name: "Consulta Veterinária", price: 150, duration: 30, category: "Saúde" },
-    { name: "Vacinação", price: 90, duration: 20, category: "Saúde" },
-  ],
   clinica: [
     { name: "Consulta", price: 200, duration: 30, category: "Atendimento" },
     { name: "Retorno", price: 100, duration: 20, category: "Atendimento" },
@@ -144,7 +135,7 @@ export const NICHE_SUGGESTIONS: Record<BusinessNiche, Omit<Service, "id">[]> = {
 };
 
 // Keep backward compatibility
-export const SUGGESTED_SERVICES = NICHE_SUGGESTIONS.petshop;
+export const SUGGESTED_SERVICES = NICHE_SUGGESTIONS.salao;
 
 export const STEP_LABELS = [
   "WhatsApp",

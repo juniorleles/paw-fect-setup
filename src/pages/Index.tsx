@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import ProgressBar from "@/components/onboarding/ProgressBar";
 import StepWhatsApp from "@/components/onboarding/StepWhatsApp";
-import StepPetShopData from "@/components/onboarding/StepPetShopData";
+import StepBusinessData from "@/components/onboarding/StepBusinessData";
 import StepBusinessHours from "@/components/onboarding/StepBusinessHours";
 import StepServices from "@/components/onboarding/StepServices";
 import StepPersonalization from "@/components/onboarding/StepPersonalization";
@@ -47,7 +47,7 @@ const Index = () => {
         setData({
           phone: c.phone,
           phoneVerified: c.phone_verified,
-          niche: (c as any).niche ?? "petshop",
+          niche: (c as any).niche ?? "salao",
           shopName: c.shop_name,
           address: c.address,
           neighborhood: c.neighborhood,
@@ -235,7 +235,7 @@ const Index = () => {
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               {step === 1 && <StepWhatsApp data={data} onChange={updateData} />}
-              {step === 2 && <StepPetShopData data={data} onChange={updateData} errors={errors} />}
+              {step === 2 && <StepBusinessData data={data} onChange={updateData} errors={errors} />}
               {step === 3 && <StepBusinessHours data={data} onChange={updateData} />}
               {step === 4 && <StepServices data={data} onChange={updateData} errors={errors} />}
               {step === 5 && <StepPersonalization data={data} onChange={updateData} errors={errors} />}

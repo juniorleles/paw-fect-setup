@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
 import StepWhatsApp from "@/components/onboarding/StepWhatsApp";
-import StepPetShopData from "@/components/onboarding/StepPetShopData";
+import StepBusinessData from "@/components/onboarding/StepBusinessData";
 import StepBusinessHours from "@/components/onboarding/StepBusinessHours";
 import StepServices from "@/components/onboarding/StepServices";
 import StepPersonalization from "@/components/onboarding/StepPersonalization";
@@ -39,7 +39,7 @@ const Settings = () => {
         setData({
           phone: c.phone,
           phoneVerified: c.phone_verified,
-          niche: (c as any).niche ?? "petshop",
+          niche: (c as any).niche ?? "salao",
           shopName: c.shop_name,
           address: c.address,
           neighborhood: c.neighborhood,
@@ -124,7 +124,7 @@ const Settings = () => {
           <StepWhatsApp data={data} onChange={updateData} />
         </TabsContent>
         <TabsContent value="shop" className="mt-6">
-          <StepPetShopData data={data} onChange={updateData} errors={noErrors} />
+          <StepBusinessData data={data} onChange={updateData} errors={noErrors} />
         </TabsContent>
         <TabsContent value="hours" className="mt-6">
           <StepBusinessHours data={data} onChange={updateData} />
