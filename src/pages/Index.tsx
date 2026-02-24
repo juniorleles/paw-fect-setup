@@ -6,6 +6,7 @@ import StepPetShopData from "@/components/onboarding/StepPetShopData";
 import StepBusinessHours from "@/components/onboarding/StepBusinessHours";
 import StepServices from "@/components/onboarding/StepServices";
 import StepPersonalization from "@/components/onboarding/StepPersonalization";
+import StepSimulator from "@/components/onboarding/StepSimulator";
 import SuccessScreen from "@/components/onboarding/SuccessScreen";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
 import { ArrowLeft, ArrowRight, Zap, Briefcase, LogOut, Loader2, Copy, Check } from "lucide-react";
@@ -120,6 +121,7 @@ const Index = () => {
     if (step === 5 && !data.assistantName.trim()) {
       errs.assistantName = "Dê um nome à sua secretária";
     }
+    // Step 6 (simulator) has no validation
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -128,14 +130,14 @@ const Index = () => {
     if (!validate()) return;
     setCompletedSteps((prev) => [...new Set([...prev, step])]);
     await saveConfig(data);
-    if (step < 5) setStep(step + 1);
+    if (step < 6) setStep(step + 1);
   };
 
   const goBack = () => step > 1 && setStep(step - 1);
 
   const handleActivate = async () => {
     if (!validate()) return;
-    setCompletedSteps((prev) => [...new Set([...prev, 5])]);
+    setCompletedSteps((prev) => [...new Set([...prev, 6])]);
     await saveConfig(data, true);
 
     // Activate subscription and create per-user Evolution instance
@@ -237,6 +239,7 @@ const Index = () => {
               {step === 3 && <StepBusinessHours data={data} onChange={updateData} />}
               {step === 4 && <StepServices data={data} onChange={updateData} errors={errors} />}
               {step === 5 && <StepPersonalization data={data} onChange={updateData} errors={errors} />}
+              {step === 6 && <StepSimulator data={data} />}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -247,7 +250,7 @@ const Index = () => {
             <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
           </Button>
 
-          {step < 5 ? (
+          {step < 6 ? (
             <Button onClick={goNext} className="h-12 px-8 font-bold">
               Próximo <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
