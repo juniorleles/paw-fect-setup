@@ -13,6 +13,18 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
+// Price IDs for live and test modes
+const PRICE_MAP: Record<string, { live: string; test: string }> = {
+  starter: {
+    live: "price_1T4S0JE3YGO6w5oCBXFikz8v",
+    test: "price_1T4UnTE3YGO6w5oCkeqZ4Fbb",
+  },
+  professional: {
+    live: "price_1T4S1KE3YGO6w5oC23qcdMl3",
+    test: "price_1T4UniE3YGO6w5oCiWyqqrfG",
+  },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,6 +35,9 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+
+    const isTestMode = stripeKey.startsWith("sk_test_") || stripeKey.startsWith("rk_test_");
+    logStep("Stripe mode", { isTestMode });
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -40,9 +55,18 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { priceId } = await req.json();
-    if (!priceId) throw new Error("priceId is required");
-    logStep("Price ID received", { priceId });
+    const { planKey, priceId: legacyPriceId } = await req.json();
+    
+    // Resolve price ID: prefer planKey, fallback to legacy priceId
+    let priceId: string;
+    if (planKey && PRICE_MAP[planKey]) {
+      priceId = isTestMode ? PRICE_MAP[planKey].test : PRICE_MAP[planKey].live;
+    } else if (legacyPriceId) {
+      priceId = legacyPriceId;
+    } else {
+      throw new Error("planKey or priceId is required");
+    }
+    logStep("Price ID resolved", { planKey, priceId, isTestMode });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
