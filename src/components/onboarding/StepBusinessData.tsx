@@ -13,7 +13,7 @@ interface Props {
 
 const nicheKeys = Object.keys(NICHE_LABELS) as BusinessNiche[];
 
-const StepPetShopData = ({ data, onChange, errors }: Props) => {
+const StepBusinessData = ({ data, onChange, errors }: Props) => {
   return (
     <Card className="border-none shadow-xl bg-card">
       <CardHeader className="text-center pb-2">
@@ -108,4 +108,4 @@ const StepPetShopData = ({ data, onChange, errors }: Props) => {
   );
 };
 
-export default StepPetShopData;
+export default StepBusinessData;
