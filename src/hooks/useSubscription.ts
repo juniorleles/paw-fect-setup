@@ -7,6 +7,7 @@ export type SubscriptionStatus = "active" | "cancelled" | "none";
 export const useSubscription = () => {
   const { user } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>("none");
+  const [trialEndAt, setTrialEndAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [reactivating, setReactivating] = useState(false);
@@ -16,11 +17,12 @@ export const useSubscription = () => {
     setLoading(true);
     const { data } = await supabase
       .from("subscriptions")
-      .select("status")
+      .select("status, trial_end_at")
       .eq("user_id", user.id)
       .maybeSingle();
 
     setStatus((data?.status as SubscriptionStatus) ?? "none");
+    setTrialEndAt(data?.trial_end_at ?? null);
     setLoading(false);
   }, [user]);
 
@@ -62,5 +64,5 @@ export const useSubscription = () => {
     }
   };
 
-  return { status, loading, cancelling, reactivating, cancel, reactivate, refetch: fetchSubscription };
+  return { status, loading, cancelling, reactivating, trialEndAt, cancel, reactivate, refetch: fetchSubscription };
 };

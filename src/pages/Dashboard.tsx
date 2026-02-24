@@ -27,14 +27,15 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { format, differenceInMinutes, startOfMonth, endOfMonth } from "date-fns";
+import { format, differenceInMinutes, differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const whatsappStatus = useWhatsAppStatus();
-  const { status: subStatus } = useSubscription();
+  const { status: subStatus, trialEndAt } = useSubscription();
 
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -194,6 +195,13 @@ const Dashboard = () => {
   const planName = subStatus === "active" ? "Profissional" : subStatus === "cancelled" ? "Cancelado" : "Sem plano";
   const messagesPercent = planLimit > 0 ? (totalMessagesMonth / planLimit) * 100 : 0;
 
+  // Trial alert
+  const trialDaysLeft = useMemo(() => {
+    if (!trialEndAt) return null;
+    const days = differenceInDays(new Date(trialEndAt), now);
+    return days;
+  }, [trialEndAt, now]);
+
   if (loadingConfig || loadingApts) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -204,6 +212,25 @@ const Dashboard = () => {
 
   return (
     <div className="flex-1 p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
+      {/* ─── Trial Alert ─── */}
+      {trialDaysLeft !== null && trialDaysLeft >= 0 && trialDaysLeft <= 2 && (
+        <Alert className="border-accent/50 bg-accent/10">
+          <AlertTriangle className="h-4 w-4 text-accent" />
+          <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-sm font-medium">
+              {trialDaysLeft === 0
+                ? "⏰ Seu período de teste termina hoje!"
+                : `⏰ Seu período de teste termina em ${trialDaysLeft} dia${trialDaysLeft > 1 ? "s" : ""}!`}
+              {" "}Ative seu plano para continuar usando.
+            </span>
+            <Button size="sm" className="gap-1" onClick={() => navigate("/my-account")}>
+              <Crown className="w-4 h-4" />
+              Ativar plano
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ─── 1. Hero Section ─── */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
