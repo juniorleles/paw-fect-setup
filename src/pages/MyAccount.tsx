@@ -83,20 +83,22 @@ const MyAccount = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const currentMonth = format(new Date(), "yyyy-MM");
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
-      const [subRes, usageRes, payRes] = await Promise.all([
+      const [subRes, messagesRes, payRes] = await Promise.all([
         supabase
           .from("subscriptions")
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle(),
         supabase
-          .from("usage_monthly")
-          .select("messages_used, messages_limit")
+          .from("conversation_messages")
+          .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
-          .eq("month", currentMonth)
-          .maybeSingle(),
+          .gte("created_at", monthStart)
+          .lte("created_at", monthEnd),
         supabase
           .from("payment_history")
           .select("*")
@@ -105,8 +107,12 @@ const MyAccount = () => {
           .limit(10),
       ]);
 
-      setSub((subRes.data as unknown as SubscriptionData) ?? null);
-      setUsage(usageRes.data ?? { messages_used: 0, messages_limit: PLANS.starter.limit });
+      const subData = (subRes.data as unknown as SubscriptionData) ?? null;
+      const currentPlanKey = (subData?.plan as keyof typeof PLANS) ?? "starter";
+      const limit = PLANS[currentPlanKey]?.limit ?? PLANS.starter.limit;
+
+      setSub(subData);
+      setUsage({ messages_used: messagesRes.count ?? 0, messages_limit: limit });
       setPayments((payRes.data as unknown as PaymentRecord[]) ?? []);
       setLoading(false);
     };
