@@ -113,6 +113,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_history: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          paid_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string
+          id?: string
+          paid_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          paid_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pet_shop_configs: {
         Row: {
           activated: boolean
@@ -205,26 +235,80 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          cancel_at_period_end: boolean
           cancelled_at: string | null
           created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
           id: string
+          last_payment_status: string | null
+          payment_method: string | null
+          plan: string
           status: string
+          trial_end_at: string | null
+          trial_start_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          cancel_at_period_end?: boolean
           cancelled_at?: string | null
           created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
           id?: string
+          last_payment_status?: string | null
+          payment_method?: string | null
+          plan?: string
           status?: string
+          trial_end_at?: string | null
+          trial_start_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          cancel_at_period_end?: boolean
           cancelled_at?: string | null
           created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
           id?: string
+          last_payment_status?: string | null
+          payment_method?: string | null
+          plan?: string
           status?: string
+          trial_end_at?: string | null
+          trial_start_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      usage_monthly: {
+        Row: {
+          created_at: string
+          id: string
+          messages_limit: number
+          messages_used: number
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          messages_limit?: number
+          messages_used?: number
+          month: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          messages_limit?: number
+          messages_used?: number
+          month?: string
           updated_at?: string
           user_id?: string
         }
