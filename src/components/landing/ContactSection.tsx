@@ -49,7 +49,26 @@ const ContactSection = () => {
             <CardContent className="p-6 sm:p-8">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Input placeholder="Seu nome *" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
-                <Input placeholder="WhatsApp com DDD *" value={phone} onChange={(e) => setPhone(e.target.value)} required maxLength={20} type="tel" />
+                <Input
+                  placeholder="(11) 99999-9999 *"
+                  value={phone}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                    let formatted = digits;
+                    if (digits.length > 6) {
+                      formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+                    } else if (digits.length > 2) {
+                      formatted = `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+                    } else if (digits.length > 0) {
+                      formatted = `(${digits}`;
+                    }
+                    setPhone(formatted);
+                  }}
+                  required
+                  maxLength={16}
+                  type="tel"
+                  inputMode="numeric"
+                />
                 <Textarea placeholder="Conte sobre seu negócio (opcional)" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={500} rows={3} />
                 <Button type="submit" className="w-full h-14 text-base font-bold shadow-lg" disabled={sending}>
                   <Send className="w-5 h-5 mr-2" /> {sending ? "Enviando..." : "Quero minha secretária digital"}
