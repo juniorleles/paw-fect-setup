@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
+  const { completed: onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -21,7 +23,7 @@ const Auth = () => {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const { toast } = useToast();
 
-  if (loading) {
+  if (loading || (user && onboardingLoading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -29,7 +31,9 @@ const Auth = () => {
     );
   }
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) {
+    return <Navigate to={onboardingCompleted ? "/dashboard" : "/onboarding"} replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
