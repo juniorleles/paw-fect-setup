@@ -8,28 +8,27 @@ interface Props {
 
 const AppointmentStatsBar = ({ appointments }: Props) => {
   const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
 
   const stats = useMemo(() => {
-    const todayApts = appointments.filter((a) => a.date === todayStr && a.status !== "cancelled");
-    const pending = todayApts.filter((a) => a.status === "pending").length;
-    const confirmed = todayApts.filter((a) => a.status === "confirmed" || a.status === "completed").length;
+    const active = appointments.filter((a) => a.status !== "cancelled");
+    const pending = active.filter((a) => a.status === "pending").length;
+    const confirmed = active.filter((a) => a.status === "confirmed" || a.status === "completed").length;
 
-    const overdue = appointments.filter((a) => {
-      if (a.status === "cancelled" || a.status === "completed") return false;
+    const overdue = active.filter((a) => {
+      if (a.status === "completed") return false;
       const aptDateTime = new Date(`${a.date}T${a.time}`);
       return aptDateTime < now;
     }).length;
 
-    const upcoming = todayApts
+    const upcoming = active
       .filter((a) => {
         const aptDateTime = new Date(`${a.date}T${a.time}`);
         return aptDateTime > now;
       })
       .sort((a, b) => a.time.localeCompare(b.time))[0];
 
-    return { todayTotal: todayApts.length, pending, confirmed, overdue, upcoming };
-  }, [appointments, todayStr]);
+    return { total: active.length, pending, confirmed, overdue, upcoming };
+  }, [appointments]);
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -38,8 +37,8 @@ const AppointmentStatsBar = ({ appointments }: Props) => {
           <CalendarDays className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <p className="text-2xl font-bold text-foreground leading-none">{stats.todayTotal}</p>
-          <p className="text-xs text-muted-foreground">Hoje</p>
+          <p className="text-2xl font-bold text-foreground leading-none">{stats.total}</p>
+          <p className="text-xs text-muted-foreground">Total</p>
         </div>
       </div>
 

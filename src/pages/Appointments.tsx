@@ -168,7 +168,7 @@ const Appointments = () => {
       )}
 
       {/* Stats */}
-      <AppointmentStatsBar appointments={appointments} />
+      <AppointmentStatsBar appointments={filteredAppointments} />
 
       {/* Filters */}
       <AppointmentFilters
