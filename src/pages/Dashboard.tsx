@@ -162,18 +162,19 @@ const Dashboard = () => {
     return m > 0 ? `em ${h}h${m}min` : `em ${h}h`;
   };
 
-  // Conversations count (from conversation_messages)
+  // Unique conversations count (distinct phones from conversation_messages)
   const [conversationsMonth, setConversationsMonth] = useState(0);
   useEffect(() => {
     if (!user) return;
     const fetchConvos = async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from("conversation_messages")
-        .select("*", { count: "exact", head: true })
+        .select("phone")
         .eq("user_id", user.id)
         .gte("created_at", `${monthStart}T00:00:00`)
         .lte("created_at", `${monthEnd}T23:59:59`);
-      setConversationsMonth(count ?? 0);
+      const uniquePhones = new Set(data?.map((m) => m.phone) ?? []);
+      setConversationsMonth(uniquePhones.size);
     };
     fetchConvos();
   }, [user, monthStart, monthEnd]);
