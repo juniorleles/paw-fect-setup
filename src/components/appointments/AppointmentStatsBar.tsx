@@ -11,23 +11,29 @@ const AppointmentStatsBar = ({ appointments }: Props) => {
 
   const stats = useMemo(() => {
     const active = appointments.filter((a) => a.status !== "cancelled");
-    const pending = active.filter((a) => a.status === "pending").length;
-    const confirmed = active.filter((a) => a.status === "confirmed" || a.status === "completed").length;
 
-    const overdue = active.filter((a) => {
-      if (a.status === "completed") return false;
-      const aptDateTime = new Date(`${a.date}T${a.time}`);
-      return aptDateTime < now;
-    }).length;
+    let pending = 0;
+    let confirmed = 0;
+    let overdue = 0;
+    let upcomingApt: Appointment | undefined;
 
-    const upcoming = active
-      .filter((a) => {
-        const aptDateTime = new Date(`${a.date}T${a.time}`);
-        return aptDateTime > now;
-      })
-      .sort((a, b) => a.time.localeCompare(b.time))[0];
+    for (const a of active) {
+      const pastTime = new Date(`${a.date}T${a.time}`) < now;
 
-    return { total: active.length, pending, confirmed, overdue, upcoming };
+      if (a.status === "completed") {
+        confirmed++;
+      } else if (pastTime) {
+        overdue++;
+      } else if (a.status === "confirmed") {
+        confirmed++;
+        if (!upcomingApt || a.time < upcomingApt.time) upcomingApt = a;
+      } else {
+        pending++;
+        if (!upcomingApt || a.time < upcomingApt.time) upcomingApt = a;
+      }
+    }
+
+    return { total: active.length, pending, confirmed, overdue, upcoming: upcomingApt };
   }, [appointments]);
 
   return (
