@@ -26,7 +26,8 @@ serve(async (req) => {
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
     );
 
     const authHeader = req.headers.get("Authorization");
@@ -53,6 +54,16 @@ serve(async (req) => {
       logStep("Existing Stripe customer found", { customerId });
     }
 
+    // Check if user already used trial
+    const { data: subData } = await supabaseClient
+      .from("subscriptions")
+      .select("trial_end_at, status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const alreadyUsedTrial = !!subData?.trial_end_at;
+    logStep("Trial check", { alreadyUsedTrial, status: subData?.status });
+
     const origin = req.headers.get("origin") || "https://paw-fect-setup.lovable.app";
 
     const session = await stripe.checkout.sessions.create({
@@ -63,7 +74,7 @@ serve(async (req) => {
       success_url: `${origin}/my-account?checkout=success`,
       cancel_url: `${origin}/my-account?checkout=cancelled`,
       subscription_data: {
-        trial_period_days: 7,
+        ...(alreadyUsedTrial ? {} : { trial_period_days: 7 }),
         metadata: { user_id: user.id },
       },
       metadata: { user_id: user.id },
