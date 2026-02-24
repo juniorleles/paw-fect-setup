@@ -347,63 +347,27 @@ const Dashboard = () => {
       <section>
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Financeiro</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="border-none shadow-md bg-card">
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-success" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-lg font-bold truncate">{formatCurrency(revenueToday)}</p>
-                  <p className="text-xs text-muted-foreground">Faturamento hoje</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-md bg-card">
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-lg font-bold truncate">{formatCurrency(revenueMonth)}</p>
-                  <p className="text-xs text-muted-foreground">Faturamento do mês</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-md bg-card">
-            <CardContent className="pt-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-accent" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-lg font-bold truncate">{formatCurrency(ticketMedio)}</p>
-                  <p className="text-xs text-muted-foreground">Ticket médio</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {cancelledMonthValue > 0 && (
-            <Card className="border-none shadow-md bg-destructive/5 ring-1 ring-destructive/20">
+          {[
+            { value: formatCurrency(revenueToday), label: "Faturamento hoje", icon: DollarSign, color: "text-success", bg: "bg-success/10" },
+            { value: formatCurrency(revenueMonth), label: "Faturamento do mês", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
+            { value: formatCurrency(ticketMedio), label: "Ticket médio", icon: Users, color: "text-accent", bg: "bg-accent/10" },
+            ...(cancelledMonthValue > 0
+              ? [{ value: formatCurrency(cancelledMonthValue), label: "Perdido com faltas", icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10", alert: true }]
+              : []),
+          ].map((stat) => (
+            <Card
+              key={stat.label}
+              className={`border-none shadow-md ${stat.alert ? "ring-1 ring-destructive/20 bg-destructive/5" : "bg-card"}`}
+            >
               <CardContent className="pt-4 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-destructive" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-lg font-bold truncate text-destructive">{formatCurrency(cancelledMonthValue)}</p>
-                    <p className="text-xs text-muted-foreground">Perdido com faltas</p>
-                  </div>
+                <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-2`}>
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
+                <p className={`text-lg font-bold ${stat.alert ? "text-destructive" : ""}`}>{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
               </CardContent>
             </Card>
-          )}
+          ))}
         </div>
       </section>
 
