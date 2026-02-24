@@ -239,11 +239,11 @@ const Dashboard = () => {
               {greeting}, {firstName} 👋
             </h1>
             <div className="flex items-center gap-2 mt-1">
-              <Bot className="w-4 h-4 text-primary" />
+              <Bot className={`w-4 h-4 ${whatsappStatus === "connected" ? "text-primary" : "text-muted-foreground"}`} />
               <span className="text-sm text-muted-foreground">
-                Secretária <span className="font-semibold text-primary">{data.assistantName}</span> ativa
+                Secretária <span className={`font-semibold ${whatsappStatus === "connected" ? "text-primary" : "text-destructive"}`}>{data.assistantName}</span> {whatsappStatus === "connected" ? "ativa" : "inativa"}
               </span>
-              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              <span className={`w-2 h-2 rounded-full ${whatsappStatus === "connected" ? "bg-success animate-pulse" : "bg-destructive"}`} />
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => navigate("/appointments")} className="gap-2 self-start">
