@@ -195,6 +195,7 @@ const MyAccount = () => {
   const isTrialing = sub?.status === "trialing" || (sub?.status === "active" && sub?.trial_end_at && new Date(sub.trial_end_at) > now);
   const isActive = sub?.status === "active" && !isTrialing;
   const isCancelled = sub?.status === "cancelled";
+  const isExpired = sub?.status === "expired";
 
   const trialEndDate = sub?.trial_end_at ? new Date(sub.trial_end_at) : null;
   const trialStartDate = sub?.trial_start_at ? new Date(sub.trial_start_at) : null;
@@ -296,13 +297,14 @@ const MyAccount = () => {
                 {isActive && `Próxima cobrança: ${nextBillingDate} • R$ ${planInfo.price}/mês`}
                 {isTrialing && `Trial termina em ${nextBillingDate}`}
                 {isCancelled && "Assinatura cancelada"}
+                {isExpired && "Seu trial expirou. Contrate um plano para continuar."}
               </p>
             </div>
             <div className="flex gap-2">
-              {isTrialing && (
+              {(isTrialing || isExpired) && (
                 <Button className="font-bold" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
                   <Zap className="w-4 h-4 mr-2" />
-                  Contratar plano agora
+                  {isExpired ? "Assinar agora" : "Contratar plano agora"}
                 </Button>
               )}
               {(isActive || isTrialing) && (
