@@ -1,63 +1,111 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, Lock, Rocket } from "lucide-react";
 import { motion } from "framer-motion";
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 
-const PLANS = [
-  {
-    name: "Starter", price: "97", period: "/mês", popular: false,
-    features: ["1 número WhatsApp", "Até 100 agendamentos/mês", "Lembretes automáticos", "Suporte por email"],
-  },
-  {
-    name: "Profissional", price: "197", period: "/mês", popular: true,
-    features: ["1 número WhatsApp", "Agendamentos ilimitados", "Lembretes + confirmações", "Respostas personalizadas", "Relatórios de atendimento", "Suporte prioritário"],
-  },
-  {
-    name: "Empresa", price: "397", period: "/mês", popular: false,
-    features: ["Múltiplos números", "Agendamentos ilimitados", "Tudo do Profissional", "Integração com sistemas", "Gerente de conta dedicado"],
-  },
-];
-
 const PricingSection = () => (
   <section id="precos" className="py-24 px-4 bg-secondary/30">
     <div className="max-w-5xl mx-auto">
-      <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5 }} className="text-center mb-14">
+      <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5 }} className="text-center mb-6">
         <h2 className="text-3xl sm:text-4xl font-display font-bold mb-3">Planos que cabem no seu bolso</h2>
         <p className="text-muted-foreground text-lg">Escolha o ideal para o tamanho do seu negócio</p>
       </motion.div>
-      <div className="grid sm:grid-cols-3 gap-6">
-        {PLANS.map((plan, i) => (
-          <motion.div key={plan.name} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.4, delay: i * 0.1 }}>
-            <Card className={`h-full border-2 transition-shadow ${plan.popular ? "border-primary shadow-xl scale-[1.03]" : "border-transparent shadow-md"}`}>
-              <CardContent className="p-6 flex flex-col h-full">
-                {plan.popular && (
-                  <Badge className="w-fit mb-3 bg-primary text-primary-foreground">Mais popular</Badge>
-                )}
-                <h3 className="font-display font-bold text-xl mb-1">{plan.name}</h3>
-                <div className="mb-5">
-                  <span className="text-4xl font-bold">R$ {plan.price}</span>
-                  <span className="text-muted-foreground text-sm">{plan.period}</span>
-                </div>
-                <ul className="space-y-2.5 mb-6 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a href="#contact">
-                  <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
-                    Começar agora
-                  </Button>
-                </a>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+
+      {/* Destaque 7 dias grátis */}
+      <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.45, delay: 0.1 }} className="mb-12">
+        <div className="mx-auto max-w-xl rounded-xl border border-primary/20 bg-primary/5 px-6 py-4 text-center shadow-sm">
+          <p className="text-base sm:text-lg font-semibold text-foreground">
+            🎁 Teste grátis por 7 dias. Sem compromisso. Cancele quando quiser.
+          </p>
+        </div>
+      </motion.div>
+
+      <div className="grid sm:grid-cols-3 gap-6 items-stretch">
+        {/* Starter */}
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.4, delay: 0 }}>
+          <Card className="h-full border-2 border-transparent shadow-md">
+            <CardContent className="p-6 flex flex-col h-full">
+              <Badge className="w-fit mb-3 bg-destructive text-destructive-foreground">🔥 Plano Fundador – Vagas Limitadas</Badge>
+              <h3 className="font-display font-bold text-xl mb-1">Starter</h3>
+              <div className="mb-1">
+                <span className="text-4xl font-bold">R$ 67</span>
+                <span className="text-muted-foreground text-sm">/mês</span>
+              </div>
+              <p className="text-xs text-primary font-medium mb-4">7 dias grátis para testar</p>
+              <p className="text-sm text-muted-foreground mb-5">Ideal para pequenos negócios que querem automatizar o WhatsApp sem complicação.</p>
+              <ul className="space-y-2.5 mb-5 flex-1">
+                {["1 número WhatsApp", "Até 1.000 mensagens por mês", "Respostas automáticas básicas", "Mensagem de boas-vindas automática", "Configuração de horário de atendimento", "Suporte padrão"].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-muted-foreground mb-4 leading-snug">Após o período promocional, o valor será R$ 97/mês. Clientes fundadores mantêm o valor.</p>
+              <a href="#contact">
+                <Button className="w-full" variant="outline">Começar 7 dias grátis</Button>
+              </a>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Profissional */}
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.4, delay: 0.1 }}>
+          <Card className="h-full border-2 border-primary shadow-xl scale-[1.03]">
+            <CardContent className="p-6 flex flex-col h-full">
+              <Badge className="w-fit mb-3 bg-primary text-primary-foreground">⭐ Mais Popular</Badge>
+              <h3 className="font-display font-bold text-xl mb-1">Profissional</h3>
+              <div className="mb-1">
+                <span className="text-4xl font-bold">R$ 167</span>
+                <span className="text-muted-foreground text-sm">/mês</span>
+              </div>
+              <p className="text-xs text-primary font-medium mb-4">7 dias grátis para testar</p>
+              <p className="text-sm text-muted-foreground mb-5">Para negócios que querem atendimento inteligente e mais volume.</p>
+              <p className="text-xs font-semibold text-foreground mb-2">Inclui tudo do Starter +</p>
+              <ul className="space-y-2.5 mb-6 flex-1">
+                {["Até 3.000 mensagens por mês", "Respostas com IA personalizada", "Fluxos automatizados customizados", "Relatórios de atendimento", "Organização de contatos", "Suporte prioritário"].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <a href="#contact">
+                <Button className="w-full">Começar 7 dias grátis</Button>
+              </a>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Empresarial */}
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.4, delay: 0.2 }}>
+          <Card className="h-full border-2 border-transparent shadow-md">
+            <CardContent className="p-6 flex flex-col h-full">
+              <Badge variant="secondary" className="w-fit mb-3">🚀 Em breve</Badge>
+              <h3 className="font-display font-bold text-xl mb-1">Empresa</h3>
+              <div className="mb-1">
+                <Lock className="inline w-5 h-5 text-muted-foreground mr-1" />
+                <span className="text-2xl font-bold text-muted-foreground">Em breve</span>
+              </div>
+              <p className="text-xs text-primary font-medium mb-4">Teste gratuito disponível no lançamento</p>
+              <p className="text-sm text-muted-foreground mb-5">Solução completa para empresas que precisam de múltiplos atendentes e integrações avançadas.</p>
+              <ul className="space-y-2.5 mb-6 flex-1 opacity-60">
+                {["Múltiplos números WhatsApp", "Mensagens ilimitadas", "Tudo do Profissional", "Integração com sistemas", "Gerente de conta dedicado"].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <a href="#contact">
+                <Button className="w-full" variant="outline">Entrar na lista de espera</Button>
+              </a>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   </section>
