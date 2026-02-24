@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const NAV_LINKS = [
   { href: "#beneficios", label: "Benefícios" },
@@ -14,16 +14,17 @@ const NAV_LINKS = [
 
 const LandingNavbar = () => {
   const [mobileMenu, setMobileMenu] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
+        <button onClick={() => navigate("/")} className="flex items-center gap-2">
           <Briefcase className="w-7 h-7 text-primary" />
           <span className="text-xl font-display font-bold">
             Secretária <span className="text-primary">Digital</span>
           </span>
-        </Link>
+        </button>
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
           {NAV_LINKS.map((link) => (
             <a key={link.href} href={link.href} className="hover:text-foreground transition-colors">
@@ -32,9 +33,9 @@ const LandingNavbar = () => {
           ))}
         </div>
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/auth">
-            <Button variant="outline" size="sm">Entrar</Button>
-          </Link>
+          <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
+            Entrar
+          </Button>
           <a href="#contact">
             <Button size="sm">Testar Grátis</Button>
           </a>
@@ -51,9 +52,9 @@ const LandingNavbar = () => {
             </a>
           ))}
           <div className="flex gap-2 pt-2">
-            <Link to="/auth" className="flex-1">
-              <Button variant="outline" size="sm" className="w-full">Entrar</Button>
-            </Link>
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => { setMobileMenu(false); navigate("/auth"); }}>
+              Entrar
+            </Button>
             <a href="#contact" className="flex-1" onClick={() => setMobileMenu(false)}>
               <Button size="sm" className="w-full">Testar Grátis</Button>
             </a>
