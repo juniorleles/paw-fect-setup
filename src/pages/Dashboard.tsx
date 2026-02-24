@@ -164,24 +164,35 @@ const Dashboard = () => {
 
   // Unique conversations count (distinct phones from conversation_messages)
   const [conversationsMonth, setConversationsMonth] = useState(0);
+  const [totalMessagesMonth, setTotalMessagesMonth] = useState(0);
   useEffect(() => {
     if (!user) return;
     const fetchConvos = async () => {
-      const { data } = await supabase
-        .from("conversation_messages")
-        .select("phone")
-        .eq("user_id", user.id)
-        .gte("created_at", `${monthStart}T00:00:00`)
-        .lte("created_at", `${monthEnd}T23:59:59`);
-      const uniquePhones = new Set(data?.map((m) => m.phone) ?? []);
+      const [convoRes, msgCountRes] = await Promise.all([
+        supabase
+          .from("conversation_messages")
+          .select("phone")
+          .eq("user_id", user.id)
+          .gte("created_at", `${monthStart}T00:00:00`)
+          .lte("created_at", `${monthEnd}T23:59:59`),
+        supabase
+          .from("conversation_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", `${monthStart}T00:00:00`)
+          .lte("created_at", `${monthEnd}T23:59:59`),
+      ]);
+      const uniquePhones = new Set(convoRes.data?.map((m) => m.phone) ?? []);
       setConversationsMonth(uniquePhones.size);
+      setTotalMessagesMonth(msgCountRes.count ?? 0);
     };
     fetchConvos();
   }, [user, monthStart, monthEnd]);
 
-  // Plan limit (hardcoded for now – 1000 free conversations)
+  // Plan limit
   const planLimit = 1000;
   const planName = subStatus === "active" ? "Profissional" : subStatus === "cancelled" ? "Cancelado" : "Sem plano";
+  const messagesPercent = planLimit > 0 ? (totalMessagesMonth / planLimit) * 100 : 0;
 
   if (loadingConfig || loadingApts) {
     return (
@@ -374,34 +385,72 @@ const Dashboard = () => {
       {/* ─── 5. Plano e Limites ─── */}
       <section>
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Plano e limites</h2>
-        <Card className="border-none shadow-md bg-card">
-          <CardContent className="py-5 px-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-primary" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Plan card */}
+          <Card className="border-none shadow-md bg-card">
+            <CardContent className="py-5 px-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold">{planName}</p>
+                    <p className="text-xs text-muted-foreground">Plano atual</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold">{planName}</p>
-                  <p className="text-xs text-muted-foreground">Plano atual</p>
-                </div>
+                <Button size="sm" className="gap-2" onClick={() => navigate("/my-account")}>
+                  <Crown className="w-4 h-4" />
+                  Gerenciar
+                </Button>
               </div>
-              <div className="flex-1 max-w-md space-y-1.5">
+              <div className="mt-4 space-y-1.5">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Conversas usadas</span>
-                  <span className="font-semibold">
-                    {conversationsMonth} / {planLimit.toLocaleString("pt-BR")}
-                  </span>
+                  <span>Conversas únicas</span>
+                  <span className="font-semibold">{conversationsMonth} / {planLimit.toLocaleString("pt-BR")}</span>
                 </div>
                 <Progress value={Math.min((conversationsMonth / planLimit) * 100, 100)} className="h-2" />
               </div>
-              <Button size="sm" className="gap-2 self-start sm:self-center" onClick={() => navigate("/settings")}>
-                <Crown className="w-4 h-4" />
-                Fazer upgrade
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Messages consumption card */}
+          <Card className={`border-none shadow-md ${messagesPercent >= 80 ? "ring-1 ring-accent/30 bg-accent/5" : "bg-card"}`}>
+            <CardContent className="py-5 px-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${messagesPercent >= 100 ? "bg-destructive/10" : messagesPercent >= 80 ? "bg-accent/10" : "bg-primary/10"}`}>
+                    <MessageSquare className={`w-5 h-5 ${messagesPercent >= 100 ? "text-destructive" : messagesPercent >= 80 ? "text-accent" : "text-primary"}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold">Mensagens do mês</p>
+                    <p className="text-xs text-muted-foreground">Enviadas + recebidas</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate("/my-account")}>
+                  Ver detalhes
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              <div className="mt-4 space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Consumo</span>
+                  <span className="font-semibold">{totalMessagesMonth} / {planLimit.toLocaleString("pt-BR")}</span>
+                </div>
+                <Progress
+                  value={Math.min(messagesPercent, 100)}
+                  className={`h-2 ${messagesPercent >= 100 ? "[&>div]:bg-destructive" : messagesPercent >= 80 ? "[&>div]:bg-accent" : ""}`}
+                />
+                {messagesPercent >= 80 && messagesPercent < 100 && (
+                  <p className="text-xs text-accent font-medium">⚠️ Você já usou {Math.round(messagesPercent)}% do limite</p>
+                )}
+                {messagesPercent >= 100 && (
+                  <p className="text-xs text-destructive font-medium">🚫 Limite atingido — faça upgrade</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </section>
     </div>
   );
