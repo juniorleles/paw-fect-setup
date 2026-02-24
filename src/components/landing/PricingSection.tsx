@@ -45,7 +45,7 @@ const PricingSection = () => (
                 ))}
               </ul>
               <p className="text-[11px] text-muted-foreground mb-4 leading-snug">Após o período promocional, o valor será R$ 97/mês. Clientes fundadores mantêm o valor.</p>
-              <a href="#contact">
+              <a href="/auth">
                 <Button className="w-full" variant="outline">Começar 7 dias grátis</Button>
               </a>
             </CardContent>
@@ -73,7 +73,7 @@ const PricingSection = () => (
                   </li>
                 ))}
               </ul>
-              <a href="#contact">
+              <a href="/auth">
                 <Button className="w-full">Começar 7 dias grátis</Button>
               </a>
             </CardContent>
@@ -100,7 +100,7 @@ const PricingSection = () => (
                   </li>
                 ))}
               </ul>
-              <a href="#contact">
+              <a href="/auth">
                 <Button className="w-full" variant="outline">Entrar na lista de espera</Button>
               </a>
             </CardContent>

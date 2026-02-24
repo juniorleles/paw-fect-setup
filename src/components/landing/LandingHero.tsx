@@ -21,7 +21,7 @@ const LandingHero = () => (
           IA que responde clientes automaticamente, agenda horários e reduz faltas — ideal para negócios que atendem pelo WhatsApp.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-          <a href="#contact">
+          <a href="/auth">
             <Button size="lg" className="h-14 px-8 text-base font-bold shadow-lg">
               Testar grátis no meu WhatsApp <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
