@@ -179,15 +179,20 @@ async function findUserByCustomerId(
   }
 }
 
+function safeTimestamp(ts: number | null | undefined): string | null {
+  if (ts == null || isNaN(ts)) return null;
+  try { return new Date(ts * 1000).toISOString(); } catch { return null; }
+}
+
 async function upsertSubscription(supabase: any, userId: string, sub: Stripe.Subscription) {
   const status = sub.status === "active" || sub.status === "trialing" ? "active" : sub.status;
 
   const payload = {
     status,
-    current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-    current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-    trial_start_at: sub.trial_start ? new Date(sub.trial_start * 1000).toISOString() : null,
-    trial_end_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+    current_period_start: safeTimestamp(sub.current_period_start),
+    current_period_end: safeTimestamp(sub.current_period_end),
+    trial_start_at: safeTimestamp(sub.trial_start),
+    trial_end_at: safeTimestamp(sub.trial_end),
     cancel_at_period_end: sub.cancel_at_period_end,
     last_payment_status: sub.status === "active" ? "paid" : null,
   };

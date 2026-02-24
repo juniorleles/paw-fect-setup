@@ -83,13 +83,16 @@ serve(async (req) => {
       });
     }
 
+    const safeTimestamp = (ts: number | null | undefined): string | null => {
+      if (ts == null || isNaN(ts)) return null;
+      try { return new Date(ts * 1000).toISOString(); } catch { return null; }
+    };
+
     const productId = activeSub.items.data[0]?.price?.product as string;
     const priceId = activeSub.items.data[0]?.price?.id;
-    const subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
+    const subscriptionEnd = safeTimestamp(activeSub.current_period_end);
     const isTrialing = activeSub.status === "trialing";
-    const trialEnd = activeSub.trial_end
-      ? new Date(activeSub.trial_end * 1000).toISOString()
-      : null;
+    const trialEnd = safeTimestamp(activeSub.trial_end);
 
     logStep("Active subscription found", {
       subscriptionId: activeSub.id,
@@ -108,13 +111,11 @@ serve(async (req) => {
       .maybeSingle();
 
     const subPayload = {
-      status: isTrialing ? "active" : "active",
-      current_period_start: new Date(activeSub.current_period_start * 1000).toISOString(),
+      status: "active",
+      current_period_start: safeTimestamp(activeSub.current_period_start),
       current_period_end: subscriptionEnd,
       trial_end_at: trialEnd,
-      trial_start_at: activeSub.trial_start
-        ? new Date(activeSub.trial_start * 1000).toISOString()
-        : null,
+      trial_start_at: safeTimestamp(activeSub.trial_start),
       last_payment_status: activeSub.latest_invoice ? "paid" : null,
       cancel_at_period_end: activeSub.cancel_at_period_end,
     };
