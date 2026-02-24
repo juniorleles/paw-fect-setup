@@ -382,7 +382,7 @@ const MyAccount = () => {
                   </li>
                 ))}
               </ul>
-              {currentPlan === "starter" && !isCancelled ? (
+              {currentPlan === "starter" && !isCancelled && !isExpired ? (
                 <Button variant="outline" disabled className="w-full">Plano atual</Button>
               ) : (
                 <Button
