@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Briefcase, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +22,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  
   const { toast } = useToast();
 
   if (loading || (user && onboardingLoading)) {
@@ -40,14 +39,6 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSignUp && !acceptedTerms) {
-      toast({
-        title: "Termos obrigatórios",
-        description: "Você precisa aceitar os Termos de Uso e a Política de Privacidade.",
-        variant: "destructive",
-      });
-      return;
-    }
     setSubmitting(true);
 
     const { error } = isSignUp
@@ -193,25 +184,6 @@ const Auth = () => {
                       className="h-11"
                     />
                   </div>
-                  {isSignUp && (
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="terms"
-                        checked={acceptedTerms}
-                        onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                      />
-                      <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                        Li e aceito os{" "}
-                        <Link to="/terms-of-service" target="_blank" className="text-primary hover:underline font-medium">
-                          Termos de Uso
-                        </Link>{" "}
-                        e a{" "}
-                        <Link to="/privacy-policy" target="_blank" className="text-primary hover:underline font-medium">
-                          Política de Privacidade
-                        </Link>.
-                      </label>
-                    </div>
-                  )}
                   {!isSignUp && (
                     <div className="flex justify-end">
                       <button
