@@ -22,6 +22,7 @@ interface BlockedUser {
   trial_end_at: string | null;
   status: string;
   days_overdue: number;
+  blocked_messages: number;
 }
 
 const AdminBlocked = () => {
@@ -53,12 +54,28 @@ const AdminBlocked = () => {
     if (blockedSubs.length === 0) { setUsers([]); setLoading(false); return; }
 
     const userIds = blockedSubs.map((s) => s.user_id);
-    const { data: configs } = await supabase
-      .from("pet_shop_configs")
-      .select("user_id, shop_name, phone")
-      .in("user_id", userIds);
+    const [configsRes, logsRes] = await Promise.all([
+      supabase
+        .from("pet_shop_configs")
+        .select("user_id, shop_name, phone")
+        .in("user_id", userIds),
+      supabase
+        .from("admin_error_logs")
+        .select("user_id")
+        .eq("error_message", "[TRIAL-BLOCK] Mensagem bloqueada — assinatura inativa")
+        .in("user_id", userIds),
+    ]);
+
+    const configs = configsRes.data;
+    const logs = logsRes.data;
 
     const nameMap = new Map((configs ?? []).map((c) => [c.user_id, { name: c.shop_name, phone: c.phone }]));
+    
+    // Count blocked messages per user
+    const blockCountMap = new Map<string, number>();
+    (logs ?? []).forEach((l) => {
+      blockCountMap.set(l.user_id!, (blockCountMap.get(l.user_id!) || 0) + 1);
+    });
 
     const merged: BlockedUser[] = blockedSubs.map((s) => ({
       user_id: s.user_id,
@@ -67,6 +84,7 @@ const AdminBlocked = () => {
       trial_end_at: s.trial_end_at,
       status: s.status,
       days_overdue: differenceInDays(now, new Date(s.trial_end_at!)),
+      blocked_messages: blockCountMap.get(s.user_id) || 0,
     }));
 
     // Sort by most overdue first
@@ -130,6 +148,7 @@ const AdminBlocked = () => {
                 <th className="text-left px-4 py-3 font-medium">Cliente</th>
                 <th className="text-left px-4 py-3 font-medium">Trial expirou em</th>
                 <th className="text-left px-4 py-3 font-medium">Dias vencidos</th>
+                <th className="text-left px-4 py-3 font-medium">Msgs bloqueadas</th>
                 <th className="text-left px-4 py-3 font-medium">Status</th>
                 <th className="text-left px-4 py-3 font-medium">Ações</th>
               </tr>
@@ -143,6 +162,11 @@ const AdminBlocked = () => {
                   </td>
                   <td className="px-4 py-3">
                     <span className="font-bold text-red-400">{u.days_overdue} dias</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`font-medium ${u.blocked_messages > 0 ? "text-orange-400" : "text-[hsl(220,10%,45%)]"}`}>
+                      {u.blocked_messages}
+                    </span>
                   </td>
                   <td className="px-4 py-3">{statusBadge(u.days_overdue)}</td>
                   <td className="px-4 py-3">

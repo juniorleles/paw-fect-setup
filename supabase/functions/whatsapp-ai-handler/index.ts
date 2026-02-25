@@ -438,6 +438,16 @@ Deno.serve(async (req) => {
 
     if (blocked) {
       console.log(`[TRIAL-BLOCK] Messages blocked for user ${shopConfig.user_id} — no active subscription`);
+      // Log to admin_error_logs for admin visibility
+      try {
+        await serviceClient.from("admin_error_logs").insert({
+          error_message: `[TRIAL-BLOCK] Mensagem bloqueada — assinatura inativa`,
+          endpoint: "whatsapp-ai-handler",
+          severity: "warning",
+          user_id: shopConfig.user_id,
+          stack_trace: JSON.stringify({ sender: cleanPhone, message: message.substring(0, 100), instanceName }),
+        });
+      } catch { /* ignore logging errors */ }
       // Don't respond to the customer at all — silent block
       return new Response(JSON.stringify({ success: false, reason: "subscription_inactive" }), {
         status: 200,
