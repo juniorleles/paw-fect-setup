@@ -195,6 +195,9 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
               inputMode="numeric"
               maxLength={16}
             />
+            {ownerPhone && ownerPhone.replace(/\D/g, "").length < 11 && (
+              <p className="text-xs text-destructive">Informe um número válido com DDD (11 dígitos)</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -256,7 +259,7 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
             </div>
           )}
 
-          <Button type="submit" className="w-full font-bold" disabled={saving || isSlotFull || (isPetNiche && !petName) || !ownerName || !service || !date || !time}>
+          <Button type="submit" className="w-full font-bold" disabled={saving || isSlotFull || (isPetNiche && !petName) || !ownerName || !service || !date || !time || (!!ownerPhone && ownerPhone.replace(/\D/g, "").length < 11)}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {isEditing ? "Salvar alterações" : "Agendar"}
           </Button>
