@@ -16,9 +16,17 @@ const LandingFooter = () => (
         <span className="font-display font-bold text-foreground">Secretária Digital</span>
       </div>
       <p>© {new Date().getFullYear()} Secretária Digital. Todos os direitos reservados.</p>
-      <Link to="/auth" className="hover:text-foreground transition-colors">
-        Área do Cliente
-      </Link>
+      <div className="flex items-center gap-4">
+        <Link to="/terms-of-service" className="hover:text-foreground transition-colors">
+          Termos de Uso
+        </Link>
+        <Link to="/privacy-policy" className="hover:text-foreground transition-colors">
+          Privacidade
+        </Link>
+        <Link to="/auth" className="hover:text-foreground transition-colors">
+          Área do Cliente
+        </Link>
+      </div>
     </motion.div>
   </footer>
 );

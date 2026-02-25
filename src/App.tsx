@@ -31,6 +31,8 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import AdminBlocked from "./pages/admin/AdminBlocked";
 import AdminLayout from "./components/admin/AdminLayout";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -152,6 +154,9 @@ const App = () => (
             <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/blocked" element={<AdminRoute><AdminBlocked /></AdminRoute>} />
+            {/* Legal pages */}
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
