@@ -463,8 +463,8 @@ const MyAccount = () => {
         </div>
 
         <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-          * <strong>Atendente por horário</strong> indica quantos clientes podem ser atendidos simultaneamente no mesmo horário. 
-          No Starter, apenas 1 por vez. No Profissional, até 5 ao mesmo tempo.
+          * <strong>Atendente por horário</strong> refere-se à quantidade de agendamentos simultâneos permitidos no mesmo horário na sua agenda. 
+          No Starter, 1 agendamento por horário. No Profissional, até 5 ao mesmo tempo. A IA responde a todos os clientes sem limite.
         </p>
       </div>
 
