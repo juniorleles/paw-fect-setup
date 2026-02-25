@@ -46,23 +46,37 @@ Deno.serve(async (req) => {
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
 
-    // Find users whose trial expires TODAY (same calendar day)
-    const expiringToday = (subs ?? []).filter((s) => {
-      if (!s.trial_end_at) return false;
+    // Calculate date 2 days from now
+    const twoDaysFromNow = new Date(now);
+    twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
+    const warningDateStr = twoDaysFromNow.toISOString().split("T")[0];
+
+    // Categorize users: expiring today OR expiring in 2 days (warning)
+    const expiringToday: typeof subs = [];
+    const expiringWarning: typeof subs = [];
+
+    for (const s of subs ?? []) {
+      if (!s.trial_end_at) continue;
       const trialEndStr = new Date(s.trial_end_at).toISOString().split("T")[0];
-      return trialEndStr === todayStr;
-    });
+      if (trialEndStr === todayStr) expiringToday.push(s);
+      else if (trialEndStr === warningDateStr) expiringWarning.push(s);
+    }
 
-    console.log(`[TRIAL-NOTIFY] Found ${expiringToday.length} trials expiring today (${todayStr})`);
+    console.log(`[TRIAL-NOTIFY] Found ${expiringToday.length} expiring today, ${expiringWarning.length} expiring in 2 days (${todayStr})`);
 
-    if (expiringToday.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, message: "No trials expiring today" }), {
+    const allTargets = [
+      ...expiringToday.map((s) => ({ ...s, notificationType: "expiry" as const })),
+      ...expiringWarning.map((s) => ({ ...s, notificationType: "warning" as const })),
+    ];
+
+    if (allTargets.length === 0) {
+      return new Response(JSON.stringify({ sent: 0, message: "No trials to notify" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userIds = expiringToday.map((s) => s.user_id);
+    const userIds = allTargets.map((s) => s.user_id);
 
     // Get shop configs for these users (need instance name and phone)
     const { data: configs } = await serviceClient
@@ -78,10 +92,10 @@ Deno.serve(async (req) => {
     let errors = 0;
     const baseUrl = evolutionUrl.replace(/\/+$/, "");
 
-    for (const sub of expiringToday) {
-      const config = configMap.get(sub.user_id);
+    for (const target of allTargets) {
+      const config = configMap.get(target.user_id);
       if (!config) {
-        console.log(`[TRIAL-NOTIFY] No config found for user ${sub.user_id}, skipping`);
+        console.log(`[TRIAL-NOTIFY] No config found for user ${target.user_id}, skipping`);
         continue;
       }
 
@@ -95,11 +109,18 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const message = `⚠️ *Aviso importante — ${config.shop_name}*\n\n` +
-        `Seu período de teste gratuito *expira hoje*! 🕐\n\n` +
-        `Para continuar usando o assistente de WhatsApp e não perder seus agendamentos, assine agora um dos nossos planos.\n\n` +
-        `Acesse seu painel para escolher o plano ideal para você. 💙\n\n` +
-        `Se tiver dúvidas, estamos aqui para ajudar!`;
+      const message = target.notificationType === "warning"
+        ? `👋 *Olá, ${config.shop_name}!*\n\n` +
+          `Seu período de teste gratuito termina em *2 dias*! ⏳\n\n` +
+          `Está gostando do assistente? Para não perder o acesso, aproveite para assinar um dos nossos planos antes que o trial acabe.\n\n` +
+          `Acesse seu painel para ver as opções. 💙`
+        : `⚠️ *Aviso importante — ${config.shop_name}*\n\n` +
+          `Seu período de teste gratuito *expira hoje*! 🕐\n\n` +
+          `Para continuar usando o assistente de WhatsApp e não perder seus agendamentos, assine agora um dos nossos planos.\n\n` +
+          `Acesse seu painel para escolher o plano ideal para você. 💙\n\n` +
+          `Se tiver dúvidas, estamos aqui para ajudar!`;
+
+      const logLabel = target.notificationType === "warning" ? "TRIAL-WARNING" : "TRIAL-EXPIRY";
 
       try {
         const phone = config.phone.replace(/\D/g, "");
@@ -116,19 +137,18 @@ Deno.serve(async (req) => {
         );
 
         if (sendRes.ok) {
-          console.log(`[TRIAL-NOTIFY] ✅ Notification sent to ${config.shop_name} (${phone})`);
+          console.log(`[TRIAL-NOTIFY] ✅ [${logLabel}] Sent to ${config.shop_name} (${phone})`);
           sent++;
 
-          // Log to admin_error_logs for visibility
           await serviceClient.from("admin_error_logs").insert({
-            error_message: `[TRIAL-NOTIFY] Notificação de expiração enviada para ${config.shop_name}`,
+            error_message: `[${logLabel}] Notificação enviada para ${config.shop_name}`,
             endpoint: "trial-expiry-notification",
             severity: "warning",
-            user_id: sub.user_id,
+            user_id: target.user_id,
           });
         } else {
           const errBody = await sendRes.text();
-          console.error(`[TRIAL-NOTIFY] ❌ Failed for ${config.shop_name}: ${sendRes.status} - ${errBody}`);
+          console.error(`[TRIAL-NOTIFY] ❌ [${logLabel}] Failed for ${config.shop_name}: ${sendRes.status} - ${errBody}`);
           errors++;
         }
       } catch (err) {
@@ -140,10 +160,10 @@ Deno.serve(async (req) => {
     // Create system alert summary
     if (sent > 0) {
       await serviceClient.from("system_alerts").insert({
-        alert_type: "trial_expiry",
+        alert_type: "trial_notification",
         severity: "info",
-        message: `${sent} notificação(ões) de expiração de trial enviada(s)`,
-        details: { sent, errors, date: todayStr },
+        message: `${sent} notificação(ões) de trial enviada(s)`,
+        details: { sent, errors, date: todayStr, warnings: expiringWarning.length, expiries: expiringToday.length },
       });
     }
 
