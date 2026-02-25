@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, MessageSquare, CalendarDays, Zap, Users, Clock, TrendingUp } from "lucide-react";
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import heroIllustration from "@/assets/hero-illustration.png";
 
-const AnimatedCounter = ({ target, suffix = "", duration = 2 }: { target: number; suffix?: string; duration?: number }) => {
+const AnimatedCounter = ({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) => {
   const [value, setValue] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -15,13 +15,14 @@ const AnimatedCounter = ({ target, suffix = "", duration = 2 }: { target: number
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated) {
           setHasAnimated(true);
-          const motionVal = { val: 0 };
-          const controls = animate(motionVal, { val: target }, {
-            duration,
-            ease: "easeOut",
-            onUpdate: (latest) => setValue(Math.round(latest.val)),
-          });
-          return () => controls.stop();
+          const start = performance.now();
+          const step = (now: number) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setValue(Math.round(eased * target));
+            if (progress < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
         }
       },
       { threshold: 0.5 }
