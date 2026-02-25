@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OnboardingData, DaySchedule } from "@/types/onboarding";
-import { Clock, Copy, Users } from "lucide-react";
+import { Clock, Copy, Users, Lock } from "lucide-react";
+import { STRIPE_PLANS } from "@/config/stripe";
 
 interface Props {
   data: OnboardingData;
   onChange: (data: Partial<OnboardingData>) => void;
+  plan?: string;
 }
 
 const TIMES = Array.from({ length: 48 }, (_, i) => {
@@ -17,7 +19,8 @@ const TIMES = Array.from({ length: 48 }, (_, i) => {
   return `${h}:${m}`;
 });
 
-const StepBusinessHours = ({ data, onChange }: Props) => {
+const StepBusinessHours = ({ data, onChange, plan }: Props) => {
+  const maxAllowed = plan === "professional" ? STRIPE_PLANS.professional.maxAttendants : STRIPE_PLANS.starter.maxAttendants;
   const updateDay = (index: number, updates: Partial<DaySchedule>) => {
     const hours = [...data.businessHours];
     hours[index] = { ...hours[index], ...updates };
@@ -62,12 +65,18 @@ const StepBusinessHours = ({ data, onChange }: Props) => {
             id="concurrent"
             type="number"
             min={1}
-            max={20}
-            value={data.maxConcurrentAppointments}
-            onChange={(e) => onChange({ maxConcurrentAppointments: Math.max(1, Math.min(20, parseInt(e.target.value) || 1)) })}
+            max={maxAllowed}
+            value={Math.min(data.maxConcurrentAppointments, maxAllowed)}
+            onChange={(e) => onChange({ maxConcurrentAppointments: Math.max(1, Math.min(maxAllowed, parseInt(e.target.value) || 1)) })}
             className="w-20 text-center font-bold"
           />
         </div>
+        {maxAllowed === 1 && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 text-xs text-muted-foreground">
+            <Lock className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+            <span>Plano Starter permite apenas 1 atendente. <strong>Faça upgrade para o Profissional</strong> para ter até {STRIPE_PLANS.professional.maxAttendants} atendentes.</span>
+          </div>
+        )}
 
         <Button variant="outline" size="sm" onClick={copyToAll} className="w-full mb-2">
           <Copy className="w-4 h-4 mr-2" />
