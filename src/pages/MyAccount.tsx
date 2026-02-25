@@ -461,6 +461,11 @@ const MyAccount = () => {
             </CardContent>
           </Card>
         </div>
+
+        <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+          * <strong>Atendente por horário</strong> indica quantos clientes podem ser atendidos simultaneamente no mesmo horário. 
+          No Starter, apenas 1 por vez. No Profissional, até 5 ao mesmo tempo.
+        </p>
       </div>
 
       {/* 4. Forma de pagamento - agora via Stripe Portal */}

@@ -148,6 +148,11 @@ const PricingSection = () => (
           </Card>
         </motion.div>
       </div>
+
+      <p className="text-xs text-muted-foreground mt-6 text-center max-w-2xl mx-auto leading-relaxed">
+        * <strong>Atendente por horário</strong> indica quantos clientes podem ser atendidos simultaneamente no mesmo horário. 
+        No plano Starter, apenas 1 cliente por vez. No Profissional, até 5 clientes ao mesmo tempo — ideal para negócios com mais de um profissional disponível.
+      </p>
     </div>
   </section>
 );
