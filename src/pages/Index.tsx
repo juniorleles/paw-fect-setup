@@ -12,6 +12,7 @@ import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
 import { ArrowLeft, ArrowRight, Zap, Briefcase, LogOut, Loader2, Copy, Check } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { plan: subscriptionPlan } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -238,7 +240,7 @@ const Index = () => {
             >
               {step === 1 && <StepWhatsApp data={data} onChange={updateData} />}
               {step === 2 && <StepBusinessData data={data} onChange={updateData} errors={errors} />}
-              {step === 3 && <StepBusinessHours data={data} onChange={updateData} />}
+              {step === 3 && <StepBusinessHours data={data} onChange={updateData} plan={subscriptionPlan} />}
               {step === 4 && <StepServices data={data} onChange={updateData} errors={errors} />}
               {step === 5 && <StepPersonalization data={data} onChange={updateData} errors={errors} />}
               {step === 6 && <StepSimulator data={data} />}
