@@ -31,6 +31,7 @@ const navItems = [
   { to: "/admin/messages", icon: MessageSquare, label: "Mensagens" },
   { to: "/admin/ai-usage", icon: Cpu, label: "Consumo Gemini" },
   { to: "/admin/logs", icon: AlertTriangle, label: "Logs & Erros" },
+  { to: "/admin/users", icon: Users, label: "Usuários" },
 ];
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
