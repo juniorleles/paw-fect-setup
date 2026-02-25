@@ -6,14 +6,8 @@ const TermsOfService = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const handleBack = () => {
-    // If came from onboarding or direct access, go to onboarding (step 6)
-    const from = (location.state as any)?.from;
-    if (from) {
-      navigate(from);
-    } else {
-      navigate("/onboarding", { state: { step: 6 } });
-    }
+  const handleClose = () => {
+    window.close();
   };
 
   return (
@@ -21,7 +15,7 @@ const TermsOfService = () => {
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="max-w-4xl mx-auto px-4 h-16 flex items-center gap-4">
         <h1 className="text-lg font-display font-bold text-foreground">Termos de Uso</h1>
-        <Button variant="outline" size="sm" className="ml-auto" onClick={handleBack}>
+        <Button variant="outline" size="sm" className="ml-auto" onClick={handleClose}>
           Fechar
         </Button>
       </div>
