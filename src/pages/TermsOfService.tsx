@@ -1,16 +1,16 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const TermsOfService = () => (
+const TermsOfService = () => {
+  const navigate = useNavigate();
+  return (
   <div className="min-h-screen bg-background">
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="max-w-4xl mx-auto px-4 h-16 flex items-center gap-4">
-        <Link to="/">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
         <h1 className="text-lg font-display font-bold text-foreground">Termos de Uso</h1>
       </div>
     </header>
@@ -151,5 +151,6 @@ const TermsOfService = () => (
     </main>
   </div>
 );
+};
 
 export default TermsOfService;
