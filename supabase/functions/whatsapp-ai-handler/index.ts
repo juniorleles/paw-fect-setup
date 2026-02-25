@@ -402,6 +402,49 @@ Deno.serve(async (req) => {
 
     const shopConfig = config as PetShopConfig;
 
+    // --- TRIAL / SUBSCRIPTION ENFORCEMENT ---
+    const { data: subscription } = await serviceClient
+      .from("subscriptions")
+      .select("status, trial_end_at, current_period_end")
+      .eq("user_id", shopConfig.user_id)
+      .maybeSingle();
+
+    const GRACE_PERIOD_DAYS = 3;
+    const now = new Date();
+    let blocked = false;
+
+    if (!subscription) {
+      blocked = true;
+    } else if (subscription.status === "cancelled") {
+      blocked = true;
+    } else if (subscription.status === "active" && subscription.trial_end_at) {
+      const trialEnd = new Date(subscription.trial_end_at);
+      if (now > trialEnd) {
+        // Check if there's a paid period (current_period_end after trial_end)
+        const hasPaidPeriod = subscription.current_period_end && new Date(subscription.current_period_end) > trialEnd;
+        if (!hasPaidPeriod) {
+          // Trial expired — check grace period
+          const msOverdue = now.getTime() - trialEnd.getTime();
+          const daysOverdue = Math.floor(msOverdue / (1000 * 60 * 60 * 24));
+          if (daysOverdue > GRACE_PERIOD_DAYS) {
+            blocked = true;
+          } else {
+            // Grace period — block messages but don't fully block
+            blocked = true; // messages are blocked during grace too
+          }
+        }
+      }
+    }
+
+    if (blocked) {
+      console.log(`[TRIAL-BLOCK] Messages blocked for user ${shopConfig.user_id} — no active subscription`);
+      // Don't respond to the customer at all — silent block
+      return new Response(JSON.stringify({ success: false, reason: "subscription_inactive" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Check for quick confirmation responses (CONFIRMO, REMARCAR, CANCELAR)
     const confirmReply = await handleConfirmationResponse(serviceClient, shopConfig, cleanPhone, message);
     if (confirmReply) {
