@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
@@ -23,7 +23,9 @@ const Index = () => {
   const { plan: subscriptionPlan } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const location = useLocation();
+  const initialStep = (location.state as any)?.step ?? 1;
+  const [step, setStep] = useState(initialStep);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
