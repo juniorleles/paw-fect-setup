@@ -16,6 +16,18 @@ import MyAccount from "./pages/MyAccount";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 import DashboardLayout from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminLeads from "./pages/admin/AdminLeads";
+import AdminClients from "./pages/admin/AdminClients";
+import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminFinancial from "./pages/admin/AdminFinancial";
+import AdminMessages from "./pages/admin/AdminMessages";
+import AdminAiUsage from "./pages/admin/AdminAiUsage";
+import AdminLogs from "./pages/admin/AdminLogs";
+import AdminLayout from "./components/admin/AdminLayout";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
@@ -68,6 +80,25 @@ const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminAuth();
+
+  if (authLoading || adminLoading) {
+    return (
+      <div className="min-h-screen bg-[hsl(220,20%,7%)] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  return <AdminLayout>{children}</AdminLayout>;
+};
+
 const DashboardRoute = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
     <OnboardingGuard>
@@ -97,6 +128,17 @@ const App = () => (
             <Route path="/my-account" element={<DashboardRoute><MyAccount /></DashboardRoute>} />
             <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
             <Route path="/subscription-cancelled" element={<ProtectedRoute><SubscriptionCancelled /></ProtectedRoute>} />
+            {/* Admin routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
+            <Route path="/admin/clients" element={<AdminRoute><AdminClients /></AdminRoute>} />
+            <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
+            <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
+            <Route path="/admin/financial" element={<AdminRoute><AdminFinancial /></AdminRoute>} />
+            <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
+            <Route path="/admin/ai-usage" element={<AdminRoute><AdminAiUsage /></AdminRoute>} />
+            <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
