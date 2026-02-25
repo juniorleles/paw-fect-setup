@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
+import { useSubscription } from "@/hooks/useSubscription";
+import { STRIPE_PLANS } from "@/config/stripe";
 import StepWhatsApp from "@/components/onboarding/StepWhatsApp";
 import StepBusinessData from "@/components/onboarding/StepBusinessData";
 import StepBusinessHours from "@/components/onboarding/StepBusinessHours";
@@ -17,6 +19,7 @@ import WhatsAppStatusCard from "@/components/dashboard/WhatsAppStatusCard";
 
 const Settings = () => {
   const { user } = useAuth();
+  const { plan: subscriptionPlan } = useSubscription();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
@@ -79,7 +82,10 @@ const Settings = () => {
         services: data.services as any,
         voice_tone: data.voiceTone,
         assistant_name: data.assistantName,
-        max_concurrent_appointments: data.maxConcurrentAppointments,
+        max_concurrent_appointments: Math.min(
+          data.maxConcurrentAppointments,
+          subscriptionPlan === "professional" ? STRIPE_PLANS.professional.maxAttendants : STRIPE_PLANS.starter.maxAttendants
+        ),
       })
       .eq("id", configId);
     setSaving(false);
@@ -129,7 +135,7 @@ const Settings = () => {
           <StepBusinessData data={data} onChange={updateData} errors={noErrors} showEmail />
         </TabsContent>
         <TabsContent value="hours" className="mt-6">
-          <StepBusinessHours data={data} onChange={updateData} />
+          <StepBusinessHours data={data} onChange={updateData} plan={subscriptionPlan} />
         </TabsContent>
         <TabsContent value="services" className="mt-6">
           <StepServices data={data} onChange={updateData} errors={noErrors} />
