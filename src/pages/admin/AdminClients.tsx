@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin as supabase } from "@/integrations/supabase/adminClient";
 import { Loader2, Search, RefreshCw, Copy } from "lucide-react";
 import { differenceInDays } from "date-fns";
 import { toast } from "sonner";

@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Navigate } from "react-router-dom";
 import { Shield, Loader2 } from "lucide-react";
 
 const AdminLogin = () => {
-  const { user, loading: authLoading, signIn } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminAuth();
+  const { user, isAdmin, loading, signIn } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  if (authLoading || adminLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[hsl(220,20%,7%)] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
