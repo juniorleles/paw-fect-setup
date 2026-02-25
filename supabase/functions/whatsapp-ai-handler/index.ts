@@ -255,6 +255,22 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
     console.log("Processing action:", JSON.stringify(action));
 
     if (action.type === "create") {
+      // Validate required fields before inserting
+      const missingFields: string[] = [];
+      if (!action.pet_name) missingFields.push("nome do pet");
+      if (!action.owner_name) missingFields.push("nome do tutor");
+      if (!action.service) missingFields.push("serviço");
+      if (!action.date) missingFields.push("data");
+      if (!action.time) missingFields.push("horário");
+
+      if (missingFields.length > 0) {
+        console.warn("Missing fields for appointment creation:", missingFields);
+        // Return only the AI's natural text — it should naturally ask for the missing info
+        const cleanReply = reply.replace(/<action>.*?<\/action>/s, "").trim();
+        if (cleanReply) return cleanReply;
+        return `Preciso de mais algumas informações para completar o agendamento: ${missingFields.join(", ")}. Pode me informar?`;
+      }
+
       const { error: insertErr } = await serviceClient
         .from("appointments")
         .insert({
