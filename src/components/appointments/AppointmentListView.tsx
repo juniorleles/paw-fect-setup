@@ -37,6 +37,8 @@ const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, o
       list.push(apt);
       grouped.set(apt.date, list);
     });
+    // Sort each group by time
+    grouped.forEach((apts) => apts.sort((a, b) => a.time.localeCompare(b.time)));
     const sorted = Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b));
     return {
       groups: sorted,
