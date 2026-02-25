@@ -7,7 +7,12 @@ const TermsOfService = () => {
   const location = useLocation();
   
   const handleClose = () => {
+    // Try to close the tab; if blocked by browser, fallback to navigating back
     window.close();
+    // If window.close() didn't work (browser restriction), navigate back
+    setTimeout(() => {
+      navigate("/onboarding", { state: { step: 6 } });
+    }, 100);
   };
 
   return (
