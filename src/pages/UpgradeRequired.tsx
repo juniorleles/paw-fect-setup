@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTrialStatus } from "@/hooks/useTrialStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,11 +19,13 @@ import {
   Check,
   Star,
   Lock,
+  LogOut,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const UpgradeRequired = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { phase, daysOverdue } = useTrialStatus();
   const { toast } = useToast();
 
@@ -213,6 +216,20 @@ const UpgradeRequired = () => {
         <p className="text-center text-xs text-muted-foreground">
           💳 Pagamento seguro via Stripe • Cartão de crédito ou boleto bancário
         </p>
+
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground gap-2"
+            onClick={async () => {
+              await supabase.auth.signOut({ scope: "local" });
+              navigate("/");
+            }}
+          >
+            <LogOut className="w-4 h-4" />
+            Sair e trocar de conta
+          </Button>
+        </div>
       </div>
     </div>
   );
