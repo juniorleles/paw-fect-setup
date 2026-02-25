@@ -26,11 +26,13 @@ import {
   Crown,
   CheckCircle2,
   AlertTriangle,
+  Info,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInMinutes, differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -435,7 +437,19 @@ const Dashboard = () => {
               </div>
               <div className="mt-4 space-y-1.5">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Conversas únicas</span>
+                  <span className="flex items-center gap-1">
+                    Conversas únicas
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground/60 hover:text-primary transition-colors">
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
+                        Quantidade de números de telefone diferentes que conversaram com sua secretária neste mês. Cada cliente conta como 1.
+                      </PopoverContent>
+                    </Popover>
+                  </span>
                   <span className="font-semibold">{conversationsMonth} / {planLimit.toLocaleString("pt-BR")}</span>
                 </div>
                 <Progress value={Math.min((conversationsMonth / planLimit) * 100, 100)} className="h-2" />
@@ -463,7 +477,19 @@ const Dashboard = () => {
               </div>
               <div className="mt-4 space-y-1.5">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Consumo</span>
+                  <span className="flex items-center gap-1">
+                    Consumo
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground/60 hover:text-primary transition-colors">
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
+                        Total de mensagens individuais (enviadas + recebidas) trocadas no mês. Inclui todas as mensagens de todos os clientes.
+                      </PopoverContent>
+                    </Popover>
+                  </span>
                   <span className="font-semibold">{totalMessagesMonth} / {planLimit.toLocaleString("pt-BR")}</span>
                 </div>
                 <Progress
