@@ -329,7 +329,19 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-xl font-bold">{conversationsMonth}</p>
-                  <p className="text-xs text-muted-foreground">Conversas no mês</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    Conversas no mês
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground/60 hover:text-primary transition-colors">
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
+                        Quantidade de clientes diferentes (números únicos) que enviaram mensagens para sua secretária neste mês.
+                      </PopoverContent>
+                    </Popover>
+                  </p>
                 </div>
               </div>
 
@@ -339,7 +351,19 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-xl font-bold">100%</p>
-                  <p className="text-xs text-muted-foreground">Respostas automáticas</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    Respostas automáticas
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground/60 hover:text-primary transition-colors">
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
+                        Percentual de mensagens respondidas automaticamente pela IA, sem necessidade de intervenção humana.
+                      </PopoverContent>
+                    </Popover>
+                  </p>
                 </div>
               </div>
 
@@ -349,7 +373,19 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-xl font-bold">&lt;1s</p>
-                  <p className="text-xs text-muted-foreground">Tempo de resposta</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    Tempo de resposta
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground/60 hover:text-primary transition-colors">
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
+                        Tempo médio que a secretária digital leva para responder cada mensagem recebida.
+                      </PopoverContent>
+                    </Popover>
+                  </p>
                 </div>
               </div>
 
