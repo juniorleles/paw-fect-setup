@@ -212,7 +212,7 @@ const Appointments = () => {
 
       {viewMode === "calendar" && (
         <AppointmentCalendarView
-          appointments={filteredAppointments}
+          appointments={appointments}
           onStatusChange={handleStatusChange}
           onEdit={handleEdit}
           onDelete={handleDelete}

@@ -144,7 +144,7 @@ const AppointmentCalendarView = ({
                   setSubView("day");
                 }}
                 className={`min-h-[90px] border-t border-r border-border/20 p-1 text-left hover:bg-muted/30 transition-colors relative ${
-                  isToday ? "bg-primary/5" : ""
+                  isToday ? "bg-primary/10" : activeCount > 0 ? "bg-accent/10" : ""
                 }`}
               >
                 {/* Day number */}
