@@ -57,6 +57,7 @@ const Index = () => {
           services: c.services as unknown as OnboardingData["services"],
           voiceTone: c.voice_tone as OnboardingData["voiceTone"],
           assistantName: c.assistant_name,
+          maxConcurrentAppointments: (c as any).max_concurrent_appointments ?? 1,
         });
         if (c.activated) {
           navigate("/dashboard", { replace: true });
@@ -84,6 +85,7 @@ const Index = () => {
       services: updatedData.services as any,
       voice_tone: updatedData.voiceTone,
       assistant_name: updatedData.assistantName,
+      max_concurrent_appointments: updatedData.maxConcurrentAppointments,
       activated: isActivated,
     };
 

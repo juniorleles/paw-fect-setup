@@ -49,6 +49,7 @@ const Settings = () => {
           services: c.services as unknown as OnboardingData["services"],
           voiceTone: c.voice_tone as OnboardingData["voiceTone"],
           assistantName: c.assistant_name,
+          maxConcurrentAppointments: (c as any).max_concurrent_appointments ?? 1,
         });
       }
       setLoading(false);
@@ -78,6 +79,7 @@ const Settings = () => {
         services: data.services as any,
         voice_tone: data.voiceTone,
         assistant_name: data.assistantName,
+        max_concurrent_appointments: data.maxConcurrentAppointments,
       })
       .eq("id", configId);
     setSaving(false);

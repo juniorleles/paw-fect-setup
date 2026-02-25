@@ -34,6 +34,7 @@ export interface OnboardingData {
 
   // Step 3
   businessHours: DaySchedule[];
+  maxConcurrentAppointments: number;
 
   // Step 4
   services: Service[];
@@ -68,6 +69,7 @@ export const INITIAL_DATA: OnboardingData = {
   neighborhood: "",
   city: "",
   state: "",
+  maxConcurrentAppointments: 1,
   businessHours: [
     { day: "Segunda-feira", isOpen: true, openTime: "08:00", closeTime: "18:00" },
     { day: "Terça-feira", isOpen: true, openTime: "08:00", closeTime: "18:00" },

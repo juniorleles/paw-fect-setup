@@ -8,6 +8,7 @@ import type { DaySchedule } from "@/types/onboarding";
 interface Props {
   appointments: Appointment[];
   businessHours: DaySchedule[];
+  maxConcurrent?: number;
 }
 
 const DAY_MAP: Record<number, string> = {
@@ -35,7 +36,7 @@ function generateSlots(openTime: string, closeTime: string, intervalMin = 30): s
   return slots;
 }
 
-const AvailabilityCard = ({ appointments, businessHours }: Props) => {
+const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1 }: Props) => {
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
   const todayDayName = DAY_MAP[now.getDay()];
@@ -48,19 +49,32 @@ const AvailabilityCard = ({ appointments, businessHours }: Props) => {
 
     const allSlots = generateSlots(todaySchedule.openTime, todaySchedule.closeTime);
     const todayApts = appointments.filter((a) => a.date === todayStr && a.status !== "cancelled");
-    const bookedTimes = new Set(todayApts.map((a) => a.time.slice(0, 5)));
+
+    // Count bookings per time slot
+    const bookingsPerSlot = new Map<string, number>();
+    todayApts.forEach((a) => {
+      const t = a.time.slice(0, 5);
+      bookingsPerSlot.set(t, (bookingsPerSlot.get(t) || 0) + 1);
+    });
 
     const nowTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     const futureSlots = allSlots.filter((s) => s >= nowTime);
-    const freeSlots = futureSlots.filter((s) => !bookedTimes.has(s));
 
-    const occupancy = allSlots.length > 0
-      ? Math.round(((allSlots.length - freeSlots.length) / allSlots.length) * 100)
+    // A slot is free if bookings < maxConcurrent
+    const totalCapacity = allSlots.length * maxConcurrent;
+    const totalBooked = todayApts.length;
+    const freeSlots = futureSlots.reduce((acc, s) => {
+      const booked = bookingsPerSlot.get(s) || 0;
+      return acc + Math.max(0, maxConcurrent - booked);
+    }, 0);
+
+    const occupancy = totalCapacity > 0
+      ? Math.round((totalBooked / totalCapacity) * 100)
       : 100;
 
-    const lastFree = freeSlots.length > 0 ? freeSlots[freeSlots.length - 1] : null;
+    const lastFree = [...futureSlots].reverse().find((s) => (bookingsPerSlot.get(s) || 0) < maxConcurrent) || null;
 
-    return { closed: false, totalSlots: allSlots.length, freeSlots: freeSlots.length, occupancy, lastFree };
+    return { closed: false, totalSlots: totalCapacity, freeSlots, occupancy: Math.min(occupancy, 100), lastFree };
   }, [appointments, businessHours, todayStr, todayDayName]);
 
   if (availability.closed) {
