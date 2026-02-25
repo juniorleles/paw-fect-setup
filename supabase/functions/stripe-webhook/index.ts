@@ -74,26 +74,46 @@ serve(async (req) => {
 
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
+        logStep("invoice.paid details", { 
+          customer: invoice.customer, 
+          subscription: invoice.subscription,
+          amount_paid: invoice.amount_paid,
+          number: invoice.number,
+        });
+
         const subscriptionId = invoice.subscription as string;
-        if (!subscriptionId) break;
+        if (!subscriptionId) {
+          logStep("No subscription in invoice, skipping");
+          break;
+        }
 
         const sub = await stripe.subscriptions.retrieve(subscriptionId);
         const userId = await findUserByCustomerId(supabase, stripe, invoice.customer as string);
-        if (!userId) break;
+        if (!userId) {
+          logStep("No user found for customer", { customer: invoice.customer });
+          break;
+        }
 
         await upsertSubscription(supabase, userId, sub);
 
         // Record payment history
-        const amount = (invoice.amount_paid ?? 0) / 100;
-        await supabase.from("payment_history").insert({
+        const amount = (invoice.amount_paid ?? (invoice as any).total ?? 0) / 100;
+        const paidAtTs = invoice.status_transitions?.paid_at;
+        const paidAt = paidAtTs ? new Date(paidAtTs * 1000).toISOString() : new Date().toISOString();
+        
+        const { error: insertError } = await supabase.from("payment_history").insert({
           user_id: userId,
           amount,
           status: "paid",
           description: `Fatura ${invoice.number || invoice.id}`,
-          paid_at: new Date(invoice.status_transitions?.paid_at ? invoice.status_transitions.paid_at * 1000 : Date.now()).toISOString(),
+          paid_at: paidAt,
         });
 
-        logStep("invoice.paid processed", { userId });
+        if (insertError) {
+          logStep("Error inserting payment_history", { error: insertError.message });
+        }
+
+        logStep("invoice.paid processed", { userId, amount });
         break;
       }
 
