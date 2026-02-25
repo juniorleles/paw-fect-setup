@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Search, RefreshCw } from "lucide-react";
+import { Loader2, Search, RefreshCw, Copy } from "lucide-react";
 import { differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import AdminPagination from "@/components/admin/AdminPagination";
@@ -143,7 +143,24 @@ const AdminClients = () => {
             {paginated.map((c) => (
               <tr key={c.id} className="hover:bg-[hsl(220,20%,11%)] transition-colors cursor-pointer" onClick={() => setSelectedClient(c)}>
                 <td className="px-4 py-3 text-white font-medium">{c.shop_name}</td>
-                <td className="px-4 py-3 text-[hsl(220,10%,55%)] font-mono text-xs">{c.evolution_instance_name || "—"}</td>
+                <td className="px-4 py-3 text-[hsl(220,10%,55%)] font-mono text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span>{c.evolution_instance_name || "—"}</span>
+                    {c.evolution_instance_name && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(c.evolution_instance_name);
+                          toast.success("Instância copiada!");
+                        }}
+                        className="p-1 rounded-md text-[hsl(220,10%,40%)] hover:text-blue-400 hover:bg-[hsl(220,20%,15%)] transition-colors"
+                        title="Copiar instância"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)] capitalize">{c.plan}</td>
                 <td className="px-4 py-3">{statusBadge(c.subStatus)}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,55%)]">
