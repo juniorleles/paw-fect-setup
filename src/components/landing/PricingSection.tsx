@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Lock, Rocket } from "lucide-react";
+import { Check, Lock, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
@@ -9,14 +9,29 @@ const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 const PricingSection = () => (
   <section id="precos" className="py-24 px-4 bg-secondary/30">
     <div className="max-w-5xl mx-auto">
-      <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.5 }} className="text-center mb-6">
-        <h2 className="text-3xl sm:text-4xl font-display font-bold mb-3">Planos que cabem no seu bolso</h2>
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeUp}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-6"
+      >
+        <h2 className="text-3xl sm:text-4xl font-display font-bold mb-3">
+          Planos que cabem no seu bolso
+        </h2>
         <p className="text-muted-foreground text-lg">Escolha o ideal para o tamanho do seu negócio</p>
       </motion.div>
 
-      {/* Destaque 7 dias grátis */}
-      <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.45, delay: 0.1 }} className="mb-12">
-        <div className="mx-auto max-w-xl rounded-xl border border-primary/20 bg-primary/5 px-6 py-4 text-center shadow-sm">
+      {/* Trial highlight */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.1, type: "spring" }}
+        className="mb-12"
+      >
+        <div className="mx-auto max-w-xl rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-center shadow-sm">
           <p className="text-base sm:text-lg font-semibold text-foreground">
             🎁 Teste grátis por 7 dias. Sem compromisso. Cancele quando quiser.
           </p>
@@ -25,8 +40,14 @@ const PricingSection = () => (
 
       <div className="grid sm:grid-cols-3 gap-6 items-stretch">
         {/* Starter */}
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.4, delay: 0 }}>
-          <Card className="h-full border-2 border-transparent shadow-md">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0 }}
+          whileHover={{ y: -6, transition: { duration: 0.2 } }}
+        >
+          <Card className="h-full border-2 border-transparent shadow-md hover:shadow-xl transition-all">
             <CardContent className="p-6 flex flex-col h-full">
               <Badge className="w-fit mb-3 bg-destructive text-destructive-foreground">🔥 Plano Fundador – Vagas Limitadas</Badge>
               <h3 className="font-display font-bold text-xl mb-1">Starter</h3>
@@ -53,10 +74,24 @@ const PricingSection = () => (
         </motion.div>
 
         {/* Profissional */}
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.4, delay: 0.1 }}>
-          <Card className="h-full border-2 border-primary shadow-xl scale-[1.03]">
-            <CardContent className="p-6 flex flex-col h-full">
-              <Badge className="w-fit mb-3 bg-primary text-primary-foreground">⭐ Mais Popular</Badge>
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          whileHover={{ y: -8, transition: { duration: 0.2 } }}
+        >
+          <Card className="h-full border-2 border-primary shadow-xl scale-[1.03] relative overflow-hidden">
+            {/* Shine effect */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent"
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+            />
+            <CardContent className="p-6 flex flex-col h-full relative">
+              <Badge className="w-fit mb-3 bg-primary text-primary-foreground">
+                <Sparkles className="w-3 h-3 mr-1" /> Mais Popular
+              </Badge>
               <h3 className="font-display font-bold text-xl mb-1">Profissional</h3>
               <div className="mb-1">
                 <span className="text-4xl font-bold">R$ 167</span>
@@ -74,15 +109,21 @@ const PricingSection = () => (
                 ))}
               </ul>
               <a href="/auth">
-                <Button className="w-full">Começar 7 dias grátis</Button>
+                <Button className="w-full shadow-lg shadow-primary/20">Começar 7 dias grátis</Button>
               </a>
             </CardContent>
           </Card>
         </motion.div>
 
         {/* Empresarial */}
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ duration: 0.4, delay: 0.2 }}>
-          <Card className="h-full border-2 border-transparent shadow-md">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          whileHover={{ y: -6, transition: { duration: 0.2 } }}
+        >
+          <Card className="h-full border-2 border-transparent shadow-md hover:shadow-xl transition-all">
             <CardContent className="p-6 flex flex-col h-full">
               <Badge variant="secondary" className="w-fit mb-3">🚀 Em breve</Badge>
               <h3 className="font-display font-bold text-xl mb-1">Empresa</h3>
