@@ -28,6 +28,7 @@ const Index = () => {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activated, setActivated] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   
   const isMobile = useIsMobile();
   const [configId, setConfigId] = useState<string | null>(null);
@@ -141,6 +142,14 @@ const Index = () => {
 
   const handleActivate = async () => {
     if (!validate()) return;
+    if (!acceptedTerms) {
+      toast({
+        title: "Termos obrigatórios",
+        description: "Você precisa aceitar os Termos de Uso e a Política de Privacidade para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
     setCompletedSteps((prev) => [...new Set([...prev, 6])]);
     await saveConfig(data, true);
 
@@ -243,7 +252,7 @@ const Index = () => {
               {step === 3 && <StepBusinessHours data={data} onChange={updateData} plan={subscriptionPlan} />}
               {step === 4 && <StepServices data={data} onChange={updateData} errors={errors} />}
               {step === 5 && <StepPersonalization data={data} onChange={updateData} errors={errors} />}
-              {step === 6 && <StepSimulator data={data} />}
+              {step === 6 && <StepSimulator data={data} acceptedTerms={acceptedTerms} onAcceptedTermsChange={setAcceptedTerms} />}
             </motion.div>
           </AnimatePresence>
         </div>

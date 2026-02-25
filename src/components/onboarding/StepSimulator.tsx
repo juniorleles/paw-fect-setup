@@ -15,11 +15,15 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   data: OnboardingData;
+  acceptedTerms?: boolean;
+  onAcceptedTermsChange?: (accepted: boolean) => void;
 }
 
 interface ChatMessage {
@@ -36,7 +40,7 @@ const SCENARIO_PROMPTS = [
   { label: "Cancelar agendamento", message: "Preciso cancelar meu horário" },
 ];
 
-const StepSimulator = ({ data }: Props) => {
+const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -280,6 +284,26 @@ const StepSimulator = ({ data }: Props) => {
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
+        </div>
+
+        {/* Terms acceptance */}
+        <div className="flex items-start gap-3 p-4 rounded-xl border bg-secondary/50">
+          <Checkbox
+            id="accept-terms"
+            checked={acceptedTerms}
+            onCheckedChange={(checked) => onAcceptedTermsChange?.(checked === true)}
+            className="mt-0.5"
+          />
+          <label htmlFor="accept-terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+            Li e aceito os{" "}
+            <Link to="/terms-of-service" target="_blank" className="text-primary underline hover:text-primary/80">
+              Termos de Uso
+            </Link>{" "}
+            e a{" "}
+            <Link to="/privacy-policy" target="_blank" className="text-primary underline hover:text-primary/80">
+              Política de Privacidade
+            </Link>
+          </label>
         </div>
       </CardContent>
     </Card>
