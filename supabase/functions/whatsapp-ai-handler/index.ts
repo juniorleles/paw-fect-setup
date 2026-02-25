@@ -19,6 +19,80 @@ interface PetShopConfig {
   city: string;
   state: string;
   niche: string;
+  max_concurrent_appointments?: number;
+}
+
+// --- Compute Available Slots ---
+
+function computeAvailableSlots(
+  businessHours: any[],
+  appointments: any[],
+  maxConcurrent: number,
+  services: any[],
+  daysAhead = 7
+): string {
+  const now = new Date();
+  const brNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const todayStr = brNow.toISOString().split("T")[0];
+  const currentHour = brNow.getHours();
+  const currentMin = brNow.getMinutes();
+
+  const dayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+
+  // Get the shortest service duration to determine slot interval
+  const minDuration = Math.min(...services.map((s: any) => s.duration || 30), 30);
+  const slotInterval = minDuration;
+
+  const lines: string[] = [];
+
+  for (let d = 0; d < daysAhead; d++) {
+    const date = new Date(brNow);
+    date.setDate(date.getDate() + d);
+    const dateStr = date.toISOString().split("T")[0];
+    const weekday = dayNames[date.getDay()];
+
+    // Find business hours for this weekday
+    const daySchedule = businessHours.find((h: any) => h.day === weekday);
+    if (!daySchedule || !daySchedule.isOpen) continue;
+
+    const [openH, openM] = daySchedule.openTime.split(":").map(Number);
+    const [closeH, closeM] = daySchedule.closeTime.split(":").map(Number);
+
+    // Count bookings per time slot for this date
+    const bookedCount: Record<string, number> = {};
+    for (const apt of appointments) {
+      if (apt.date === dateStr && apt.status !== "cancelled") {
+        bookedCount[apt.time] = (bookedCount[apt.time] || 0) + 1;
+      }
+    }
+
+    const freeSlots: string[] = [];
+    let h = openH, m = openM;
+    while (h < closeH || (h === closeH && m < closeM)) {
+      const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+
+      // Skip past times for today
+      const isPast = d === 0 && (h < currentHour || (h === currentHour && m <= currentMin));
+      if (!isPast) {
+        const booked = bookedCount[timeStr] || 0;
+        const available = maxConcurrent - booked;
+        if (available > 0) {
+          freeSlots.push(maxConcurrent > 1 ? `${timeStr} (${available}/${maxConcurrent} vagas)` : timeStr);
+        }
+      }
+
+      m += slotInterval;
+      if (m >= 60) { h += Math.floor(m / 60); m = m % 60; }
+    }
+
+    if (freeSlots.length > 0) {
+      lines.push(`${weekday} ${dateStr}: ${freeSlots.join(", ")}`);
+    } else {
+      lines.push(`${weekday} ${dateStr}: LOTADO`);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 function getServiceClient() {
@@ -158,7 +232,7 @@ async function handleConfirmationResponse(
 
 // --- Build System Prompt ---
 
-function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existingAppointments: string, customerApptsText: string): string {
+function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existingAppointments: string, customerApptsText: string, availableSlots: string, maxConcurrent: number): string {
   const servicesText = (shopConfig.services as any[])
     .map((s: any) => `- ${s.name}: R$${s.price} (${s.duration} min)`)
     .join("\n");
@@ -232,6 +306,12 @@ ${existingAppointments || "Nenhum agendamento."}
 
 AGENDAMENTOS DESTE CLIENTE (telefone: ${cleanPhone}):
 ${customerApptsText}
+
+CAPACIDADE DE ATENDIMENTO SIMULTÂNEO: ${maxConcurrent} atendente${maxConcurrent > 1 ? "s" : ""} por horário.
+
+HORÁRIOS DISPONÍVEIS NOS PRÓXIMOS 7 DIAS:
+${availableSlots || "Nenhum horário disponível."}
+IMPORTANTE: Use SEMPRE esta lista para sugerir horários livres. NÃO invente horários. Se o cliente pedir um horário que não está nesta lista, informe que está lotado e sugira alternativas da lista.
 
 REGRAS DE COMPORTAMENTO:
 1. Fale SEMPRE em português brasileiro (pt-BR).
@@ -550,7 +630,15 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       }
     }
 
-    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText) + longTermMemory;
+    const maxConcurrent = (shopConfig as any).max_concurrent_appointments || 1;
+    const availableSlots = computeAvailableSlots(
+      shopConfig.business_hours,
+      appointments || [],
+      maxConcurrent,
+      shopConfig.services
+    );
+
+    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlots, maxConcurrent) + longTermMemory;
 
     // Build messages array with history
     const aiMessages: { role: string; content: string }[] = [
