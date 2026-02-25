@@ -78,15 +78,15 @@ serve(async (req) => {
       logStep("Existing Stripe customer found", { customerId });
     }
 
-    // Check if user already used trial
+    // Check if user already used trial or has active subscription
     const { data: subData } = await supabaseClient
       .from("subscriptions")
       .select("trial_end_at, status")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const alreadyUsedTrial = !!subData?.trial_end_at;
-    logStep("Trial check", { alreadyUsedTrial, status: subData?.status });
+    const alreadyUsedTrial = !!subData?.trial_end_at || subData?.status === "active";
+    logStep("Trial check", { alreadyUsedTrial, status: subData?.status, hasTrialEnd: !!subData?.trial_end_at });
 
     const origin = req.headers.get("origin") || "https://paw-fect-setup.lovable.app";
 
