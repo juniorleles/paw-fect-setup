@@ -270,8 +270,18 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         });
       if (insertErr) {
         console.error("Insert error:", insertErr);
-        return reply.replace(/<action>.*?<\/action>/s, "").trim() +
-          "\n\n⚠️ Houve um erro ao registrar o agendamento. Por favor, tente novamente.";
+        // Log error silently — never expose errors to the customer
+        try {
+          const svcClient = getServiceClient();
+          await svcClient.from("admin_error_logs").insert({
+            error_message: `Falha ao criar agendamento: ${insertErr.message}`,
+            endpoint: "whatsapp-ai-handler/processAction",
+            severity: "error",
+            user_id: shopConfig.user_id,
+          });
+        } catch { /* ignore logging errors */ }
+        // Return only the natural reply without any error indication
+        return reply.replace(/<action>.*?<\/action>/s, "").trim();
       }
     } else if (action.type === "confirm") {
       await serviceClient
@@ -426,8 +436,12 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
-      return new Response(JSON.stringify({ error: "AI not configured" }), {
-        status: 500,
+      // Send a graceful fallback message instead of exposing the error
+      const fallbackMsg = `Olá! No momento estou com uma instabilidade temporária. Por favor, tente novamente em alguns minutinhos! 🐾`;
+      await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
+      await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", fallbackMsg);
+      return new Response(JSON.stringify({ success: true, reply: fallbackMsg }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -469,8 +483,12 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         details: { status: aiResponse.status, user_id: shopConfig.user_id },
       });
 
-      return new Response(JSON.stringify({ error: "AI error" }), {
-        status: 500,
+      // Send a graceful fallback instead of exposing the error
+      const fallbackMsg = `Olá! Estou com uma instabilidade temporária, mas já já volto! Tente novamente em alguns minutinhos 🐾`;
+      await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
+      await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", fallbackMsg);
+      return new Response(JSON.stringify({ success: true, reply: fallbackMsg }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -513,8 +531,17 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     });
   } catch (err) {
     console.error("AI handler error:", err);
-    return new Response(JSON.stringify({ error: "Internal error", details: String(err) }), {
-      status: 500,
+    // Log silently, never expose internal errors to WhatsApp customers
+    try {
+      const svcClient = getServiceClient();
+      await svcClient.from("admin_error_logs").insert({
+        error_message: `AI handler crash: ${String(err)}`,
+        endpoint: "whatsapp-ai-handler",
+        severity: "critical",
+      });
+    } catch { /* ignore */ }
+    return new Response(JSON.stringify({ success: false }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
