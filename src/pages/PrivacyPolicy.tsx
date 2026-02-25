@@ -158,6 +158,12 @@ const PrivacyPolicy = () => {
             Comprometemo-nos a responder todas as solicitações no prazo de até 15 (quinze) dias úteis, conforme previsto na LGPD.
           </p>
         </section>
+
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="lg" onClick={handleClose}>
+            Fechar
+          </Button>
+        </div>
       </article>
     </main>
   </div>

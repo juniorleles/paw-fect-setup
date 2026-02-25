@@ -158,6 +158,12 @@ const TermsOfService = () => {
             Em caso de dúvidas sobre estes Termos de Uso, entre em contato conosco pelo e-mail: <strong>contato@magiczap.com.br</strong>.
           </p>
         </section>
+
+        <div className="flex justify-center pt-4">
+          <Button variant="outline" size="lg" onClick={handleClose}>
+            Fechar
+          </Button>
+        </div>
       </article>
     </main>
   </div>
