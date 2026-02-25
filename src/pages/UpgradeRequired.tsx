@@ -227,7 +227,7 @@ const UpgradeRequired = () => {
             }}
           >
             <LogOut className="w-4 h-4" />
-            Sair e trocar de conta
+            Sair
           </Button>
         </div>
       </div>
