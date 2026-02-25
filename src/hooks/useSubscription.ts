@@ -12,17 +12,20 @@ export const useSubscription = () => {
   const [cancelling, setCancelling] = useState(false);
   const [reactivating, setReactivating] = useState(false);
 
+  const [plan, setPlan] = useState<string>("starter");
+
   const fetchSubscription = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     const { data } = await supabase
       .from("subscriptions")
-      .select("status, trial_end_at")
+      .select("status, trial_end_at, plan")
       .eq("user_id", user.id)
       .maybeSingle();
 
     setStatus((data?.status as SubscriptionStatus) ?? "none");
     setTrialEndAt(data?.trial_end_at ?? null);
+    setPlan(data?.plan ?? "starter");
     setLoading(false);
   }, [user]);
 
@@ -64,5 +67,5 @@ export const useSubscription = () => {
     }
   };
 
-  return { status, loading, cancelling, reactivating, trialEndAt, cancel, reactivate, refetch: fetchSubscription };
+  return { status, loading, cancelling, reactivating, trialEndAt, plan, cancel, reactivate, refetch: fetchSubscription };
 };

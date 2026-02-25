@@ -8,6 +8,7 @@ import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useWhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { useSubscription } from "@/hooks/useSubscription";
+import { STRIPE_PLANS } from "@/config/stripe";
 import type { Appointment } from "@/types/appointment";
 import {
   CalendarDays,
@@ -35,7 +36,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const whatsappStatus = useWhatsAppStatus();
-  const { status: subStatus, trialEndAt } = useSubscription();
+  const { status: subStatus, trialEndAt, plan: currentPlan } = useSubscription();
 
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -190,9 +191,10 @@ const Dashboard = () => {
     fetchConvos();
   }, [user, monthStart, monthEnd]);
 
-  // Plan limit
-  const planLimit = 1000;
-  const planName = subStatus === "active" ? "Profissional" : subStatus === "cancelled" ? "Cancelado" : "Sem plano";
+  // Plan limit based on actual plan
+  const planKey = (currentPlan === "professional" ? "professional" : "starter") as keyof typeof STRIPE_PLANS;
+  const planLimit = STRIPE_PLANS[planKey].limit;
+  const planName = subStatus === "active" ? STRIPE_PLANS[planKey].name : subStatus === "cancelled" ? "Cancelado" : "Sem plano";
   const messagesPercent = planLimit > 0 ? (totalMessagesMonth / planLimit) * 100 : 0;
 
   // Trial alert
