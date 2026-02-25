@@ -14,6 +14,7 @@ import Appointments from "./pages/Appointments";
 
 import MyAccount from "./pages/MyAccount";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
+import UpgradeRequired from "./pages/UpgradeRequired";
 import DashboardLayout from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -28,12 +29,13 @@ import AdminAiUsage from "./pages/admin/AdminAiUsage";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
+import AdminBlocked from "./pages/admin/AdminBlocked";
 import AdminLayout from "./components/admin/AdminLayout";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
-
+import { useTrialStatus } from "@/hooks/useTrialStatus";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -69,7 +71,9 @@ const OnboardingGuard = ({ children }: { children: React.ReactNode }) => {
 
 const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
   const { status, loading } = useSubscription();
-  if (loading) {
+  const { phase, showUpgradeRequired, loading: trialLoading } = useTrialStatus();
+
+  if (loading || trialLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -78,6 +82,9 @@ const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
   }
   if (status === "cancelled") {
     return <Navigate to="/subscription-cancelled" replace />;
+  }
+  if (showUpgradeRequired) {
+    return <Navigate to="/upgrade" replace />;
   }
   return <>{children}</>;
 };
@@ -130,6 +137,7 @@ const App = () => (
             <Route path="/my-account" element={<DashboardRoute><MyAccount /></DashboardRoute>} />
             <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
             <Route path="/subscription-cancelled" element={<ProtectedRoute><SubscriptionCancelled /></ProtectedRoute>} />
+            <Route path="/upgrade" element={<ProtectedRoute><UpgradeRequired /></ProtectedRoute>} />
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -143,6 +151,7 @@ const App = () => (
             <Route path="/admin/ai-usage" element={<AdminRoute><AdminAiUsage /></AdminRoute>} />
             <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+            <Route path="/admin/blocked" element={<AdminRoute><AdminBlocked /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
