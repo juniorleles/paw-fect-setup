@@ -10,6 +10,7 @@ export const STRIPE_PLANS = {
     product_id_test: "prod_U2ZxFgQ7HaugUf",
     price: 67,
     limit: 1000,
+    maxAttendants: 1,
   },
   professional: {
     name: "Profissional",
@@ -19,6 +20,7 @@ export const STRIPE_PLANS = {
     product_id_test: "prod_U2ZxGxqNGAiwhQ",
     price: 167,
     limit: 3000,
+    maxAttendants: 5,
   },
 } as const;
 
