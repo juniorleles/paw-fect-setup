@@ -11,14 +11,14 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import Appointments from "./pages/Appointments";
-import Leads from "./pages/Leads";
+
 import MyAccount from "./pages/MyAccount";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 import DashboardLayout from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminLeads from "./pages/admin/AdminLeads";
+
 import AdminClients from "./pages/admin/AdminClients";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminPayments from "./pages/admin/AdminPayments";
@@ -126,7 +126,7 @@ const App = () => (
             <Route path="/onboarding" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
             <Route path="/appointments" element={<DashboardRoute><Appointments /></DashboardRoute>} />
-            <Route path="/leads" element={<DashboardRoute><Leads /></DashboardRoute>} />
+            
             <Route path="/my-account" element={<DashboardRoute><MyAccount /></DashboardRoute>} />
             <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
             <Route path="/subscription-cancelled" element={<ProtectedRoute><SubscriptionCancelled /></ProtectedRoute>} />
@@ -134,7 +134,7 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/monitoring" element={<AdminRoute><AdminMonitoring /></AdminRoute>} />
-            <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
+            
             <Route path="/admin/clients" element={<AdminRoute><AdminClients /></AdminRoute>} />
             <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
             <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
