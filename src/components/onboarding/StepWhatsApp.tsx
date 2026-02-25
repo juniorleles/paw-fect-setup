@@ -85,12 +85,22 @@ const StepWhatsApp = ({ data, onChange }: Props) => {
             )}
           </Button>
         ) : (
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-success/10 border border-success/20">
-            <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0" />
-            <div>
-              <p className="font-bold text-success">Número verificado!</p>
-              <p className="text-sm text-muted-foreground">Seu WhatsApp está pronto para usar</p>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-success/10 border border-success/20">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0" />
+              <div>
+                <p className="font-bold text-success">Número verificado!</p>
+                <p className="text-sm text-muted-foreground">Seu WhatsApp está pronto para usar</p>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ phoneVerified: false })}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Alterar número
+            </Button>
           </div>
         )}
       </CardContent>
