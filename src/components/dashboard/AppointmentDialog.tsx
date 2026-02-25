@@ -30,6 +30,7 @@ interface Props {
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  isPetNiche?: boolean;
 }
 
 const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
@@ -40,13 +41,14 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
   trigger,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  isPetNiche = true,
 }, ref) => {
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
 
-  const [petName, setPetName] = useState(editingAppointment?.pet_name ?? "");
+  const [petName, setPetName] = useState(editingAppointment?.pet_name ?? (isPetNiche ? "" : "—"));
   const [ownerName, setOwnerName] = useState(editingAppointment?.owner_name ?? "");
   const [ownerPhone, setOwnerPhone] = useState(editingAppointment?.owner_phone ?? "");
   const [service, setService] = useState(editingAppointment?.service ?? "");
@@ -59,7 +61,7 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
   const isEditing = !!editingAppointment;
 
   const resetForm = () => {
-    setPetName("");
+    setPetName(isPetNiche ? "" : "—");
     setOwnerName("");
     setOwnerPhone("");
     setService("");
@@ -126,26 +128,38 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="font-semibold text-sm">Nome do Pet *</Label>
-              <Input
-                placeholder="Ex: Rex"
-                value={petName}
-                onChange={(e) => setPetName(e.target.value)}
-                required
-              />
+          {isPetNiche ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="font-semibold text-sm">Nome do Pet *</Label>
+                <Input
+                  placeholder="Ex: Rex"
+                  value={petName}
+                  onChange={(e) => setPetName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="font-semibold text-sm">Tutor *</Label>
+                <Input
+                  placeholder="Nome do tutor"
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                  required
+                />
+              </div>
             </div>
+          ) : (
             <div className="space-y-1.5">
-              <Label className="font-semibold text-sm">Dono *</Label>
+              <Label className="font-semibold text-sm">Nome do Cliente *</Label>
               <Input
-                placeholder="Nome do dono"
+                placeholder="Nome do cliente"
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
                 required
               />
             </div>
-          </div>
+          )}
 
           <div className="space-y-1.5">
             <Label className="font-semibold text-sm">Telefone</Label>
@@ -208,7 +222,7 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
             />
           </div>
 
-          <Button type="submit" className="w-full font-bold" disabled={saving || !petName || !ownerName || !service || !date || !time}>
+          <Button type="submit" className="w-full font-bold" disabled={saving || (isPetNiche && !petName) || !ownerName || !service || !date || !time}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {isEditing ? "Salvar alterações" : "Agendar"}
           </Button>

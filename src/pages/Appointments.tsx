@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppointments } from "@/hooks/useAppointments";
+import { useNiche } from "@/hooks/useNiche";
 import AppointmentDialog from "@/components/dashboard/AppointmentDialog";
 import type { Appointment } from "@/types/appointment";
 import type { Service } from "@/types/onboarding";
@@ -20,6 +21,7 @@ import type { DaySchedule } from "@/types/onboarding";
 const Appointments = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isPetNiche } = useNiche();
   const {
     appointments,
     loading: loadingApts,
@@ -159,7 +161,7 @@ const Appointments = () => {
             )}
           </p>
         </div>
-        <AppointmentDialog services={services} onSave={addAppointment} />
+        <AppointmentDialog services={services} onSave={addAppointment} isPetNiche={isPetNiche} />
       </div>
 
       {/* Availability */}
@@ -197,6 +199,7 @@ const Appointments = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           hasActiveFilters={hasActiveFilters}
+          isPetNiche={isPetNiche}
         />
       )}
 
@@ -208,6 +211,7 @@ const Appointments = () => {
           onDelete={handleDelete}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
+          isPetNiche={isPetNiche}
         />
       )}
 
@@ -243,6 +247,7 @@ const Appointments = () => {
             setEditDialogOpen(open);
             if (!open) setEditingApt(null);
           }}
+          isPetNiche={isPetNiche}
         />
       )}
 
@@ -251,6 +256,7 @@ const Appointments = () => {
         <AppointmentDialog
           services={services}
           onSave={addAppointment}
+          isPetNiche={isPetNiche}
           trigger={
             <Button size="lg" className="rounded-full w-14 h-14 shadow-lg">
               <Plus className="w-6 h-6" />
