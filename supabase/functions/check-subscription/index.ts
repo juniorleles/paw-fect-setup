@@ -94,11 +94,21 @@ serve(async (req) => {
     const isTrialing = activeSub.status === "trialing";
     const trialEnd = safeTimestamp(activeSub.trial_end);
 
+    // Map product IDs to plan names
+    const PRODUCT_TO_PLAN: Record<string, string> = {
+      "prod_U2X4v8ah9uiCN0": "starter",
+      "prod_U2ZxFgQ7HaugUf": "starter",
+      "prod_U2X5te6HQ2va2l": "professional",
+      "prod_U2ZxGxqNGAiwhQ": "professional",
+    };
+    const resolvedPlan = PRODUCT_TO_PLAN[productId] || "starter";
+
     logStep("Active subscription found", {
       subscriptionId: activeSub.id,
       status: activeSub.status,
       productId,
       priceId,
+      resolvedPlan,
       endDate: subscriptionEnd,
       trialEnd,
     });
@@ -112,6 +122,7 @@ serve(async (req) => {
 
     const subPayload = {
       status: "active",
+      plan: resolvedPlan,
       current_period_start: safeTimestamp(activeSub.current_period_start),
       current_period_end: subscriptionEnd,
       trial_end_at: trialEnd,
