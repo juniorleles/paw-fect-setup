@@ -80,6 +80,7 @@ export type Database = {
           id: string
           model: string
           request_type: string
+          response_time_ms: number | null
           tokens_used: number
           user_id: string
         }
@@ -88,6 +89,7 @@ export type Database = {
           id?: string
           model?: string
           request_type?: string
+          response_time_ms?: number | null
           tokens_used?: number
           user_id: string
         }
@@ -96,6 +98,7 @@ export type Database = {
           id?: string
           model?: string
           request_type?: string
+          response_time_ms?: number | null
           tokens_used?: number
           user_id?: string
         }
@@ -368,6 +371,39 @@ export type Database = {
           trial_start_at?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          message: string
+          resolved: boolean
+          resolved_at: string | null
+          severity: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          message: string
+          resolved?: boolean
+          resolved_at?: string | null
+          severity?: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          message?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          severity?: string
         }
         Relationships: []
       }

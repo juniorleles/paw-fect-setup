@@ -26,6 +26,7 @@ import AdminFinancial from "./pages/admin/AdminFinancial";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminAiUsage from "./pages/admin/AdminAiUsage";
 import AdminLogs from "./pages/admin/AdminLogs";
+import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import AdminLayout from "./components/admin/AdminLayout";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Loader2 } from "lucide-react";
@@ -131,6 +132,7 @@ const App = () => (
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/monitoring" element={<AdminRoute><AdminMonitoring /></AdminRoute>} />
             <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
             <Route path="/admin/clients" element={<AdminRoute><AdminClients /></AdminRoute>} />
             <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
