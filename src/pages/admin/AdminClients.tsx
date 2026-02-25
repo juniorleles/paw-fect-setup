@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, RefreshCw } from "lucide-react";
 import { differenceInDays } from "date-fns";
+import { toast } from "sonner";
 import AdminPagination from "@/components/admin/AdminPagination";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 
@@ -13,6 +14,7 @@ const AdminClients = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [checkingInstance, setCheckingInstance] = useState<string | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -59,6 +61,34 @@ const AdminClients = () => {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   useEffect(() => { setPage(1); }, [search]);
+
+  const checkInstanceStatus = async (e: React.MouseEvent, instanceName: string) => {
+    e.stopPropagation();
+    if (!instanceName) return;
+    setCheckingInstance(instanceName);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-instance-status", {
+        body: { instance_name: instanceName },
+      });
+      if (error) throw error;
+      
+      // Update local state with synced status
+      if (data?.mapped_status) {
+        setClients((prev) =>
+          prev.map((c) =>
+            c.evolution_instance_name === instanceName
+              ? { ...c, whatsapp_status: data.mapped_status }
+              : c
+          )
+        );
+      }
+      toast.success(`${instanceName}: ${data?.label ?? data?.state ?? "OK"}`);
+    } catch (err: any) {
+      toast.error(`Erro ao consultar: ${err.message}`);
+    } finally {
+      setCheckingInstance(null);
+    }
+  };
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -121,9 +151,21 @@ const AdminClients = () => {
                 </td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)]">{c.messages}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.whatsapp_status === "connected" ? "bg-emerald-500/15 text-emerald-400" : c.whatsapp_status === "pending" ? "bg-orange-500/15 text-orange-400" : "bg-red-500/15 text-red-400"}`}>
-                    {c.whatsapp_status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.whatsapp_status === "connected" ? "bg-emerald-500/15 text-emerald-400" : c.whatsapp_status === "pending" ? "bg-orange-500/15 text-orange-400" : "bg-red-500/15 text-red-400"}`}>
+                      {c.whatsapp_status}
+                    </span>
+                    {c.evolution_instance_name && (
+                      <button
+                        onClick={(e) => checkInstanceStatus(e, c.evolution_instance_name)}
+                        disabled={checkingInstance === c.evolution_instance_name}
+                        className="p-1 rounded-md text-[hsl(220,10%,45%)] hover:text-blue-400 hover:bg-[hsl(220,20%,15%)] disabled:opacity-50 transition-colors"
+                        title="Consultar status real"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${checkingInstance === c.evolution_instance_name ? "animate-spin" : ""}`} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
