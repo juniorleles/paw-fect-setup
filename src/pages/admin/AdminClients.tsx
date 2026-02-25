@@ -101,6 +101,7 @@ const AdminClients = () => {
           <thead>
             <tr className="bg-[hsl(220,20%,10%)] text-[hsl(220,10%,50%)] text-xs uppercase tracking-wider">
               <th className="text-left px-4 py-3 font-medium">Nome</th>
+              <th className="text-left px-4 py-3 font-medium">Instância</th>
               <th className="text-left px-4 py-3 font-medium">Plano</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
               <th className="text-left px-4 py-3 font-medium">Trial</th>
@@ -112,6 +113,7 @@ const AdminClients = () => {
             {paginated.map((c) => (
               <tr key={c.id} className="hover:bg-[hsl(220,20%,11%)] transition-colors cursor-pointer" onClick={() => setSelectedClient(c)}>
                 <td className="px-4 py-3 text-white font-medium">{c.shop_name}</td>
+                <td className="px-4 py-3 text-[hsl(220,10%,55%)] font-mono text-xs">{c.evolution_instance_name || "—"}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)] capitalize">{c.plan}</td>
                 <td className="px-4 py-3">{statusBadge(c.subStatus)}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,55%)]">
@@ -119,7 +121,7 @@ const AdminClients = () => {
                 </td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)]">{c.messages}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.whatsapp_status === "connected" ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.whatsapp_status === "connected" ? "bg-emerald-500/15 text-emerald-400" : c.whatsapp_status === "pending" ? "bg-orange-500/15 text-orange-400" : "bg-red-500/15 text-red-400"}`}>
                     {c.whatsapp_status}
                   </span>
                 </td>
