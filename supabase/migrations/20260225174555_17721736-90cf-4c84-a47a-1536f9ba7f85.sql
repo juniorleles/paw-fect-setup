@@ -1,0 +1,1 @@
+ALTER TABLE public.pet_shop_configs ADD COLUMN max_concurrent_appointments integer NOT NULL DEFAULT 1;

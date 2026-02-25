@@ -243,6 +243,7 @@ export type Database = {
           created_at: string
           evolution_instance_name: string
           id: string
+          max_concurrent_appointments: number
           neighborhood: string
           niche: string
           phone: string
@@ -264,6 +265,7 @@ export type Database = {
           created_at?: string
           evolution_instance_name?: string
           id?: string
+          max_concurrent_appointments?: number
           neighborhood?: string
           niche?: string
           phone?: string
@@ -285,6 +287,7 @@ export type Database = {
           created_at?: string
           evolution_instance_name?: string
           id?: string
+          max_concurrent_appointments?: number
           neighborhood?: string
           niche?: string
           phone?: string

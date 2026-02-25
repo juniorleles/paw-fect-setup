@@ -1,8 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { OnboardingData, DaySchedule } from "@/types/onboarding";
-import { Clock, Copy } from "lucide-react";
+import { Clock, Copy, Users } from "lucide-react";
 
 interface Props {
   data: OnboardingData;
@@ -47,6 +49,26 @@ const StepBusinessHours = ({ data, onChange }: Props) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 pt-4">
+        {/* Atendentes simultâneos */}
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Users className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <Label htmlFor="concurrent" className="text-sm font-semibold">Atendimentos simultâneos</Label>
+            <p className="text-xs text-muted-foreground">Quantos clientes podem ser atendidos ao mesmo tempo?</p>
+          </div>
+          <Input
+            id="concurrent"
+            type="number"
+            min={1}
+            max={20}
+            value={data.maxConcurrentAppointments}
+            onChange={(e) => onChange({ maxConcurrentAppointments: Math.max(1, Math.min(20, parseInt(e.target.value) || 1)) })}
+            className="w-20 text-center font-bold"
+          />
+        </div>
+
         <Button variant="outline" size="sm" onClick={copyToAll} className="w-full mb-2">
           <Copy className="w-4 h-4 mr-2" />
           Copiar horário para todos os dias

@@ -36,6 +36,7 @@ const Appointments = () => {
 
   const [services, setServices] = useState<Service[]>([]);
   const [businessHours, setBusinessHours] = useState<DaySchedule[]>([]);
+  const [maxConcurrent, setMaxConcurrent] = useState(1);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -57,6 +58,7 @@ const Appointments = () => {
       if (configs && configs.length > 0) {
         setServices(configs[0].services as unknown as Service[]);
         setBusinessHours(configs[0].business_hours as unknown as DaySchedule[]);
+        setMaxConcurrent((configs[0] as any).max_concurrent_appointments ?? 1);
       }
       setLoadingConfig(false);
     };
@@ -166,7 +168,7 @@ const Appointments = () => {
 
       {/* Availability */}
       {businessHours.length > 0 && (
-        <AvailabilityCard appointments={appointments} businessHours={businessHours} />
+        <AvailabilityCard appointments={appointments} businessHours={businessHours} maxConcurrent={maxConcurrent} />
       )}
 
       {/* Stats */}
