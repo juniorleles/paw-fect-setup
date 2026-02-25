@@ -98,13 +98,11 @@ const MyAccount = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      // Sync from Stripe first
-      await syncSubscription();
-
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
+      // Load local data and sync Stripe in parallel
       const [subRes, messagesRes, payRes] = await Promise.all([
         supabase
           .from("subscriptions")
@@ -129,6 +127,16 @@ const MyAccount = () => {
       setMessagesUsed(messagesRes.count ?? 0);
       setPayments((payRes.data as unknown as PaymentRecord[]) ?? []);
       setLoading(false);
+
+      // Sync from Stripe in background, then refresh subscription data
+      syncSubscription().then(async () => {
+        const { data } = await supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (data) setSub(data as unknown as SubscriptionData);
+      });
     };
     load();
   }, [user, syncSubscription]);
