@@ -7,6 +7,9 @@ const PrivacyPolicy = () => {
 
   const handleClose = () => {
     window.close();
+    setTimeout(() => {
+      navigate("/onboarding", { state: { step: 6 } });
+    }, 100);
   };
 
   return (
