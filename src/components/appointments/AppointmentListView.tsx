@@ -1,5 +1,5 @@
 import { useMemo, forwardRef, useCallback } from "react";
-import { PawPrint } from "lucide-react";
+import { CalendarX } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { GroupedVirtuoso } from "react-virtuoso";
@@ -80,7 +80,7 @@ const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, o
     return (
       <div ref={ref} className="bg-card rounded-xl border border-border/50 shadow-sm py-16">
         <div className="text-center text-muted-foreground">
-          <PawPrint className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <CalendarX className="w-12 h-12 mx-auto mb-3 opacity-20" />
           <p className="font-display text-lg font-medium">Nenhum agendamento encontrado</p>
           <p className="text-sm mt-1">
             {hasActiveFilters ? "Tente ajustar os filtros" : "Clique em \"Novo Agendamento\" para começar"}
