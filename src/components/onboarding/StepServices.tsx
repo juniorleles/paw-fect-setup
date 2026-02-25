@@ -22,11 +22,11 @@ const StepServices = ({ data, onChange, errors }: Props) => {
   const suggestions = NICHE_SUGGESTIONS[data.niche] ?? NICHE_SUGGESTIONS.outros;
 
   const addService = () => {
-    if (!name || !price || !duration) return;
+    if (!name || !duration) return;
     const service: Service = {
       id: crypto.randomUUID(),
       name,
-      price: parseFloat(price),
+      price: price ? parseFloat(price) : undefined,
       duration: parseInt(duration),
       category: category || undefined,
       active: true,
@@ -98,10 +98,10 @@ const StepServices = ({ data, onChange, errors }: Props) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Input placeholder="Nome do serviço" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Categoria (opcional)" value={category} onChange={(e) => setCategory(e.target.value)} />
-            <Input placeholder="Preço (R$)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <Input placeholder="Preço R$ (opcional)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
             <Input placeholder="Duração (min)" type="number" value={duration} onChange={(e) => setDuration(e.target.value)} />
           </div>
-          <Button onClick={addService} disabled={!name || !price || !duration} size="sm" className="w-full">
+          <Button onClick={addService} disabled={!name || !duration} size="sm" className="w-full">
             <Plus className="w-4 h-4 mr-1" /> Adicionar serviço
           </Button>
         </div>
@@ -126,8 +126,9 @@ const StepServices = ({ data, onChange, errors }: Props) => {
                   <div className="min-w-0">
                     <p className="font-semibold text-sm truncate">{s.name}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      R$ {Number(s.price).toFixed(2)} · {s.duration} min
-                      {s.category && ` · ${s.category}`}
+                      {s.price != null ? `R$ ${Number(s.price).toFixed(2)}` : "Sem preço"}
+                      {s.duration != null ? ` · ${s.duration} min` : ""}
+                      {s.category ? ` · ${s.category}` : ""}
                     </p>
                   </div>
                 </div>

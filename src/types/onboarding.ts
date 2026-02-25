@@ -54,8 +54,8 @@ export interface DaySchedule {
 export interface Service {
   id: string;
   name: string;
-  price: number;
-  duration: number;
+  price?: number;
+  duration?: number;
   category?: string;
   active?: boolean;
 }
@@ -91,57 +91,57 @@ export const BRAZILIAN_STATES = [
 
 export const NICHE_SUGGESTIONS: Record<BusinessNiche, Omit<Service, "id">[]> = {
   petshop: [
-    { name: "Banho", price: 60, duration: 60, category: "Higiene" },
-    { name: "Tosa", price: 80, duration: 90, category: "Higiene" },
-    { name: "Banho e Tosa", price: 120, duration: 120, category: "Higiene" },
-    { name: "Consulta Veterinária", price: 150, duration: 30, category: "Saúde" },
-    { name: "Vacinação", price: 90, duration: 20, category: "Saúde" },
+    { name: "Banho", category: "Higiene" },
+    { name: "Tosa", category: "Higiene" },
+    { name: "Banho e Tosa", category: "Higiene" },
+    { name: "Consulta Veterinária", category: "Saúde" },
+    { name: "Vacinação", category: "Saúde" },
   ],
   clinica: [
-    { name: "Consulta", price: 200, duration: 30, category: "Atendimento" },
-    { name: "Retorno", price: 100, duration: 20, category: "Atendimento" },
-    { name: "Exame de Rotina", price: 150, duration: 40, category: "Exames" },
-    { name: "Procedimento Simples", price: 300, duration: 60, category: "Procedimentos" },
-    { name: "Avaliação", price: 180, duration: 45, category: "Atendimento" },
+    { name: "Consulta", category: "Atendimento" },
+    { name: "Retorno", category: "Atendimento" },
+    { name: "Exame de Rotina", category: "Exames" },
+    { name: "Procedimento Simples", category: "Procedimentos" },
+    { name: "Avaliação", category: "Atendimento" },
   ],
   salao: [
-    { name: "Corte Feminino", price: 80, duration: 60, category: "Corte" },
-    { name: "Escova", price: 60, duration: 45, category: "Finalização" },
-    { name: "Coloração", price: 150, duration: 120, category: "Química" },
-    { name: "Manicure", price: 40, duration: 45, category: "Unhas" },
-    { name: "Pedicure", price: 50, duration: 50, category: "Unhas" },
+    { name: "Corte Feminino", category: "Corte" },
+    { name: "Escova", category: "Finalização" },
+    { name: "Coloração", category: "Química" },
+    { name: "Manicure", category: "Unhas" },
+    { name: "Pedicure", category: "Unhas" },
   ],
   barbearia: [
-    { name: "Corte Masculino", price: 45, duration: 30, category: "Corte" },
-    { name: "Barba", price: 35, duration: 20, category: "Barba" },
-    { name: "Corte + Barba", price: 70, duration: 45, category: "Combo" },
-    { name: "Sobrancelha", price: 20, duration: 10, category: "Acabamento" },
-    { name: "Hidratação", price: 50, duration: 30, category: "Tratamento" },
+    { name: "Corte Masculino", category: "Corte" },
+    { name: "Barba", category: "Barba" },
+    { name: "Corte + Barba", category: "Combo" },
+    { name: "Sobrancelha", category: "Acabamento" },
+    { name: "Hidratação", category: "Tratamento" },
   ],
   estetica: [
-    { name: "Limpeza de Pele", price: 120, duration: 60, category: "Facial" },
-    { name: "Peeling", price: 180, duration: 45, category: "Facial" },
-    { name: "Drenagem Linfática", price: 150, duration: 60, category: "Corporal" },
-    { name: "Massagem Relaxante", price: 130, duration: 60, category: "Corporal" },
-    { name: "Design de Sobrancelha", price: 60, duration: 30, category: "Acabamento" },
+    { name: "Limpeza de Pele", category: "Facial" },
+    { name: "Peeling", category: "Facial" },
+    { name: "Drenagem Linfática", category: "Corporal" },
+    { name: "Massagem Relaxante", category: "Corporal" },
+    { name: "Design de Sobrancelha", category: "Acabamento" },
   ],
   escritorio: [
-    { name: "Consulta Inicial", price: 250, duration: 60, category: "Atendimento" },
-    { name: "Reunião de Acompanhamento", price: 150, duration: 30, category: "Atendimento" },
-    { name: "Avaliação", price: 200, duration: 45, category: "Análise" },
-    { name: "Sessão", price: 180, duration: 50, category: "Atendimento" },
+    { name: "Consulta Inicial", category: "Atendimento" },
+    { name: "Reunião de Acompanhamento", category: "Atendimento" },
+    { name: "Avaliação", category: "Análise" },
+    { name: "Sessão", category: "Atendimento" },
   ],
   veterinaria: [
-    { name: "Consulta Veterinária", price: 150, duration: 30, category: "Consultas" },
-    { name: "Vacinação", price: 90, duration: 20, category: "Prevenção" },
-    { name: "Exame de Sangue", price: 120, duration: 15, category: "Exames" },
-    { name: "Cirurgia Simples", price: 500, duration: 120, category: "Cirurgias" },
-    { name: "Ultrassonografia", price: 200, duration: 30, category: "Exames" },
+    { name: "Consulta Veterinária", category: "Consultas" },
+    { name: "Vacinação", category: "Prevenção" },
+    { name: "Exame de Sangue", category: "Exames" },
+    { name: "Cirurgia Simples", category: "Cirurgias" },
+    { name: "Ultrassonografia", category: "Exames" },
   ],
   outros: [
-    { name: "Atendimento Padrão", price: 100, duration: 30, category: "Geral" },
-    { name: "Serviço Completo", price: 200, duration: 60, category: "Geral" },
-    { name: "Avaliação", price: 80, duration: 20, category: "Geral" },
+    { name: "Atendimento Padrão", category: "Geral" },
+    { name: "Serviço Completo", category: "Geral" },
+    { name: "Avaliação", category: "Geral" },
   ],
 };
 
