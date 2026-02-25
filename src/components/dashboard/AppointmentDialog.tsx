@@ -64,6 +64,13 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
 
   const isEditing = !!editingAppointment;
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
   // Check if the selected date+time slot is full
   const isSlotFull = (() => {
     if (!date || !time || maxConcurrent <= 0) return false;
@@ -184,7 +191,9 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
             <Input
               placeholder="(11) 99999-9999"
               value={ownerPhone}
-              onChange={(e) => setOwnerPhone(e.target.value)}
+              onChange={(e) => setOwnerPhone(formatPhone(e.target.value))}
+              inputMode="numeric"
+              maxLength={16}
             />
           </div>
 
