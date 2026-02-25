@@ -88,7 +88,7 @@ const AppointmentCalendarView = ({
                 <div className="w-16 flex-shrink-0 text-xs text-muted-foreground font-medium p-2 text-right border-r border-border/30">
                   {String(hour).padStart(2, "0")}:00
                 </div>
-                <div className="flex-1 p-1 space-y-1 relative">
+                <div className={`flex-1 p-1 space-y-1 relative ${isFull ? "bg-destructive/5" : ""}`}>
                   {activeCount > 0 && (
                     <span
                       className={`absolute top-1 right-2 text-[10px] font-bold ${
@@ -184,7 +184,7 @@ const AppointmentCalendarView = ({
                   const activeCount = apts.filter((a) => a.status !== "cancelled").length;
                   const isFull = activeCount >= maxConcurrent;
                   return (
-                    <div key={dayStr} className="border-l border-border/20 p-0.5 space-y-0.5 relative">
+                    <div key={dayStr} className={`border-l border-border/20 p-0.5 space-y-0.5 relative ${isFull ? "bg-destructive/5" : ""}`}>
                       {activeCount > 0 && (
                         <span
                           className={`absolute top-0.5 right-1 text-[9px] font-bold leading-none ${
