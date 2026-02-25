@@ -81,12 +81,23 @@ const AppointmentCalendarView = ({
           {HOURS.map((hour) => {
             const key = `${dayStr}_${hour}`;
             const apts = aptsByDayAndHour.get(key) || [];
+            const activeCount = apts.filter((a) => a.status !== "cancelled").length;
+            const isFull = activeCount >= maxConcurrent;
             return (
               <div key={hour} className="flex min-h-[60px]">
                 <div className="w-16 flex-shrink-0 text-xs text-muted-foreground font-medium p-2 text-right border-r border-border/30">
                   {String(hour).padStart(2, "0")}:00
                 </div>
-                <div className="flex-1 p-1 space-y-1">
+                <div className="flex-1 p-1 space-y-1 relative">
+                  {activeCount > 0 && (
+                    <span
+                      className={`absolute top-1 right-2 text-[10px] font-bold ${
+                        isFull ? "text-destructive" : "text-muted-foreground"
+                      }`}
+                    >
+                      {activeCount}/{maxConcurrent}
+                    </span>
+                  )}
                   {apts.map((apt) => {
                     const status = STATUS_CONFIG[apt.status] ?? STATUS_CONFIG.pending;
                     return (
