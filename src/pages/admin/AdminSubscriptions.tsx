@@ -55,6 +55,7 @@ const AdminSubscriptions = () => {
               <th className="text-left px-4 py-3 font-medium">Cliente</th>
               <th className="text-left px-4 py-3 font-medium">Plano</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="text-left px-4 py-3 font-medium">Trial</th>
               <th className="text-left px-4 py-3 font-medium">Próx. cobrança</th>
               <th className="text-left px-4 py-3 font-medium">Criado em</th>
             </tr>
@@ -65,6 +66,19 @@ const AdminSubscriptions = () => {
                 <td className="px-4 py-3 text-white font-medium">{s.clientName}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)] capitalize">{s.plan}</td>
                 <td className="px-4 py-3">{statusBadge(s.status)}</td>
+                <td className="px-4 py-3">
+                  {s.trial_end_at ? (
+                    new Date(s.trial_end_at) > new Date() ? (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/15 text-yellow-400">
+                        Trial até {format(new Date(s.trial_end_at), "dd/MM/yyyy")}
+                      </span>
+                    ) : (
+                      <span className="text-[hsl(220,10%,45%)] text-xs">Expirado em {format(new Date(s.trial_end_at), "dd/MM/yyyy")}</span>
+                    )
+                  ) : (
+                    <span className="text-[hsl(220,10%,45%)]">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-[hsl(220,10%,55%)]">
                   {s.current_period_end ? format(new Date(s.current_period_end), "dd/MM/yyyy") : "—"}
                 </td>
