@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import AdminPagination from "@/components/admin/AdminPagination";
+
+const PAGE_SIZE = 20;
 
 const tabs = [
   { key: "paid", label: "Aprovados" },
@@ -13,6 +16,7 @@ const AdminPayments = () => {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("paid");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const fetch = async () => {
@@ -24,6 +28,11 @@ const AdminPayments = () => {
   }, []);
 
   const filtered = payments.filter((p) => p.status === activeTab);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page when tab changes
+  useEffect(() => { setPage(1); }, [activeTab]);
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -77,7 +86,7 @@ const AdminPayments = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[hsl(220,15%,15%)]">
-            {filtered.map((p) => (
+            {paginated.map((p) => (
               <tr key={p.id} className="hover:bg-[hsl(220,20%,11%)] transition-colors">
                 <td className="px-4 py-3 text-white font-medium">{p.description}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)]">
@@ -89,13 +98,14 @@ const AdminPayments = () => {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <tr>
                 <td colSpan={4} className="text-center py-8 text-[hsl(220,10%,40%)]">Nenhum registro</td>
               </tr>
             )}
           </tbody>
         </table>
+        <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} pageSize={PAGE_SIZE} />
       </div>
     </div>
   );
