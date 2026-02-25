@@ -1,0 +1,1 @@
+UPDATE subscriptions SET trial_end_at = '2026-02-15 00:00:00+00' WHERE user_id = 'ed7d04bd-f358-415b-9f57-34c621d024c3';
