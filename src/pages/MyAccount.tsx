@@ -383,7 +383,7 @@ const MyAccount = () => {
               </div>
               <p className="text-xs text-primary font-medium mb-3">7 dias grátis</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
-                {["1 número WhatsApp", "Até 1.000 msgs/mês", "Respostas automáticas", "Horário de atendimento", "Suporte padrão"].map((f) => (
+                {["1 número WhatsApp", "1 atendente por horário", "Até 1.000 msgs/mês", "Respostas automáticas", "Horário de atendimento", "Suporte padrão"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
@@ -417,7 +417,7 @@ const MyAccount = () => {
               </div>
               <p className="text-xs text-primary font-medium mb-3">7 dias grátis</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
-                {["Tudo do Starter +", "Até 3.000 msgs/mês", "IA personalizada", "Fluxos customizados", "Suporte prioritário"].map((f) => (
+                {["Tudo do Starter +", "Até 5 atendentes simultâneos", "Até 3.000 msgs/mês", "IA personalizada", "Fluxos customizados", "Suporte prioritário"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>

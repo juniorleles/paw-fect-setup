@@ -58,7 +58,7 @@ const PricingSection = () => (
               <p className="text-xs text-primary font-medium mb-4">7 dias grátis para testar</p>
               <p className="text-sm text-muted-foreground mb-5">Ideal para pequenos negócios que querem automatizar o WhatsApp sem complicação.</p>
               <ul className="space-y-2.5 mb-5 flex-1">
-                {["1 número WhatsApp", "Até 1.000 mensagens por mês", "Respostas automáticas básicas", "Mensagem de boas-vindas automática", "Configuração de horário de atendimento", "Suporte padrão"].map((f) => (
+                {["1 número WhatsApp", "1 atendente por horário", "Até 1.000 mensagens por mês", "Respostas automáticas básicas", "Mensagem de boas-vindas automática", "Configuração de horário de atendimento", "Suporte padrão"].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
@@ -101,7 +101,7 @@ const PricingSection = () => (
               <p className="text-sm text-muted-foreground mb-5">Para negócios que querem atendimento inteligente e mais volume.</p>
               <p className="text-xs font-semibold text-foreground mb-2">Inclui tudo do Starter +</p>
               <ul className="space-y-2.5 mb-6 flex-1">
-                {["Até 3.000 mensagens por mês", "Respostas com IA personalizada", "Fluxos automatizados customizados", "Relatórios de atendimento", "Organização de contatos", "Suporte prioritário"].map((f) => (
+                {["Até 5 atendentes simultâneos", "Até 3.000 mensagens por mês", "Respostas com IA personalizada", "Fluxos automatizados customizados", "Relatórios de atendimento", "Organização de contatos", "Suporte prioritário"].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
