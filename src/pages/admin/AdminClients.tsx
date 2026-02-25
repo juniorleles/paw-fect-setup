@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Search } from "lucide-react";
 import { differenceInDays } from "date-fns";
+import AdminPagination from "@/components/admin/AdminPagination";
+
+const PAGE_SIZE = 20;
 
 const AdminClients = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const fetch = async () => {
@@ -49,6 +53,10 @@ const AdminClients = () => {
   }, []);
 
   const filtered = clients.filter((c) => c.shop_name?.toLowerCase().includes(search.toLowerCase()));
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search]);
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -99,7 +107,7 @@ const AdminClients = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[hsl(220,15%,15%)]">
-            {filtered.map((c) => (
+            {paginated.map((c) => (
               <tr key={c.id} className="hover:bg-[hsl(220,20%,11%)] transition-colors">
                 <td className="px-4 py-3 text-white font-medium">{c.shop_name}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)] capitalize">{c.plan}</td>
@@ -117,6 +125,7 @@ const AdminClients = () => {
             ))}
           </tbody>
         </table>
+        <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} pageSize={PAGE_SIZE} />
       </div>
     </div>
   );

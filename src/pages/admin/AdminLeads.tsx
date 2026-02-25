@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
+import AdminPagination from "@/components/admin/AdminPagination";
+
+const PAGE_SIZE = 20;
 
 const AdminLeads = () => {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const fetch = async () => {
@@ -20,6 +24,12 @@ const AdminLeads = () => {
   const filtered = leads.filter(
     (l) => l.name?.toLowerCase().includes(search.toLowerCase()) || l.phone?.includes(search)
   );
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page when search changes
+  useEffect(() => { setPage(1); }, [search]);
 
   if (loading) {
     return (
@@ -59,7 +69,7 @@ const AdminLeads = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[hsl(220,15%,15%)]">
-            {filtered.map((lead) => (
+            {paginated.map((lead) => (
               <tr key={lead.id} className="hover:bg-[hsl(220,20%,11%)] transition-colors">
                 <td className="px-4 py-3 text-white font-medium">{lead.name}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)]">{lead.phone}</td>
@@ -69,7 +79,7 @@ const AdminLeads = () => {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <tr>
                 <td colSpan={4} className="text-center py-8 text-[hsl(220,10%,40%)]">
                   Nenhum lead encontrado
@@ -78,6 +88,7 @@ const AdminLeads = () => {
             )}
           </tbody>
         </table>
+        <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} pageSize={PAGE_SIZE} />
       </div>
     </div>
   );
