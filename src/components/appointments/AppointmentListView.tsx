@@ -12,6 +12,7 @@ interface Props {
   onEdit: (apt: Appointment) => void;
   onDelete: (id: string) => void;
   hasActiveFilters: boolean;
+  isPetNiche?: boolean;
 }
 
 const formatDateLabel = (dateStr: string) => {
@@ -28,7 +29,7 @@ const formatDateLabel = (dateStr: string) => {
 
 const VIRTUOSO_THRESHOLD = 50;
 
-const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, onStatusChange, onEdit, onDelete, hasActiveFilters }, ref) => {
+const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, onStatusChange, onEdit, onDelete, hasActiveFilters, isPetNiche = true }, ref) => {
   const { groups, groupCounts, groupLabels, flatAppointments } = useMemo(() => {
     const grouped = new Map<string, Appointment[]>();
     appointments.forEach((apt) => {
@@ -69,10 +70,11 @@ const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, o
           onStatusChange={onStatusChange}
           onEdit={onEdit}
           onDelete={onDelete}
+          isPetNiche={isPetNiche}
         />
       </div>
     );
-  }, [flatAppointments, onStatusChange, onEdit, onDelete]);
+  }, [flatAppointments, onStatusChange, onEdit, onDelete, isPetNiche]);
 
   if (appointments.length === 0) {
     return (
@@ -111,6 +113,7 @@ const AppointmentListView = forwardRef<HTMLDivElement, Props>(({ appointments, o
                   onStatusChange={onStatusChange}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  isPetNiche={isPetNiche}
                 />
               ))}
             </div>

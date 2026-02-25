@@ -13,6 +13,7 @@ interface Props {
   onDelete: (id: string) => void;
   selectedDate: Date | undefined;
   onSelectDate: (date: Date | undefined) => void;
+  isPetNiche?: boolean;
 }
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7h to 20h
@@ -26,6 +27,7 @@ const AppointmentCalendarView = ({
   onDelete,
   selectedDate,
   onSelectDate,
+  isPetNiche = true,
 }: Props) => {
   const [subView, setSubView] = useState<CalendarSubView>("week");
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -91,7 +93,7 @@ const AppointmentCalendarView = ({
                         onClick={() => onEdit(apt)}
                         className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium truncate ${status.class} hover:opacity-80 transition-opacity`}
                       >
-                        <span className="font-bold">{apt.time.slice(0, 5)}</span> {apt.owner_name} · {apt.pet_name} · {apt.service}
+                        <span className="font-bold">{apt.time.slice(0, 5)}</span> {apt.owner_name} · {isPetNiche && apt.pet_name && apt.pet_name !== "—" ? `${apt.pet_name} · ` : ""}{apt.service}
                       </button>
                     );
                   })}
@@ -176,7 +178,7 @@ const AppointmentCalendarView = ({
                             onClick={() => onEdit(apt)}
                             className={`w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium truncate ${status.class} hover:opacity-80 transition-opacity`}
                           >
-                            {apt.time.slice(0, 5)} {apt.pet_name}
+                            {apt.time.slice(0, 5)} {isPetNiche && apt.pet_name && apt.pet_name !== "—" ? apt.pet_name : apt.owner_name}
                           </button>
                         );
                       })}

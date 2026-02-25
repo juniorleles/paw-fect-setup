@@ -68,9 +68,10 @@ interface Props {
   onStatusChange: (id: string, status: Appointment["status"]) => void;
   onEdit: (apt: Appointment) => void;
   onDelete: (id: string) => void;
+  isPetNiche?: boolean;
 }
 
-const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete }: Props) => {
+const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, isPetNiche = true }: Props) => {
   const statusInfo = STATUS_CONFIG[apt.status] ?? STATUS_CONFIG.pending;
   const now = new Date();
   const aptDateTime = new Date(`${apt.date}T${apt.time}`);
@@ -132,8 +133,12 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete }:
           )}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-          <span className="truncate">{apt.pet_name}</span>
-          <span className="text-border">·</span>
+          {isPetNiche && apt.pet_name && apt.pet_name !== "—" && (
+            <>
+              <span className="truncate">{apt.pet_name}</span>
+              <span className="text-border">·</span>
+            </>
+          )}
           <span className="truncate">{apt.service}</span>
         </div>
         {apt.notes && (
@@ -211,7 +216,7 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete }:
             <AlertDialogHeader>
               <AlertDialogTitle>Remover agendamento?</AlertDialogTitle>
               <AlertDialogDescription>
-                O agendamento de {apt.pet_name} será removido permanentemente.
+                O agendamento de {isPetNiche ? apt.pet_name : apt.owner_name} será removido permanentemente.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
