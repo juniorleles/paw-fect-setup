@@ -1,17 +1,27 @@
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const PrivacyPolicy = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = () => {
+    const from = (location.state as any)?.from;
+    if (from) {
+      navigate(from);
+    } else {
+      navigate("/onboarding", { state: { step: 6 } });
+    }
+  };
+
   return (
   <div className="min-h-screen bg-background">
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="max-w-4xl mx-auto px-4 h-16 flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
         <h1 className="text-lg font-display font-bold text-foreground">Política de Privacidade</h1>
+        <Button variant="outline" size="sm" className="ml-auto" onClick={handleBack}>
+          Fechar
+        </Button>
       </div>
     </header>
 
