@@ -1,57 +1,32 @@
 
+## Mascara de Telefone no Novo Agendamento
 
-# Onboarding da Secretária Digital para Pet Shop 🐾
+Adicionar mascara de telefone `(XX) XXXXX-XXXX` no campo "Telefone" do `AppointmentDialog`, seguindo o mesmo padrao ja usado em outros formularios do projeto.
 
-## Visão Geral
-Aplicação de onboarding em 5 etapas para configurar uma secretária digital (IA) para pet shops via WhatsApp. Interface moderna, amigável e com temática pet.
+### Alteracoes
 
-## Design & Estilo
-- Paleta de cores quente e acolhedora (tons de roxo/lilás com acentos em laranja)
-- Ícones temáticos de pets (patinhas, ossinhos)
-- Barra de progresso no topo com as 5 etapas numeradas e nomeadas
-- Layout centralizado, responsivo e limpo
+**Arquivo: `src/components/dashboard/AppointmentDialog.tsx`**
 
-## Etapas do Onboarding
+1. Criar uma funcao `formatPhone` que:
+   - Remove todos os caracteres nao numericos
+   - Limita a 11 digitos
+   - Aplica a mascara `(XX) XXXXX-XXXX` progressivamente
 
-### Etapa 1 — Conectar WhatsApp
-- Campo de telefone com máscara brasileira (XX) XXXXX-XXXX
-- Botão "Verificar número"
-- Simulação de verificação com feedback visual (loading + confirmação)
+2. Atualizar o handler `onChange` do campo Telefone para usar `formatPhone`
 
-### Etapa 2 — Dados do Pet Shop
-- Campos: Nome Fantasia, Endereço, Bairro, Cidade, UF (select com estados)
-- Validação de campos obrigatórios com mensagens de erro
+3. Adicionar `inputMode="numeric"` ao input para mostrar teclado numerico no mobile
 
-### Etapa 3 — Horário de Funcionamento
-- Lista dos 7 dias da semana
-- Toggle para marcar dia como aberto/fechado
-- Seletores de horário de abertura e fechamento para cada dia ativo
-- Opção "Copiar para todos os dias" para facilitar o preenchimento
+4. Atualizar o placeholder para `(11) 99999-9999` (ja esta assim)
 
-### Etapa 4 — Cadastro de Serviços
-- Formulário para adicionar serviço: nome, preço (R$) e duração (minutos)
-- Lista dos serviços adicionados com opção de remover
-- Mínimo de 1 serviço para avançar
-- Serviços sugeridos pré-definidos (Banho, Tosa, Consulta Veterinária) para adicionar com um clique
+### Detalhes Tecnicos
 
-### Etapa 5 — Personalização da IA
-- Seleção do tom de voz com 3 cards visuais: Formal, Amigável, Divertido (com preview de exemplo de mensagem)
-- Campo para definir o nome da secretária digital
-- Preview de como a secretária vai se apresentar no WhatsApp
+```typescript
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+```
 
-## Finalização
-- Botão "ATIVAR SECRETÁRIA" destacado
-- Tela de sucesso com animação de celebração (confetti)
-- Resumo das configurações realizadas
-- Mensagem de boas-vindas personalizada com o nome escolhido
-
-## Navegação
-- Botões "Voltar" e "Próximo" em cada etapa
-- Barra de progresso clicável para navegar entre etapas já completadas
-- Dados preservados ao navegar entre etapas (estado local)
-
-## Observações
-- Todos os dados ficam apenas no frontend (sem backend/banco de dados)
-- Validação client-side com feedback visual em todos os formulários
-- Totalmente responsivo para desktop e mobile
-
+O valor salvo no estado mantera a mascara. Isso e consistente com o padrao ja existente no projeto conforme a memoria tecnica.
