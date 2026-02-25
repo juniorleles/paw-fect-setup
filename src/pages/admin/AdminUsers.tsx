@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, KeyRound, Users, Eye, EyeOff } from "lucide-react";
+import { Loader2, UserPlus, KeyRound, Users, Eye, EyeOff, Trash2 } from "lucide-react";
 
 interface SimpleUser {
   id: string;
@@ -29,6 +29,7 @@ const AdminUsers = () => {
   const [resetPassword, setResetPassword] = useState("");
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const callFunction = async (body: Record<string, string>) => {
     const { data, error } = await supabase.functions.invoke("admin-manage-users", { body });
@@ -214,6 +215,7 @@ const AdminUsers = () => {
                   <th className="text-left py-3 px-3 text-xs font-medium text-[hsl(220,10%,45%)] uppercase">Email</th>
                   <th className="text-left py-3 px-3 text-xs font-medium text-[hsl(220,10%,45%)] uppercase">Criado em</th>
                   <th className="text-left py-3 px-3 text-xs font-medium text-[hsl(220,10%,45%)] uppercase">Último login</th>
+                  <th className="text-right py-3 px-3 text-xs font-medium text-[hsl(220,10%,45%)] uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -227,6 +229,27 @@ const AdminUsers = () => {
                       {u.last_sign_in_at
                         ? new Date(u.last_sign_in_at).toLocaleDateString("pt-BR")
                         : "Nunca"}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Tem certeza que deseja excluir ${u.email}?`)) return;
+                          setDeletingId(u.id);
+                          try {
+                            await callFunction({ action: "delete-user", email: u.email! });
+                            toast({ title: "Sucesso", description: "Usuário excluído!" });
+                            loadUsers();
+                          } catch (err: any) {
+                            toast({ title: "Erro", description: err.message, variant: "destructive" });
+                          } finally {
+                            setDeletingId(null);
+                          }
+                        }}
+                        disabled={deletingId === u.id}
+                        className="text-[hsl(220,10%,45%)] hover:text-red-400 transition-colors disabled:opacity-50"
+                      >
+                        {deletingId === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
                     </td>
                   </tr>
                 ))}
