@@ -219,7 +219,25 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="font-semibold text-sm">Data *</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                min={new Date().toISOString().split("T")[0]}
+                max={(() => {
+                  const maxDate = new Date();
+                  maxDate.setMonth(maxDate.getMonth() + 1);
+                  return maxDate.toISOString().split("T")[0];
+                })()}
+              />
+              {date && (() => {
+                const maxDate = new Date();
+                maxDate.setMonth(maxDate.getMonth() + 1);
+                return date > maxDate.toISOString().split("T")[0];
+              })() && (
+                <p className="text-xs text-destructive">Agendamentos permitidos até 1 mês a partir de hoje</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="font-semibold text-sm">Horário *</Label>
@@ -259,7 +277,7 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
             </div>
           )}
 
-          <Button type="submit" className="w-full font-bold" disabled={saving || isSlotFull || (isPetNiche && !petName) || !ownerName || !service || !date || !time || (!!ownerPhone && ownerPhone.replace(/\D/g, "").length < 11)}>
+          <Button type="submit" className="w-full font-bold" disabled={saving || isSlotFull || (isPetNiche && !petName) || !ownerName || !service || !date || !time || (!!ownerPhone && ownerPhone.replace(/\D/g, "").length < 11) || (!!date && (() => { const m = new Date(); m.setMonth(m.getMonth() + 1); return date > m.toISOString().split("T")[0]; })())}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {isEditing ? "Salvar alterações" : "Agendar"}
           </Button>

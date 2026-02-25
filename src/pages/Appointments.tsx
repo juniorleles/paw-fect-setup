@@ -8,7 +8,7 @@ import { useNiche } from "@/hooks/useNiche";
 import AppointmentDialog from "@/components/dashboard/AppointmentDialog";
 import type { Appointment } from "@/types/appointment";
 import type { Service } from "@/types/onboarding";
-import { isSameDay, parseISO, addDays, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { isSameDay, parseISO, addDays, startOfWeek, endOfWeek, endOfMonth, isWithinInterval } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import AppointmentStatsBar from "@/components/appointments/AppointmentStatsBar";
 import AppointmentFilters, { type ViewMode } from "@/components/appointments/AppointmentFilters";
@@ -83,6 +83,11 @@ const Appointments = () => {
       if (quickDateFilter === "week") {
         const aptDate = parseISO(apt.date);
         if (!isWithinInterval(aptDate, { start: today, end: weekEnd })) return false;
+      }
+      if (quickDateFilter === "month") {
+        const aptDate = parseISO(apt.date);
+        const monthEnd = endOfMonth(today);
+        if (!isWithinInterval(aptDate, { start: today, end: monthEnd })) return false;
       }
 
       // Selected date

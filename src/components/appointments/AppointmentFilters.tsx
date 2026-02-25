@@ -59,6 +59,7 @@ const AppointmentFilters = ({
             { key: "today", label: "Hoje" },
             { key: "tomorrow", label: "Amanhã" },
             { key: "week", label: "Semana" },
+            { key: "month", label: "Mês" },
           ].map((item) => (
             <Button
               key={item.key}
