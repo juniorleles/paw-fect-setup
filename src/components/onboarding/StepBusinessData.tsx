@@ -4,16 +4,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OnboardingData, BRAZILIAN_STATES, NICHE_LABELS, BusinessNiche } from "@/types/onboarding";
 import { Store } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
   data: OnboardingData;
   onChange: (data: Partial<OnboardingData>) => void;
   errors: Record<string, string>;
+  showEmail?: boolean;
 }
 
 const nicheKeys = Object.keys(NICHE_LABELS) as BusinessNiche[];
 
-const StepBusinessData = ({ data, onChange, errors }: Props) => {
+const StepBusinessData = ({ data, onChange, errors, showEmail = false }: Props) => {
+  const { user } = useAuth();
   return (
     <Card className="border-none shadow-xl bg-card">
       <CardHeader className="text-center pb-2">
@@ -39,6 +42,18 @@ const StepBusinessData = ({ data, onChange, errors }: Props) => {
             </SelectContent>
           </Select>
         </div>
+
+        {showEmail && user?.email && (
+          <div className="space-y-2">
+            <Label className="font-semibold">Email</Label>
+            <Input
+              value={user.email}
+              readOnly
+              disabled
+              className="h-11 bg-muted cursor-not-allowed"
+            />
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="shopName" className="font-semibold">Nome Fantasia *</Label>

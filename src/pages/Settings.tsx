@@ -124,7 +124,7 @@ const Settings = () => {
           <StepWhatsApp data={data} onChange={updateData} />
         </TabsContent>
         <TabsContent value="shop" className="mt-6">
-          <StepBusinessData data={data} onChange={updateData} errors={noErrors} />
+          <StepBusinessData data={data} onChange={updateData} errors={noErrors} showEmail />
         </TabsContent>
         <TabsContent value="hours" className="mt-6">
           <StepBusinessHours data={data} onChange={updateData} />
