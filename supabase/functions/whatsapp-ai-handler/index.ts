@@ -18,6 +18,7 @@ interface PetShopConfig {
   neighborhood: string;
   city: string;
   state: string;
+  niche: string;
 }
 
 function getServiceClient() {
@@ -169,7 +170,7 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
   const toneInstructions: Record<string, string> = {
     formal: "Use linguagem formal e educada. Trate o cliente por 'senhor(a)'. Seja objetiva e profissional.",
     friendly: "Use linguagem amigável e acolhedora. Trate o cliente pelo nome quando souber. Seja pessoal e calorosa.",
-    fun: "Use linguagem divertida e descontraída, com emojis moderados 🐾🐶. Seja animada e alegre, com humor leve!",
+    fun: "Use linguagem divertida e descontraída, com emojis moderados 💇✨. Seja animada e alegre, com humor leve!",
   };
 
   const nowDate = new Date();
@@ -177,17 +178,44 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
   const brTime = nowDate.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
   const brWeekday = nowDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" });
 
-  return `Você é ${shopConfig.assistant_name || "a secretária digital"} do pet shop "${shopConfig.shop_name}".
+  const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
+  
+  const nicheLabels: Record<string, string> = {
+    petshop: "pet shop",
+    salao: "salão de beleza",
+    barbearia: "barbearia",
+    clinica: "clínica",
+    estetica: "centro de estética",
+    escritorio: "escritório",
+    veterinaria: "clínica veterinária",
+    outros: "estabelecimento",
+  };
+  const nicheLabel = nicheLabels[shopConfig.niche] || nicheLabels.outros;
+
+  // Adapt field names based on niche
+  const clientLabel = isPetNiche ? "tutor" : "cliente";
+  const petField = isPetNiche 
+    ? '- nome do pet' 
+    : '';
+  const collectFields = isPetNiche
+    ? `nome do ${clientLabel}, nome do pet, serviço desejado, data e horário, observações (opcional)`
+    : `nome do ${clientLabel}, serviço desejado, data e horário, observações (opcional)`;
+  
+  const actionExample = isPetNiche
+    ? `<action>{"type":"create","pet_name":"Rex","owner_name":"João","owner_phone":"${cleanPhone}","service":"Banho","date":"2026-02-21","time":"10:00","notes":"","status":"pending"}</action>`
+    : `<action>{"type":"create","pet_name":"—","owner_name":"Ana","owner_phone":"${cleanPhone}","service":"Escova","date":"2026-02-21","time":"10:00","notes":"","status":"pending"}</action>`;
+
+  return `Você é ${shopConfig.assistant_name || "a secretária digital"} do ${nicheLabel} "${shopConfig.shop_name}".
 ${toneInstructions[shopConfig.voice_tone] || toneInstructions.friendly}
 
 IMPORTANTE SOBRE CONVERSA:
 - Você está em uma conversa contínua via WhatsApp. O histórico de mensagens anteriores já está incluído.
 - NÃO se apresente novamente se já tiver se apresentado em mensagens anteriores.
-- Mantenha o contexto da conversa. Se o cliente já forneceu informações (nome, pet, etc.), não peça novamente.
+- Mantenha o contexto da conversa. Se o cliente já forneceu informações (nome, etc.), não peça novamente.
 - Seja natural e fluida, como uma conversa real de WhatsApp.
 - Só se apresente na PRIMEIRA mensagem de uma conversa nova (quando não houver histórico).
 
-INFORMAÇÕES DO PET SHOP:
+INFORMAÇÕES DO ESTABELECIMENTO:
 - Endereço: ${shopConfig.address}, ${shopConfig.neighborhood}, ${shopConfig.city}/${shopConfig.state}
 - Telefone: ${shopConfig.phone}
 
@@ -210,12 +238,14 @@ REGRAS DE COMPORTAMENTO:
 2. Seja CURTA e DIRETA. Máximo 3-4 frases por mensagem.
 3. NUNCA invente dados. Se serviços ou horários não estiverem cadastrados, peça ao responsável configurar.
 4. Siga rigorosamente o tom de voz configurado.
+${isPetNiche ? "" : "5. NÃO pergunte nome de pet. Este é um " + nicheLabel + ", não um pet shop."}
 
 FLUXO DE AGENDAMENTO:
-1. Colete: nome do tutor, nome do pet, serviço desejado, data e horário, observações (opcional).
+1. Colete: ${collectFields}.
 2. Verifique se o horário está dentro do funcionamento e se não há conflito.
 3. Confirme TODOS os detalhes com o cliente antes de registrar.
 4. Registre como PENDENTE (status "pending").
+${!isPetNiche ? '5. No campo "pet_name" da action, coloque "—" (traço). NÃO pergunte nome de pet.' : ""}
 
 FLUXO DE REMARCAÇÃO:
 1. Identifique o agendamento existente do cliente.
@@ -230,7 +260,7 @@ FLUXO DE CANCELAMENTO:
 FORMATO DE AÇÕES (inclua APENAS quando tiver todos os dados confirmados pelo cliente):
 
 Para agendar (status SEMPRE "pending"):
-<action>{"type":"create","pet_name":"Rex","owner_name":"João","owner_phone":"${cleanPhone}","service":"Banho","date":"2026-02-21","time":"10:00","notes":"","status":"pending"}</action>
+${actionExample}
 
 Para cancelar:
 <action>{"type":"cancel","date":"2026-02-21","time":"10:00"}</action>
@@ -255,17 +285,23 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
     console.log("Processing action:", JSON.stringify(action));
 
     if (action.type === "create") {
+      const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
+      
+      // For non-pet niches, auto-fill pet_name with owner_name or placeholder
+      if (!isPetNiche && !action.pet_name) {
+        action.pet_name = action.owner_name || "—";
+      }
+
       // Validate required fields before inserting
       const missingFields: string[] = [];
-      if (!action.pet_name) missingFields.push("nome do pet");
-      if (!action.owner_name) missingFields.push("nome do tutor");
+      if (!action.pet_name && isPetNiche) missingFields.push("nome do pet");
+      if (!action.owner_name) missingFields.push("nome do cliente");
       if (!action.service) missingFields.push("serviço");
       if (!action.date) missingFields.push("data");
       if (!action.time) missingFields.push("horário");
 
       if (missingFields.length > 0) {
         console.warn("Missing fields for appointment creation:", missingFields);
-        // Return only the AI's natural text — it should naturally ask for the missing info
         const cleanReply = reply.replace(/<action>.*?<\/action>/s, "").trim();
         if (cleanReply) return cleanReply;
         return `Preciso de mais algumas informações para completar o agendamento: ${missingFields.join(", ")}. Pode me informar?`;
@@ -394,15 +430,21 @@ Deno.serve(async (req) => {
       .gte("date", today)
       .neq("status", "cancelled");
 
+    const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
+
     const existingAppointments = (appointments || [])
-      .map((a: any) => `${a.date} ${a.time} - ${a.service} (${a.pet_name}/${a.owner_name}, tel: ${a.owner_phone}, status: ${a.status})`)
+      .map((a: any) => isPetNiche
+        ? `${a.date} ${a.time} - ${a.service} (${a.pet_name}/${a.owner_name}, tel: ${a.owner_phone}, status: ${a.status})`
+        : `${a.date} ${a.time} - ${a.service} (${a.owner_name}, tel: ${a.owner_phone}, status: ${a.status})`)
       .join("\n");
 
     const customerAppointments = (appointments || [])
       .filter((a: any) => phoneMatches(a.owner_phone || "", cleanPhone));
 
     const customerApptsText = customerAppointments.length > 0
-      ? customerAppointments.map((a: any) => `- ${a.date} às ${a.time}: ${a.service} (pet: ${a.pet_name}, status: ${a.status})`).join("\n")
+      ? customerAppointments.map((a: any) => isPetNiche
+        ? `- ${a.date} às ${a.time}: ${a.service} (pet: ${a.pet_name}, status: ${a.status})`
+        : `- ${a.date} às ${a.time}: ${a.service} (status: ${a.status})`).join("\n")
       : "Nenhum agendamento encontrado.";
 
     // Long-term memory: fetch past appointments for this customer
@@ -417,16 +459,17 @@ Deno.serve(async (req) => {
     const pastCustomerAppts = (pastAppointments || [])
       .filter((a: any) => phoneMatches(a.owner_phone || "", cleanPhone));
 
-    const petNames = [...new Set(pastCustomerAppts.map((a: any) => a.pet_name))];
     const ownerName = pastCustomerAppts[0]?.owner_name || customerAppointments[0]?.owner_name || null;
     const favoriteServices = [...new Set(pastCustomerAppts.map((a: any) => a.service))];
     const totalVisits = pastCustomerAppts.length;
 
     let longTermMemory = "";
     if (totalVisits > 0) {
-      longTermMemory = `\nMEMÓRIA DO CLIENTE (telefone: ${cleanPhone}):
+      if (isPetNiche) {
+        const petNames = [...new Set(pastCustomerAppts.map((a: any) => a.pet_name).filter((n: string) => n && n !== "—"))];
+        longTermMemory = `\nMEMÓRIA DO CLIENTE (telefone: ${cleanPhone}):
 - Nome do tutor: ${ownerName || "Desconhecido"}
-- Pets conhecidos: ${petNames.join(", ")}
+- Pets conhecidos: ${petNames.join(", ") || "Nenhum"}
 - Serviços já utilizados: ${favoriteServices.join(", ")}
 - Total de visitas anteriores: ${totalVisits}
 - Últimas visitas:
@@ -438,6 +481,20 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
 - Sugira serviços que o cliente já usou antes.
 - Lembre de observações anteriores relevantes (ex: alergias, preferências).
 - NÃO peça nome do tutor ou do pet se já souber.`;
+      } else {
+        longTermMemory = `\nMEMÓRIA DO CLIENTE (telefone: ${cleanPhone}):
+- Nome: ${ownerName || "Desconhecido"}
+- Serviços já utilizados: ${favoriteServices.join(", ")}
+- Total de visitas anteriores: ${totalVisits}
+- Últimas visitas:
+${pastCustomerAppts.slice(0, 5).map((a: any) => `  · ${a.date} - ${a.service}${a.notes ? ` [obs: ${a.notes}]` : ""}`).join("\n")}
+
+USE ESSAS INFORMAÇÕES para personalizar o atendimento:
+- Chame o cliente pelo nome se souber.
+- Sugira serviços que já usou antes.
+- Lembre de observações anteriores relevantes (ex: preferências).
+- NÃO peça o nome novamente se já souber.`;
+      }
     }
 
     const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText) + longTermMemory;
