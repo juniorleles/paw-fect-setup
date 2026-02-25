@@ -26,6 +26,7 @@ import AdminFinancial from "./pages/admin/AdminFinancial";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminAiUsage from "./pages/admin/AdminAiUsage";
 import AdminLogs from "./pages/admin/AdminLogs";
+import AdminUsers from "./pages/admin/AdminUsers";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import AdminLayout from "./components/admin/AdminLayout";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -141,6 +142,7 @@ const App = () => (
             <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
             <Route path="/admin/ai-usage" element={<AdminRoute><AdminAiUsage /></AdminRoute>} />
             <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
