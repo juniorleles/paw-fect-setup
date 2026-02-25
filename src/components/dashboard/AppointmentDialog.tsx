@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import type { Appointment } from "@/types/appointment";
 import type { Service } from "@/types/onboarding";
@@ -31,6 +31,8 @@ interface Props {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   isPetNiche?: boolean;
+  appointments?: Appointment[];
+  maxConcurrent?: number;
 }
 
 const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
@@ -42,6 +44,8 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   isPetNiche = true,
+  appointments = [],
+  maxConcurrent = 1,
 }, ref) => {
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -59,6 +63,20 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
   const [saving, setSaving] = useState(false);
 
   const isEditing = !!editingAppointment;
+
+  // Check if the selected date+time slot is full
+  const isSlotFull = (() => {
+    if (!date || !time || maxConcurrent <= 0) return false;
+    const timeNormalized = time.slice(0, 5);
+    const bookingsAtSlot = appointments.filter(
+      (a) =>
+        a.date === date &&
+        a.time.slice(0, 5) === timeNormalized &&
+        a.status !== "cancelled" &&
+        (!isEditing || a.id !== editingAppointment?.id)
+    ).length;
+    return bookingsAtSlot >= maxConcurrent;
+  })();
 
   const resetForm = () => {
     setPetName(isPetNiche ? "" : "—");
@@ -222,7 +240,14 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
             />
           </div>
 
-          <Button type="submit" className="w-full font-bold" disabled={saving || (isPetNiche && !petName) || !ownerName || !service || !date || !time}>
+          {isSlotFull && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span>Horário lotado! Todos os {maxConcurrent} atendentes já estão ocupados neste horário.</span>
+            </div>
+          )}
+
+          <Button type="submit" className="w-full font-bold" disabled={saving || isSlotFull || (isPetNiche && !petName) || !ownerName || !service || !date || !time}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {isEditing ? "Salvar alterações" : "Agendar"}
           </Button>

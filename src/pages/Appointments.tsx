@@ -163,7 +163,7 @@ const Appointments = () => {
             )}
           </p>
         </div>
-        <AppointmentDialog services={services} onSave={addAppointment} isPetNiche={isPetNiche} />
+        <AppointmentDialog services={services} onSave={addAppointment} isPetNiche={isPetNiche} appointments={appointments} maxConcurrent={maxConcurrent} />
       </div>
 
       {/* Availability */}
@@ -250,6 +250,8 @@ const Appointments = () => {
             if (!open) setEditingApt(null);
           }}
           isPetNiche={isPetNiche}
+          appointments={appointments}
+          maxConcurrent={maxConcurrent}
         />
       )}
 
@@ -259,6 +261,8 @@ const Appointments = () => {
           services={services}
           onSave={addAppointment}
           isPetNiche={isPetNiche}
+          appointments={appointments}
+          maxConcurrent={maxConcurrent}
           trigger={
             <Button size="lg" className="rounded-full w-14 h-14 shadow-lg">
               <Plus className="w-6 h-6" />
