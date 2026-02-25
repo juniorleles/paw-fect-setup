@@ -214,6 +214,7 @@ const Appointments = () => {
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
           isPetNiche={isPetNiche}
+          maxConcurrent={maxConcurrent}
         />
       )}
 

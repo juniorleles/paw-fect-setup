@@ -14,6 +14,7 @@ interface Props {
   selectedDate: Date | undefined;
   onSelectDate: (date: Date | undefined) => void;
   isPetNiche?: boolean;
+  maxConcurrent?: number;
 }
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7h to 20h
@@ -28,6 +29,7 @@ const AppointmentCalendarView = ({
   selectedDate,
   onSelectDate,
   isPetNiche = true,
+  maxConcurrent = 1,
 }: Props) => {
   const [subView, setSubView] = useState<CalendarSubView>("week");
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -168,8 +170,19 @@ const AppointmentCalendarView = ({
                   const dayStr = format(day, "yyyy-MM-dd");
                   const key = `${dayStr}_${hour}`;
                   const apts = aptsByDayAndHour.get(key) || [];
+                  const activeCount = apts.filter((a) => a.status !== "cancelled").length;
+                  const isFull = activeCount >= maxConcurrent;
                   return (
-                    <div key={dayStr} className="border-l border-border/20 p-0.5 space-y-0.5">
+                    <div key={dayStr} className="border-l border-border/20 p-0.5 space-y-0.5 relative">
+                      {activeCount > 0 && (
+                        <span
+                          className={`absolute top-0.5 right-1 text-[9px] font-bold leading-none ${
+                            isFull ? "text-destructive" : "text-muted-foreground"
+                          }`}
+                        >
+                          {activeCount}/{maxConcurrent}
+                        </span>
+                      )}
                       {apts.map((apt) => {
                         const status = STATUS_CONFIG[apt.status] ?? STATUS_CONFIG.pending;
                         return (
