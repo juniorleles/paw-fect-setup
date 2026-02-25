@@ -92,10 +92,9 @@ const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminAuth();
+  const { user, isAdmin, loading } = useAdminAuth();
 
-  if (authLoading || adminLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[hsl(220,20%,7%)] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
