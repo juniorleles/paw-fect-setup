@@ -19,12 +19,35 @@ const AdminPayments = () => {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data } = await supabase.from("payment_history").select("*").order("created_at", { ascending: false });
-      setPayments(data ?? []);
+      if (!data) { setLoading(false); return; }
+
+      const userIds = [...new Set(data.map((p) => p.user_id))];
+      const { data: configs } = await supabase.from("pet_shop_configs").select("user_id, shop_name, phone").in("user_id", userIds);
+      const configMap = new Map((configs ?? []).map((c) => [c.user_id, c]));
+
+      // Fetch emails via admin edge function
+      let emailMap = new Map<string, string>();
+      try {
+        const res = await supabase.functions.invoke("admin-manage-users", {
+          body: { action: "list-users" },
+        });
+        if (res.data?.users) {
+          emailMap = new Map(res.data.users.map((u: any) => [u.id, u.email]));
+        }
+      } catch { /* ignore */ }
+
+      const merged = data.map((p) => ({
+        ...p,
+        shopName: configMap.get(p.user_id)?.shop_name ?? "Sem nome",
+        phone: configMap.get(p.user_id)?.phone ?? "—",
+        email: emailMap.get(p.user_id) ?? "—",
+      }));
+      setPayments(merged);
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, []);
 
   const filtered = payments.filter((p) => p.status === activeTab);
@@ -79,6 +102,9 @@ const AdminPayments = () => {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[hsl(220,20%,10%)] text-[hsl(220,10%,50%)] text-xs uppercase tracking-wider">
+              <th className="text-left px-4 py-3 font-medium">Estabelecimento</th>
+              <th className="text-left px-4 py-3 font-medium">Telefone</th>
+              <th className="text-left px-4 py-3 font-medium">Email</th>
               <th className="text-left px-4 py-3 font-medium">Descrição</th>
               <th className="text-left px-4 py-3 font-medium">Valor</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
@@ -88,7 +114,10 @@ const AdminPayments = () => {
           <tbody className="divide-y divide-[hsl(220,15%,15%)]">
             {paginated.map((p) => (
               <tr key={p.id} className="hover:bg-[hsl(220,20%,11%)] transition-colors">
-                <td className="px-4 py-3 text-white font-medium">{p.description}</td>
+                <td className="px-4 py-3 text-white font-medium">{p.shopName}</td>
+                <td className="px-4 py-3 text-[hsl(220,10%,65%)]">{p.phone}</td>
+                <td className="px-4 py-3 text-[hsl(220,10%,65%)]">{p.email}</td>
+                <td className="px-4 py-3 text-white">{p.description}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,65%)]">
                   {Number(p.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </td>
@@ -100,7 +129,7 @@ const AdminPayments = () => {
             ))}
             {paginated.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center py-8 text-[hsl(220,10%,40%)]">Nenhum registro</td>
+                <td colSpan={7} className="text-center py-8 text-[hsl(220,10%,40%)]">Nenhum registro</td>
               </tr>
             )}
           </tbody>
