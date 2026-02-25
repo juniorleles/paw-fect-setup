@@ -432,6 +432,8 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       });
     }
 
+    const aiStartTime = Date.now();
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -444,9 +446,29 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       }),
     });
 
+    const aiResponseTimeMs = Date.now() - aiStartTime;
+    console.log(`AI response time: ${aiResponseTimeMs}ms`);
+
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
       console.error("AI error:", aiResponse.status, errText);
+
+      // Log error to admin_error_logs
+      await serviceClient.from("admin_error_logs").insert({
+        error_message: `AI error: ${aiResponse.status} - ${errText.substring(0, 500)}`,
+        endpoint: "whatsapp-ai-handler",
+        severity: "error",
+        user_id: shopConfig.user_id,
+      });
+
+      // Generate alert if AI is consistently failing
+      await serviceClient.from("system_alerts").insert({
+        alert_type: "ai_error",
+        severity: "error",
+        message: `Erro na IA para instância ${instanceName}`,
+        details: { status: aiResponse.status, user_id: shopConfig.user_id },
+      });
+
       return new Response(JSON.stringify({ error: "AI error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -455,6 +477,26 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
 
     const aiData = await aiResponse.json();
     let reply = aiData.choices?.[0]?.message?.content || "Desculpe, não consegui processar sua mensagem.";
+
+    // Track AI usage with latency
+    const tokensUsed = aiData.usage?.total_tokens || 0;
+    await serviceClient.from("ai_usage").insert({
+      user_id: shopConfig.user_id,
+      tokens_used: tokensUsed,
+      request_type: "whatsapp_chat",
+      model: "gemini-2.5-flash",
+      response_time_ms: aiResponseTimeMs,
+    });
+
+    // Alert if response time is too high (> 15 seconds)
+    if (aiResponseTimeMs > 15000) {
+      await serviceClient.from("system_alerts").insert({
+        alert_type: "high_latency",
+        severity: "warning",
+        message: `Latência alta da IA: ${aiResponseTimeMs}ms`,
+        details: { response_time_ms: aiResponseTimeMs, instance: instanceName, user_id: shopConfig.user_id },
+      });
+    }
 
     // Process actions (create/cancel/reschedule/confirm)
     reply = await processAction(serviceClient, shopConfig, cleanPhone, reply);

@@ -56,6 +56,16 @@ Deno.serve(async (req) => {
       } else {
         console.log(`Updated whatsapp_status to '${whatsappStatus}' for instance '${instanceName}'`);
       }
+
+      // Generate alert for disconnections
+      if (whatsappStatus === "disconnected") {
+        await serviceClient.from("system_alerts").insert({
+          alert_type: "disconnection",
+          severity: "warning",
+          message: `WhatsApp desconectado: ${instanceName}`,
+          details: { instance: instanceName, state },
+        });
+      }
     }
 
     // Handle QRCODE_UPDATED
