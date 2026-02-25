@@ -13,6 +13,7 @@ import {
   Cpu,
   AlertTriangle,
   Activity,
+  ShieldOff,
   Menu,
   X,
   LogOut,
@@ -32,6 +33,7 @@ const navItems = [
   { to: "/admin/ai-usage", icon: Cpu, label: "Consumo Gemini" },
   { to: "/admin/logs", icon: AlertTriangle, label: "Logs & Erros" },
   { to: "/admin/users", icon: Users, label: "Usuários" },
+  { to: "/admin/blocked", icon: ShieldOff, label: "Bloqueados" },
 ];
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {

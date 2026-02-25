@@ -33,6 +33,7 @@ import { format, differenceInMinutes, differenceInDays, startOfMonth, endOfMonth
 import { ptBR } from "date-fns/locale";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import TrialBanner from "@/components/dashboard/TrialBanner";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -216,24 +217,8 @@ const Dashboard = () => {
 
   return (
     <div className="flex-1 p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
-      {/* ─── Trial Alert ─── */}
-      {trialDaysLeft !== null && trialDaysLeft >= 0 && trialDaysLeft <= 2 && (
-        <Alert className="border-accent/50 bg-accent/10">
-          <AlertTriangle className="h-4 w-4 text-accent" />
-          <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-sm font-medium">
-              {trialDaysLeft === 0
-                ? "⏰ Seu período de teste termina hoje!"
-                : `⏰ Seu período de teste termina em ${trialDaysLeft} dia${trialDaysLeft > 1 ? "s" : ""}!`}
-              {" "}Ative seu plano para continuar usando.
-            </span>
-            <Button size="sm" className="gap-1" onClick={() => navigate("/my-account")}>
-              <Crown className="w-4 h-4" />
-              Ativar plano
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* ─── Trial Banner ─── */}
+      <TrialBanner />
 
       {/* ─── 1. Hero Section ─── */}
       <section className="space-y-4">
