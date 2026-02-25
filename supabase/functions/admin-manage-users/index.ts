@@ -149,6 +149,43 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "delete-user") {
+      if (!email) {
+        return new Response(JSON.stringify({ error: "Email é obrigatório" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: users, error: listErr } = await adminClient.auth.admin.listUsers();
+      if (listErr) {
+        return new Response(JSON.stringify({ error: listErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const targetUser = users.users.find((u) => u.email === email);
+      if (!targetUser) {
+        return new Response(JSON.stringify({ error: "Usuário não encontrado" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { error: deleteErr } = await adminClient.auth.admin.deleteUser(targetUser.id);
+      if (deleteErr) {
+        return new Response(JSON.stringify({ error: deleteErr.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Ação inválida" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
