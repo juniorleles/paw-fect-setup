@@ -46,6 +46,12 @@ interface MonthlyClients {
   clients: number;
 }
 
+interface MonthlyMessages {
+  month: string;
+  label: string;
+  messages: number;
+}
+
 const StatCard = ({
   label,
   value,
@@ -83,6 +89,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [revenueChart, setRevenueChart] = useState<MonthlyRevenue[]>([]);
   const [clientsChart, setClientsChart] = useState<MonthlyClients[]>([]);
+  const [messagesChart, setMessagesChart] = useState<MonthlyMessages[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -101,6 +108,7 @@ const AdminDashboard = () => {
         aiRes,
         allPayments,
         allConfigs,
+        allMessages,
       ] = await Promise.all([
         supabase.from("pet_shop_configs").select("id", { count: "exact", head: true }).eq("activated", true),
         supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
@@ -111,6 +119,7 @@ const AdminDashboard = () => {
         supabase.from("ai_usage").select("id", { count: "exact", head: true }).gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
         supabase.from("payment_history").select("amount, paid_at").eq("status", "paid").order("paid_at", { ascending: true }),
         supabase.from("pet_shop_configs").select("created_at").eq("activated", true).order("created_at", { ascending: true }),
+        supabase.from("conversation_messages").select("created_at").order("created_at", { ascending: true }),
       ]);
 
       const payments = paymentsMonth.data ?? [];
@@ -157,6 +166,25 @@ const AdminDashboard = () => {
           month,
           label: MONTH_LABELS[parseInt(month.split("-")[1]) - 1],
           clients: clientsByMonth[month],
+        }))
+      );
+
+      // Build last 6 months messages chart
+      const messagesByMonth: Record<string, number> = {};
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        messagesByMonth[key] = 0;
+      }
+      (allMessages.data ?? []).forEach((m) => {
+        const key = m.created_at.substring(0, 7);
+        if (key in messagesByMonth) messagesByMonth[key]++;
+      });
+      setMessagesChart(
+        Object.keys(messagesByMonth).sort().map((month) => ({
+          month,
+          label: MONTH_LABELS[parseInt(month.split("-")[1]) - 1],
+          messages: messagesByMonth[month],
         }))
       );
 
@@ -247,6 +275,29 @@ const AdminDashboard = () => {
                 />
                 <Line type="monotone" dataKey="clients" stroke="hsl(217,91%,60%)" strokeWidth={2} dot={{ fill: "hsl(217,91%,60%)", r: 4 }} />
               </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Messages Chart */}
+        <div className="bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl p-5 lg:col-span-2">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-sm font-semibold text-white">Mensagens por mês</h2>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={messagesChart}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,18%)" />
+                <XAxis dataKey="label" tick={{ fill: "hsl(220,10%,50%)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "hsl(220,10%,50%)", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "hsl(220,20%,12%)", border: "1px solid hsl(220,15%,20%)", borderRadius: 8, color: "#fff" }}
+                  formatter={(value: number) => [value.toLocaleString("pt-BR"), "Mensagens"]}
+                  labelStyle={{ color: "hsl(220,10%,60%)" }}
+                />
+                <Bar dataKey="messages" fill="hsl(187,71%,45%)" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
