@@ -785,7 +785,14 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     
     // Retry with alternative model if response is empty or emoji-only
     if (!reply || reply.trim() === "" || isEmojiOnly(reply)) {
-      console.warn("Empty or emoji-only AI reply, retrying with google/gemini-3-pro-preview...", JSON.stringify({ content_preview: reply?.substring(0, 100) }));
+      console.warn("Empty or emoji-only AI reply, retrying with openai/gpt-5-mini...", JSON.stringify({ content_preview: reply?.substring(0, 100) }));
+      
+      // Build retry messages with an extra reinforcement instruction
+      const retryMessages = [
+        ...aiMessages,
+        { role: "user", content: "INSTRUÇÃO DO SISTEMA: Sua última resposta continha apenas emojis. Responda OBRIGATORIAMENTE com TEXTO ESCRITO em português. Repita a resposta ao cliente usando palavras, não apenas emojis." },
+      ];
+      
       const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -793,9 +800,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-pro-preview",
-          messages: aiMessages,
-          temperature: 0.7,
+          model: "openai/gpt-5-mini",
+          messages: retryMessages,
+          temperature: 0.3,
           max_tokens: 1024,
         }),
       });
@@ -807,7 +814,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         if (retryReply && retryReply.trim() !== "" && !isEmojiOnly(retryReply)) {
           reply = retryReply;
           aiData = retryData;
-          console.log("Retry succeeded with gemini-3-pro-preview");
+          console.log("Retry succeeded with openai/gpt-5-mini");
         }
       }
     }
