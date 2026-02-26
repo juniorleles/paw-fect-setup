@@ -3,11 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Mail, MessageCircle, Send, ArrowLeft, Clock, Headphones } from "lucide-react";
+import { Mail, MessageCircle, Send, Clock, Headphones } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
 
 const SUPPORT_EMAIL = "suporte@secretariadigital.com.br";
 const SUPPORT_WHATSAPP = "5511999999999";
@@ -49,35 +48,21 @@ const Support = () => {
   const whatsappUrl = `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent("Olá! Preciso de ajuda com a Secretária Digital.")}`;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-secondary/20">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Voltar</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Headphones className="w-5 h-5 text-primary" />
-            <span className="font-display font-bold text-foreground">Suporte</span>
-          </div>
-          <div className="w-16" />
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 py-12 sm:py-16">
-        {/* Hero */}
+    <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeUp}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="mb-8"
         >
-          <h1 className="text-3xl sm:text-4xl font-display font-bold mb-3">
-            Como podemos te ajudar?
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          <div className="flex items-center gap-2 mb-1">
+            <Headphones className="w-6 h-6 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-display font-bold">Suporte</h1>
+          </div>
+          <p className="text-muted-foreground">
             Escolha o canal que preferir. Estamos prontos para atender você.
           </p>
         </motion.div>
@@ -88,7 +73,7 @@ const Support = () => {
           animate="visible"
           variants={fadeUp}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="grid sm:grid-cols-2 gap-4 mb-12"
+          className="grid sm:grid-cols-2 gap-4 mb-10"
         >
           {/* WhatsApp card */}
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="group">
@@ -180,7 +165,7 @@ const Support = () => {
             </CardContent>
           </Card>
         </motion.div>
-      </main>
+      </div>
     </div>
   );
 };

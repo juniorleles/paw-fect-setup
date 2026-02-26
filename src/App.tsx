@@ -137,6 +137,7 @@ const App = () => (
             <Route path="/appointments" element={<DashboardRoute><Appointments /></DashboardRoute>} />
             
             <Route path="/my-account" element={<DashboardRoute><MyAccount /></DashboardRoute>} />
+            <Route path="/support" element={<DashboardRoute><Support /></DashboardRoute>} />
             <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
             <Route path="/subscription-cancelled" element={<ProtectedRoute><SubscriptionCancelled /></ProtectedRoute>} />
             <Route path="/upgrade" element={<ProtectedRoute><UpgradeRequired /></ProtectedRoute>} />
@@ -154,10 +155,9 @@ const App = () => (
             <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/blocked" element={<AdminRoute><AdminBlocked /></AdminRoute>} />
-            {/* Legal & support pages */}
+            {/* Legal pages */}
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/suporte" element={<Support />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
