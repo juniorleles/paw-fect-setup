@@ -319,6 +319,13 @@ const WhatsAppStatusBadge = () => {
               </Tabs>
             )}
 
+            {/* Device name notice */}
+            {!expired && (qrCode || pairingCode) && (
+              <div className="w-full text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 text-center">
+                <span className="font-medium">ℹ️ Aviso:</span> Após conectar, o dispositivo pode aparecer como <strong>"MacOS"</strong> ou <strong>"Windows"</strong> na lista de dispositivos conectados do seu WhatsApp. Isso é normal e esperado.
+              </div>
+            )}
+
             {/* Timer bar */}
             {!expired && (qrCode || pairingCode) && (
               <div className="w-full space-y-1.5">
