@@ -163,7 +163,7 @@ const Index = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.access_token) {
         console.warn("No valid session - skipping activate-subscription call. User may need to confirm email.");
-        // Still show success - the subscription will be activated on first dashboard load
+        await Promise.all([refetchOnboarding(), refetchSubscription()]);
         setActivated(true);
         toast({ title: "Secretária configurada!", description: "Confirme seu e-mail para ativar completamente." });
         return;
@@ -175,13 +175,14 @@ const Index = () => {
         });
         if (error) {
           console.error("Activate subscription error:", error);
-          // Don't block the user - they can reconnect from the dashboard
+          await Promise.all([refetchOnboarding(), refetchSubscription()]);
           toast({ title: "Aviso", description: "Configuração salva. Conecte o WhatsApp pelo Dashboard.", variant: "default" });
           setActivated(true);
           return;
         }
         if (result?.error) {
           console.error("Activate result error:", result.error);
+          await Promise.all([refetchOnboarding(), refetchSubscription()]);
           toast({ title: "Aviso", description: "Configuração salva. Conecte o WhatsApp pelo Dashboard.", variant: "default" });
           setActivated(true);
           return;
@@ -189,7 +190,7 @@ const Index = () => {
         console.log("Subscription activated:", result);
       } catch (e: any) {
         console.error("Activate error:", e);
-        // Don't block - let user proceed
+        await Promise.all([refetchOnboarding(), refetchSubscription()]);
         toast({ title: "Aviso", description: "Configuração salva. Conecte o WhatsApp pelo Dashboard.", variant: "default" });
         setActivated(true);
         return;
