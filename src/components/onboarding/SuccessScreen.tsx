@@ -68,7 +68,7 @@ const SuccessScreen = ({ data }: Props) => {
               <span className="font-bold text-primary">{data.assistantName}</span> está pronta para atender seus clientes
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              O WhatsApp será conectado automaticamente. Você pode acompanhar o status no Dashboard.
+              Agora só falta conectar o seu WhatsApp! Acesse o Dashboard para finalizar a conexão. 📲
             </p>
           </div>
 
