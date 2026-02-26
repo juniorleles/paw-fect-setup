@@ -10,6 +10,7 @@ import type { Appointment } from "@/types/appointment";
 import type { Service } from "@/types/onboarding";
 import { isSameDay, parseISO, addDays, startOfWeek, endOfWeek, endOfMonth, isWithinInterval } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 import AppointmentStatsBar from "@/components/appointments/AppointmentStatsBar";
 import AppointmentFilters, { type ViewMode } from "@/components/appointments/AppointmentFilters";
 import AppointmentListView from "@/components/appointments/AppointmentListView";
@@ -22,6 +23,7 @@ const Appointments = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { isPetNiche } = useNiche();
+  const { plan } = useSubscription();
   const {
     appointments,
     loading: loadingApts,
@@ -36,8 +38,13 @@ const Appointments = () => {
 
   const [services, setServices] = useState<Service[]>([]);
   const [businessHours, setBusinessHours] = useState<DaySchedule[]>([]);
-  const [maxConcurrent, setMaxConcurrent] = useState(1);
+  const [rawMaxConcurrent, setRawMaxConcurrent] = useState(1);
   const [loadingConfig, setLoadingConfig] = useState(true);
+
+  // Clamp maxConcurrent based on subscription plan
+  const planLimit = plan === "professional" ? 5 : 1;
+  const maxConcurrent = Math.min(rawMaxConcurrent, planLimit);
+
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -58,7 +65,7 @@ const Appointments = () => {
       if (configs && configs.length > 0) {
         setServices(configs[0].services as unknown as Service[]);
         setBusinessHours(configs[0].business_hours as unknown as DaySchedule[]);
-        setMaxConcurrent((configs[0] as any).max_concurrent_appointments ?? 1);
+        setRawMaxConcurrent((configs[0] as any).max_concurrent_appointments ?? 1);
       }
       setLoadingConfig(false);
     };
