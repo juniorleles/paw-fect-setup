@@ -163,7 +163,7 @@ async function getConversationHistory(
     "instabilidade temporária",
   ];
 
-  return (data || [])
+  const filtered = (data || [])
     .map((m: any) => ({ role: m.role, content: m.content }))
     .filter((m) => {
       if (m.role === "assistant") {
@@ -171,6 +171,22 @@ async function getConversationHistory(
       }
       return true;
     });
+
+  // Remove consecutive duplicate user messages (keep only the last one in each sequence)
+  const cleaned: { role: string; content: string }[] = [];
+  for (let i = 0; i < filtered.length; i++) {
+    const msg = filtered[i];
+    const next = filtered[i + 1];
+    // Skip user message if next one is also user (keep the last in a sequence)
+    if (msg.role === "user" && next && next.role === "user") {
+      continue;
+    }
+    cleaned.push(msg);
+  }
+
+  // Ensure conversation doesn't end with orphaned user messages without a response
+  // and limit to last 10 messages to keep context manageable
+  return cleaned.slice(-10);
 }
 
 async function saveMessage(
@@ -703,9 +719,10 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: aiMessages,
         temperature: 0.7,
+        max_tokens: 1024,
       }),
     });
 
@@ -754,7 +771,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     
     // Retry with alternative model if response is empty
     if (!reply || reply.trim() === "") {
-      console.warn("Empty AI reply, retrying with google/gemini-2.5-pro...");
+      console.warn("Empty AI reply, retrying with google/gemini-3-pro-preview...");
       const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -762,9 +779,10 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
+          model: "google/gemini-3-pro-preview",
           messages: aiMessages,
           temperature: 0.7,
+          max_tokens: 1024,
         }),
       });
 
