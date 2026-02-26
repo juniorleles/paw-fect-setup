@@ -1,0 +1,1 @@
+DELETE FROM conversation_messages WHERE user_id = 'b6734f16-fbd8-4ca4-aa16-ca8b7406a04c' AND phone = '5511985346958'
