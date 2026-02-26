@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAppointmentNotifications } from "@/hooks/useAppointmentNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -28,6 +28,7 @@ const navItems = [
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   useAppointmentNotifications();
 
   const handleSignOut = async () => {
@@ -91,13 +92,15 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           </header>
           <main className="flex-1 flex flex-col relative">
             {children}
-            <Link
-              to="/support"
-              className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors hover:scale-105 active:scale-95"
-              aria-label="Suporte"
-            >
-              <Headphones className="w-6 h-6" />
-            </Link>
+            {location.pathname !== "/support" && (
+              <Link
+                to="/support"
+                className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors hover:scale-105 active:scale-95"
+                aria-label="Suporte"
+              >
+                <Headphones className="w-6 h-6" />
+              </Link>
+            )}
           </main>
         </div>
       </div>
