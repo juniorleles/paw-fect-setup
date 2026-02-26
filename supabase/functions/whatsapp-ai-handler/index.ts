@@ -727,29 +727,53 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       });
     }
 
-    const aiData = await aiResponse.json();
+    let aiData = await aiResponse.json();
     console.log("AI response structure:", JSON.stringify({
       choices_length: aiData.choices?.length,
-      first_choice_role: aiData.choices?.[0]?.message?.role,
       content_length: aiData.choices?.[0]?.message?.content?.length,
       content_preview: aiData.choices?.[0]?.message?.content?.substring(0, 200),
       finish_reason: aiData.choices?.[0]?.finish_reason,
-      error: aiData.error,
     }));
     
     let reply = aiData.choices?.[0]?.message?.content;
     
-    if (!reply) {
-      console.error("Empty AI reply. Full response:", JSON.stringify(aiData).substring(0, 1000));
-      // Log for admin visibility
+    // Retry with alternative model if response is empty
+    if (!reply || reply.trim() === "") {
+      console.warn("Empty AI reply, retrying with google/gemini-2.5-pro...");
+      const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: aiMessages,
+        }),
+      });
+
+      if (retryResponse.ok) {
+        const retryData = await retryResponse.json();
+        const retryReply = retryData.choices?.[0]?.message?.content;
+        console.log("Retry response length:", retryReply?.length);
+        if (retryReply && retryReply.trim() !== "") {
+          reply = retryReply;
+          aiData = retryData;
+          console.log("Retry succeeded with gemini-2.5-pro");
+        }
+      }
+    }
+
+    // Final fallback if still empty after retry
+    if (!reply || reply.trim() === "") {
+      console.error("Empty AI reply after retry. Full response:", JSON.stringify(aiData).substring(0, 1000));
       await serviceClient.from("admin_error_logs").insert({
-        error_message: `Resposta vazia da IA para instância ${instanceName}`,
+        error_message: `Resposta vazia da IA (após retry) para instância ${instanceName}`,
         endpoint: "whatsapp-ai-handler",
         severity: "error",
         user_id: shopConfig.user_id,
         stack_trace: JSON.stringify(aiData).substring(0, 500),
       });
-      // Graceful fallback
       const fallbackMsg = `Olá! Tive uma dificuldade técnica, mas pode repetir sua mensagem que vou te atender! 😊`;
       await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
       await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", fallbackMsg);
