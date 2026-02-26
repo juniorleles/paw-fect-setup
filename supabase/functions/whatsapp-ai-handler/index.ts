@@ -62,7 +62,9 @@ function computeAvailableSlots(
     const bookedCount: Record<string, number> = {};
     for (const apt of appointments) {
       if (apt.date === dateStr && apt.status !== "cancelled") {
-        bookedCount[apt.time] = (bookedCount[apt.time] || 0) + 1;
+        // Normalize time to HH:MM (DB stores HH:MM:SS)
+        const normalizedTime = apt.time.slice(0, 5);
+        bookedCount[normalizedTime] = (bookedCount[normalizedTime] || 0) + 1;
       }
     }
 
