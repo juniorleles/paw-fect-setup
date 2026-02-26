@@ -94,111 +94,127 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-      const monthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()}`;
+      try {
+        const now = new Date();
+        const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+        const monthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()}`;
 
-      const [
-        clientsRes,
-        activeSubs,
-        paymentsMonth,
-        overdueRes,
-        declinedRes,
-        messagesRes,
-        aiRes,
-        allPayments,
-        allConfigs,
-        allMessages,
-      ] = await Promise.all([
-        supabase.from("pet_shop_configs").select("id", { count: "exact", head: true }).eq("activated", true),
-        supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("payment_history").select("amount").eq("status", "paid").gte("paid_at", `${monthStart}T00:00:00`).lte("paid_at", `${monthEnd}T23:59:59`),
-        supabase.from("payment_history").select("id", { count: "exact", head: true }).eq("status", "overdue"),
-        supabase.from("payment_history").select("id", { count: "exact", head: true }).eq("status", "declined"),
-        supabase.from("conversation_messages").select("id", { count: "exact", head: true }).gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
-        supabase.from("ai_usage").select("id", { count: "exact", head: true }).gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
-        supabase.from("payment_history").select("amount, paid_at").eq("status", "paid").order("paid_at", { ascending: true }),
-        supabase.from("pet_shop_configs").select("created_at").eq("activated", true).order("created_at", { ascending: true }),
-        supabase.from("conversation_messages").select("created_at").order("created_at", { ascending: true }),
-      ]);
+        const [
+          clientsRes,
+          activeSubs,
+          paymentsMonth,
+          overdueRes,
+          declinedRes,
+          messagesRes,
+          aiRes,
+          allPayments,
+          allConfigs,
+          allMessages,
+        ] = await Promise.all([
+          supabase.from("pet_shop_configs").select("id", { count: "exact", head: true }).eq("activated", true),
+          supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
+          supabase.from("payment_history").select("amount").eq("status", "paid").gte("paid_at", `${monthStart}T00:00:00`).lte("paid_at", `${monthEnd}T23:59:59`),
+          supabase.from("payment_history").select("id", { count: "exact", head: true }).eq("status", "overdue"),
+          supabase.from("payment_history").select("id", { count: "exact", head: true }).eq("status", "declined"),
+          supabase.from("conversation_messages").select("id", { count: "exact", head: true }).gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
+          supabase.from("ai_usage").select("id", { count: "exact", head: true }).gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
+          supabase.from("payment_history").select("amount, paid_at").eq("status", "paid").order("paid_at", { ascending: true }),
+          supabase.from("pet_shop_configs").select("created_at").eq("activated", true).order("created_at", { ascending: true }),
+          supabase.from("conversation_messages").select("created_at").order("created_at", { ascending: true }),
+        ]);
 
-      const payments = paymentsMonth.data ?? [];
-      const revenueMonth = payments.reduce((s, p) => s + Number(p.amount), 0);
-      const ticketMedio = payments.length > 0 ? revenueMonth / payments.length : 0;
+        const payments = paymentsMonth.data ?? [];
+        const revenueMonth = payments.reduce((s, p) => s + Number(p.amount), 0);
+        const ticketMedio = payments.length > 0 ? revenueMonth / payments.length : 0;
 
-      // Build last 6 months revenue chart
-      const revenueByMonth: Record<string, number> = {};
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        revenueByMonth[key] = 0;
-      }
-      (allPayments.data ?? []).forEach((p) => {
-        if (p.paid_at) {
-          const key = p.paid_at.substring(0, 7);
-          if (key in revenueByMonth) revenueByMonth[key] += Number(p.amount);
+        // Build last 6 months revenue chart
+        const revenueByMonth: Record<string, number> = {};
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          revenueByMonth[key] = 0;
         }
-      });
-      setRevenueChart(
-        Object.entries(revenueByMonth).map(([month, revenue]) => ({
-          month,
-          label: MONTH_LABELS[parseInt(month.split("-")[1]) - 1],
-          revenue,
-        }))
-      );
-
-      // Build last 6 months cumulative client growth
-      const clientsByMonth: Record<string, number> = {};
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        clientsByMonth[key] = 0;
-      }
-      const sortedMonths = Object.keys(clientsByMonth).sort();
-      (allConfigs.data ?? []).forEach((c) => {
-        const key = c.created_at.substring(0, 7);
-        sortedMonths.forEach((m) => {
-          if (key <= m) clientsByMonth[m]++;
+        (allPayments.data ?? []).forEach((p) => {
+          if (p.paid_at) {
+            const key = p.paid_at.substring(0, 7);
+            if (key in revenueByMonth) revenueByMonth[key] += Number(p.amount);
+          }
         });
-      });
-      setClientsChart(
-        sortedMonths.map((month) => ({
-          month,
-          label: MONTH_LABELS[parseInt(month.split("-")[1]) - 1],
-          clients: clientsByMonth[month],
-        }))
-      );
+        setRevenueChart(
+          Object.entries(revenueByMonth).map(([month, revenue]) => ({
+            month,
+            label: MONTH_LABELS[parseInt(month.split("-")[1]) - 1],
+            revenue,
+          }))
+        );
 
-      // Build last 6 months messages chart
-      const messagesByMonth: Record<string, number> = {};
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        messagesByMonth[key] = 0;
+        // Build last 6 months cumulative client growth
+        const clientsByMonth: Record<string, number> = {};
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          clientsByMonth[key] = 0;
+        }
+        const sortedMonths = Object.keys(clientsByMonth).sort();
+        (allConfigs.data ?? []).forEach((c) => {
+          const key = c.created_at.substring(0, 7);
+          sortedMonths.forEach((m) => {
+            if (key <= m) clientsByMonth[m]++;
+          });
+        });
+        setClientsChart(
+          sortedMonths.map((month) => ({
+            month,
+            label: MONTH_LABELS[parseInt(month.split("-")[1]) - 1],
+            clients: clientsByMonth[month],
+          }))
+        );
+
+        // Build last 6 months messages chart
+        const messagesByMonth: Record<string, number> = {};
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          messagesByMonth[key] = 0;
+        }
+        (allMessages.data ?? []).forEach((m) => {
+          const key = m.created_at.substring(0, 7);
+          if (key in messagesByMonth) messagesByMonth[key]++;
+        });
+        setMessagesChart(
+          Object.keys(messagesByMonth).sort().map((month) => ({
+            month,
+            label: MONTH_LABELS[parseInt(month.split("-")[1]) - 1],
+            messages: messagesByMonth[month],
+          }))
+        );
+
+        setStats({
+          totalClients: clientsRes.count ?? 0,
+          activeSubscriptions: activeSubs.count ?? 0,
+          revenueMonth,
+          ticketMedio,
+          overduePayments: overdueRes.count ?? 0,
+          declinedPayments: declinedRes.count ?? 0,
+          totalMessages: messagesRes.count ?? 0,
+          totalAiRequests: aiRes.count ?? 0,
+        });
+      } catch (err) {
+        console.error("[AdminDashboard] fetchStats error:", err);
+        // Show empty stats rather than infinite loading
+        setStats({
+          totalClients: 0,
+          activeSubscriptions: 0,
+          revenueMonth: 0,
+          ticketMedio: 0,
+          overduePayments: 0,
+          declinedPayments: 0,
+          totalMessages: 0,
+          totalAiRequests: 0,
+        });
+      } finally {
+        setLoading(false);
       }
-      (allMessages.data ?? []).forEach((m) => {
-        const key = m.created_at.substring(0, 7);
-        if (key in messagesByMonth) messagesByMonth[key]++;
-      });
-      setMessagesChart(
-        Object.keys(messagesByMonth).sort().map((month) => ({
-          month,
-          label: MONTH_LABELS[parseInt(month.split("-")[1]) - 1],
-          messages: messagesByMonth[month],
-        }))
-      );
-
-      setStats({
-        totalClients: clientsRes.count ?? 0,
-        activeSubscriptions: activeSubs.count ?? 0,
-        revenueMonth,
-        ticketMedio,
-        overduePayments: overdueRes.count ?? 0,
-        declinedPayments: declinedRes.count ?? 0,
-        totalMessages: messagesRes.count ?? 0,
-        totalAiRequests: aiRes.count ?? 0,
-      });
-      setLoading(false);
     };
     fetchStats();
   }, []);
