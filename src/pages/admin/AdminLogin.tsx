@@ -26,10 +26,18 @@ const AdminLogin = () => {
     e.preventDefault();
     setError("");
     setSubmitting(true);
-    const { error: err } = await signIn(email, password);
-    setSubmitting(false);
-    if (err) {
-      setError("Credenciais inválidas.");
+    console.log("[AdminLogin] attempting signIn...");
+    try {
+      const { error: err } = await signIn(email, password);
+      console.log("[AdminLogin] signIn returned, error:", err);
+      setSubmitting(false);
+      if (err) {
+        setError("Credenciais inválidas.");
+      }
+    } catch (err: any) {
+      console.error("[AdminLogin] signIn threw:", err);
+      setSubmitting(false);
+      setError(err.message || "Erro ao fazer login.");
     }
   };
 
