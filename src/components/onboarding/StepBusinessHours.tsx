@@ -86,7 +86,7 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
         {data.businessHours.map((day, i) => (
           <div
             key={day.day}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+            className={`flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-3 rounded-xl transition-colors ${
               day.isOpen ? "bg-secondary" : "bg-muted/50"
             }`}
           >
@@ -94,7 +94,7 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
               checked={day.isOpen}
               onCheckedChange={(checked) => updateDay(i, { isOpen: checked })}
             />
-            <span className={`font-semibold text-sm min-w-[100px] ${!day.isOpen ? "text-muted-foreground" : ""}`}>
+            <span className={`font-semibold text-sm min-w-[80px] sm:min-w-[100px] ${!day.isOpen ? "text-muted-foreground" : ""}`}>
               {day.day}
             </span>
             {day.isOpen ? (
@@ -102,7 +102,7 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
                 <select
                   value={day.openTime}
                   onChange={(e) => updateDay(i, { openTime: e.target.value })}
-                  className="h-9 rounded-md border border-input bg-background px-1.5 sm:px-2 text-xs sm:text-sm w-[70px] sm:w-auto"
+                  className="h-9 rounded-md border border-input bg-background px-1 sm:px-2 text-xs sm:text-sm w-[68px] sm:w-auto"
                 >
                   {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -110,7 +110,7 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
                 <select
                   value={day.closeTime}
                   onChange={(e) => updateDay(i, { closeTime: e.target.value })}
-                  className="h-9 rounded-md border border-input bg-background px-1.5 sm:px-2 text-xs sm:text-sm w-[70px] sm:w-auto"
+                  className="h-9 rounded-md border border-input bg-background px-1 sm:px-2 text-xs sm:text-sm w-[68px] sm:w-auto"
                 >
                   {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
