@@ -293,8 +293,8 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
 
   const toneInstructions: Record<string, string> = {
     formal: "Use linguagem formal e educada. Trate o cliente por 'senhor(a)'. Seja objetiva e profissional. Evite emojis.",
-    friendly: "Use linguagem amigável e acolhedora. Trate o cliente pelo nome quando souber. Seja pessoal e calorosa. Use emojis com moderação.",
-    fun: `Use linguagem divertida e descontraída, com emojis moderados ${emojis}. Seja animada e alegre, com humor leve!`,
+    friendly: "Use linguagem amigável e acolhedora. Trate o cliente pelo nome quando souber. Seja pessoal e calorosa. Pode usar 1-2 emojis como complemento, mas a resposta DEVE ser principalmente TEXTO ESCRITO.",
+    fun: `Use linguagem divertida e descontraída. Seja animada e alegre, com humor leve! Pode usar 1-2 emojis como complemento (ex: ${emojis}), mas a resposta DEVE ser principalmente TEXTO ESCRITO. NUNCA responda apenas com emojis.`,
   };
 
   const nowDate = new Date();
@@ -771,9 +771,21 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     
     let reply = aiData.choices?.[0]?.message?.content;
     
-    // Retry with alternative model if response is empty
-    if (!reply || reply.trim() === "") {
-      console.warn("Empty AI reply, retrying with google/gemini-3-pro-preview...");
+    // Helper: check if reply is only emojis/symbols (no actual text)
+    const isEmojiOnly = (text: string | null | undefined): boolean => {
+      if (!text) return true;
+      // Remove action blocks, emojis, punctuation, whitespace — check if any letters remain
+      const cleaned = text
+        .replace(/<action>.*?<\/action>/gs, "")
+        .replace(/[\p{Emoji_Presentation}\p{Emoji}\p{Extended_Pictographic}]/gu, "")
+        .replace(/[\s\p{P}\p{S}]/gu, "")
+        .trim();
+      return cleaned.length === 0;
+    };
+    
+    // Retry with alternative model if response is empty or emoji-only
+    if (!reply || reply.trim() === "" || isEmojiOnly(reply)) {
+      console.warn("Empty or emoji-only AI reply, retrying with google/gemini-3-pro-preview...", JSON.stringify({ content_preview: reply?.substring(0, 100) }));
       const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -792,16 +804,16 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         const retryData = await retryResponse.json();
         const retryReply = retryData.choices?.[0]?.message?.content;
         console.log("Retry response length:", retryReply?.length);
-        if (retryReply && retryReply.trim() !== "") {
+        if (retryReply && retryReply.trim() !== "" && !isEmojiOnly(retryReply)) {
           reply = retryReply;
           aiData = retryData;
-          console.log("Retry succeeded with gemini-2.5-pro");
+          console.log("Retry succeeded with gemini-3-pro-preview");
         }
       }
     }
 
-    // Final fallback if still empty after retry
-    if (!reply || reply.trim() === "") {
+    // Final fallback if still empty or emoji-only after retry
+    if (!reply || reply.trim() === "" || isEmojiOnly(reply)) {
       console.error("Empty AI reply after retry. Full response:", JSON.stringify(aiData).substring(0, 1000));
       await serviceClient.from("admin_error_logs").insert({
         error_message: `Resposta vazia da IA (após retry) para instância ${instanceName}`,
