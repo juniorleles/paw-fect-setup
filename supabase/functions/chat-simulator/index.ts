@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: aiMessages,
-        max_tokens: 1024,
+        max_completion_tokens: 1024,
       }),
     });
 
