@@ -23,6 +23,9 @@ const LandingFooter = () => (
         <Link to="/privacy-policy" className="hover:text-foreground transition-colors">
           Privacidade
         </Link>
+        <Link to="/suporte" className="hover:text-foreground transition-colors">
+          Suporte
+        </Link>
         <Link to="/auth" className="hover:text-foreground transition-colors">
           Área do Cliente
         </Link>
