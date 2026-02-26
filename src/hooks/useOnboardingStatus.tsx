@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import React from "react";
 
 interface OnboardingContextValue {
   completed: boolean;
@@ -46,10 +45,10 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
     await fetchStatus();
   }, [fetchStatus]);
 
-  return React.createElement(
-    OnboardingContext.Provider,
-    { value: { completed, loading, refetch } },
-    children
+  return (
+    <OnboardingContext.Provider value={{ completed, loading, refetch }}>
+      {children}
+    </OnboardingContext.Provider>
   );
 };
 
