@@ -738,7 +738,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         model: "google/gemini-2.5-flash",
         messages: aiMessages,
         temperature: 0.7,
-        max_tokens: 1024,
+        max_tokens: 8192,
       }),
     });
 
@@ -823,7 +823,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
           model: "openai/gpt-5-mini",
           messages: retryMessages,
           temperature: 0.3,
-          max_tokens: 1024,
+          max_tokens: 8192,
         }),
       });
 
