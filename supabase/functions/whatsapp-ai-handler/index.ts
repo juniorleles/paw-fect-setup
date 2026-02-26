@@ -234,7 +234,12 @@ async function handleConfirmationResponse(
 
 function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existingAppointments: string, customerApptsText: string, availableSlots: string, maxConcurrent: number): string {
   const servicesText = (shopConfig.services as any[])
-    .map((s: any) => `- ${s.name}: R$${s.price} (${s.duration} min)`)
+    .map((s: any) => {
+      const parts = [`- ${s.name}`];
+      if (s.price != null) parts.push(`R$${s.price}`);
+      if (s.duration != null) parts.push(`${s.duration} min`);
+      return parts.length > 1 ? `${parts[0]}: ${parts.slice(1).join(" | ")}` : parts[0];
+    })
     .join("\n");
 
   const hoursText = (shopConfig.business_hours as any[])
