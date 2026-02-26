@@ -60,7 +60,18 @@ export const useAdminAuth = () => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    return supabaseAdmin.auth.signInWithPassword({ email, password });
+    try {
+      const result = await Promise.race([
+        supabaseAdmin.auth.signInWithPassword({ email, password }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Login timeout")), 10000)
+        ),
+      ]);
+      return result;
+    } catch (err: any) {
+      console.error("[useAdminAuth] signIn error:", err);
+      return { data: { user: null, session: null }, error: err };
+    }
   };
 
   const signOut = async () => {
