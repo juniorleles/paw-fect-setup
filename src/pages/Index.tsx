@@ -13,6 +13,7 @@ import { ArrowLeft, ArrowRight, Zap, Briefcase, LogOut, Loader2, Copy, Check } f
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -21,6 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const Index = () => {
   const { user, signOut } = useAuth();
   const { plan: subscriptionPlan } = useSubscription();
+  const { refetch: refetchOnboarding } = useOnboardingStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -194,6 +196,7 @@ const Index = () => {
       }
     }
 
+    await refetchOnboarding();
     setActivated(true);
     toast({ title: "Secretária ativada!", description: "Sua instância WhatsApp foi criada com sucesso." });
   };
