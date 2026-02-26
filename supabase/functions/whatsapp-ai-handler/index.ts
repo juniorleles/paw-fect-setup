@@ -653,19 +653,25 @@ Deno.serve(async (req) => {
 
     const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
 
+    const statusPtBr: Record<string, string> = {
+      pending: "pendente",
+      confirmed: "confirmado",
+      completed: "concluído",
+      cancelled: "cancelado",
+    };
+    const translateStatus = (s: string) => statusPtBr[s] || s;
+
     const existingAppointments = (appointments || [])
       .map((a: any) => isPetNiche
-        ? `${a.date} ${a.time} - ${a.service} (${a.pet_name}/${a.owner_name}, tel: ${a.owner_phone}, status: ${a.status})`
-        : `${a.date} ${a.time} - ${a.service} (${a.owner_name}, tel: ${a.owner_phone}, status: ${a.status})`)
+        ? `${a.date} ${a.time} - ${a.service} (${a.pet_name}/${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)})`
+        : `${a.date} ${a.time} - ${a.service} (${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)})`)
       .join("\n");
 
-    const customerAppointments = (appointments || [])
-      .filter((a: any) => phoneMatches(a.owner_phone || "", cleanPhone));
-
+    const customerAppointments = (appointments || []).filter((a: any) => a.owner_phone?.replace(/\D/g, "").endsWith(cleanPhone.slice(-8)));
     const customerApptsText = customerAppointments.length > 0
       ? customerAppointments.map((a: any) => isPetNiche
-        ? `- ${a.date} às ${a.time}: ${a.service} (pet: ${a.pet_name}, status: ${a.status})`
-        : `- ${a.date} às ${a.time}: ${a.service} (status: ${a.status})`).join("\n")
+        ? `- ${a.date} às ${a.time}: ${a.service} (pet: ${a.pet_name}, status: ${translateStatus(a.status)})`
+        : `- ${a.date} às ${a.time}: ${a.service} (status: ${translateStatus(a.status)})`).join("\n")
       : "Nenhum agendamento encontrado.";
 
     // Long-term memory: fetch past appointments for this customer
