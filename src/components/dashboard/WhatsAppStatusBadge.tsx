@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useWhatsAppStatus, type WhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { Button } from "@/components/ui/button";
-import { Smartphone, RefreshCw, Loader2, Copy, CheckCircle2, Timer } from "lucide-react";
+import { Smartphone, RefreshCw, Loader2, Copy, CheckCircle2, Timer, QrCode, Hash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,8 @@ const WhatsAppStatusBadge = () => {
   const [copied, setCopied] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(QR_EXPIRY_SECONDS);
   const [expired, setExpired] = useState(false);
+  const [activeTab, setActiveTab] = useState<"pairing" | "qr">("pairing");
+  const [loadingQr, setLoadingQr] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -74,7 +77,7 @@ const WhatsAppStatusBadge = () => {
   // Cleanup timer on unmount
   useEffect(() => () => clearTimer(), [clearTimer]);
 
-  const handleReconnect = async () => {
+  const handleReconnect = async (mode: "pairing" | "qr" = "pairing") => {
     setReconnecting(true);
     setQrCode(null);
     setPairingCode(null);
@@ -82,9 +85,10 @@ const WhatsAppStatusBadge = () => {
     setExpired(false);
 
     try {
+      const isMobileMode = mode === "pairing";
       const { data, error } = await supabase.functions.invoke("reconnect-whatsapp", {
         method: "POST",
-        body: { mobile: isMobile },
+        body: { mobile: isMobileMode },
       });
 
       if (error || data?.error) {
@@ -94,10 +98,14 @@ const WhatsAppStatusBadge = () => {
 
       if (data?.pairingCode && data.pairingCode.length <= 20) {
         setPairingCode(data.pairingCode);
+        setActiveTab("pairing");
         setDialogOpen(true);
         startTimer();
       } else if (data?.qrCode) {
         setQrCode(data.qrCode);
+        if (mode === "qr") {
+          setActiveTab("qr");
+        }
         setDialogOpen(true);
         startTimer();
       } else {
@@ -107,6 +115,30 @@ const WhatsAppStatusBadge = () => {
       toast({ title: "Erro ao reconectar", variant: "destructive" });
     } finally {
       setReconnecting(false);
+      setLoadingQr(false);
+    }
+  };
+
+  const handleRequestQr = async () => {
+    setLoadingQr(true);
+    setQrCode(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("reconnect-whatsapp", {
+        method: "POST",
+        body: { mobile: false },
+      });
+      if (!error && data?.qrCode) {
+        setQrCode(data.qrCode);
+        startTimer();
+      }
+    } catch { /* ignore */ }
+    finally { setLoadingQr(false); }
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab as "pairing" | "qr");
+    if (tab === "qr" && !qrCode) {
+      handleRequestQr();
     }
   };
 
@@ -145,28 +177,26 @@ const WhatsAppStatusBadge = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleReconnect}
+            onClick={() => handleReconnect()}
             disabled={reconnecting}
             className="gap-1.5 text-xs"
           >
             {reconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            {status === "pending" ? "QR Code" : "Reconectar"}
+            {status === "pending" ? "Conectar" : "Reconectar"}
           </Button>
         )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">Conectar WhatsApp</DialogTitle>
             <DialogDescription className="text-center">
-              {pairingCode
-                ? "Use o código abaixo para conectar seu WhatsApp"
-                : "Escaneie o QR Code com seu WhatsApp"}
+              Escolha como deseja conectar seu WhatsApp
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col items-center gap-4 py-4">
+          <div className="flex flex-col items-center gap-4 py-2">
             {expired ? (
               <div className="flex flex-col items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
@@ -175,70 +205,124 @@ const WhatsAppStatusBadge = () => {
                 <p className="text-sm font-medium text-muted-foreground text-center">
                   O código expirou
                 </p>
-                <Button onClick={() => { if (status === "connected") { setDialogOpen(false); clearTimer(); toast({ title: "WhatsApp conectado!", description: "Sua secretária digital está ativa." }); } else { handleReconnect(); } }} disabled={reconnecting} className="gap-2">
+                <Button onClick={() => {
+                  if (status === "connected") {
+                    setDialogOpen(false);
+                    clearTimer();
+                    toast({ title: "WhatsApp conectado!", description: "Sua secretária digital está ativa." });
+                  } else {
+                    handleReconnect(activeTab);
+                  }
+                }} disabled={reconnecting} className="gap-2">
                   {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                   Gerar novo código
                 </Button>
               </div>
-            ) : pairingCode ? (
-              <>
-                <div className="text-xl sm:text-3xl font-mono font-bold tracking-[0.15em] sm:tracking-[0.3em] text-center px-3 py-5 rounded-xl bg-secondary break-all">
-                  {pairingCode}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyCode}
-                  className="gap-2"
-                >
-                  {copied ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 text-success" />
-                      Copiado!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Copiar código
-                    </>
-                  )}
-                </Button>
-                <div className="text-sm text-muted-foreground text-center space-y-1">
-                  <p className="font-semibold">Como conectar:</p>
-                  <p>1. Abra o WhatsApp</p>
-                  <p>2. Toque em <strong>⋮ → Dispositivos conectados</strong></p>
-                  <p>3. Toque em <strong>Conectar dispositivo</strong></p>
-                  <p>4. Toque em <strong>Conectar com número de telefone</strong></p>
-                  <p>5. Cole o código acima</p>
-                </div>
-              </>
-            ) : qrCode ? (
-              <>
-                {isMobile && (
-                  <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 rounded-lg px-3 py-2 text-center">
-                    Não foi possível gerar o código de pareamento. Use o QR Code abaixo escaneando com outro dispositivo, ou tente novamente.
-                  </div>
-                )}
-                <img
-                  src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
-                  alt="QR Code WhatsApp"
-                  className="w-64 h-64 rounded-xl"
-                />
-                <p className="text-sm text-muted-foreground text-center">
-                  Abra o WhatsApp → <strong>Dispositivos conectados</strong> → Escanear QR Code
-                </p>
-              </>
             ) : (
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                <TabsList className="w-full grid grid-cols-2">
+                  <TabsTrigger value="pairing" className="gap-1.5 text-xs">
+                    <Hash className="w-3.5 h-3.5" />
+                    Código
+                  </TabsTrigger>
+                  <TabsTrigger value="qr" className="gap-1.5 text-xs">
+                    <QrCode className="w-3.5 h-3.5" />
+                    QR Code
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="pairing" className="flex flex-col items-center gap-4 mt-4">
+                  {pairingCode ? (
+                    <>
+                      <div className="text-xl sm:text-3xl font-mono font-bold tracking-[0.15em] sm:tracking-[0.3em] text-center px-3 py-5 rounded-xl bg-secondary break-all">
+                        {pairingCode}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyCode}
+                        className="gap-2"
+                      >
+                        {copied ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-success" />
+                            Copiado!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            Copiar código
+                          </>
+                        )}
+                      </Button>
+                      <div className="text-sm text-muted-foreground text-center space-y-1 bg-secondary/50 rounded-lg p-3">
+                        <p className="font-semibold text-foreground">Como conectar pelo celular:</p>
+                        <p>1. Abra o <strong>WhatsApp</strong> no seu celular</p>
+                        <p>2. Toque em <strong>⋮ → Dispositivos conectados</strong></p>
+                        <p>3. Toque em <strong>Conectar dispositivo</strong></p>
+                        <p>4. Toque em <strong>Conectar com número de telefone</strong></p>
+                        <p>5. Cole o código acima e confirme</p>
+                      </div>
+                    </>
+                  ) : reconnecting ? (
+                    <div className="flex flex-col items-center gap-3 py-6">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Gerando código de pareamento...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 py-6">
+                      <p className="text-sm text-muted-foreground text-center">
+                        Clique abaixo para gerar um código de pareamento
+                      </p>
+                      <Button onClick={() => handleReconnect("pairing")} className="gap-2">
+                        <Hash className="w-4 h-4" />
+                        Gerar código
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="qr" className="flex flex-col items-center gap-4 mt-4">
+                  {qrCode ? (
+                    <>
+                      <img
+                        src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
+                        alt="QR Code WhatsApp"
+                        className="w-56 h-56 sm:w-64 sm:h-64 rounded-xl"
+                      />
+                      <div className="text-sm text-muted-foreground text-center space-y-1 bg-secondary/50 rounded-lg p-3">
+                        <p className="font-semibold text-foreground">Como conectar pelo computador:</p>
+                        <p>1. Abra o <strong>WhatsApp</strong> no seu celular</p>
+                        <p>2. Toque em <strong>⋮ → Dispositivos conectados</strong></p>
+                        <p>3. Toque em <strong>Conectar dispositivo</strong></p>
+                        <p>4. Aponte a câmera para o <strong>QR Code</strong> acima</p>
+                        <p>5. Aguarde a conexão ser confirmada</p>
+                      </div>
+                    </>
+                  ) : loadingQr ? (
+                    <div className="flex flex-col items-center gap-3 py-6">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Gerando QR Code...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 py-6">
+                      <p className="text-sm text-muted-foreground text-center">
+                        Clique abaixo para gerar um QR Code
+                      </p>
+                      <Button onClick={handleRequestQr} className="gap-2">
+                        <QrCode className="w-4 h-4" />
+                        Gerar QR Code
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             )}
 
             {/* Timer bar */}
             {!expired && (qrCode || pairingCode) && (
               <div className="w-full space-y-1.5">
-                <Progress
-                  value={progressPercent}
-                  className="h-1.5"
-                />
+                <Progress value={progressPercent} className="h-1.5" />
                 <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                   <Timer className="w-3 h-3" />
                   <span>Expira em {secondsLeft}s</span>
