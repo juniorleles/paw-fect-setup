@@ -150,10 +150,11 @@ const AdminMonitoring = () => {
     );
     setMessagesLast24h(msgs.length);
 
-    // Alerts
+    // Alerts — filter out WhatsApp disconnection alerts
     const allAlerts = (alertsRes.data ?? []) as Alert[];
-    setAlerts(allAlerts);
-    setActiveAlerts(allAlerts.filter((a) => !a.resolved).length);
+    const filteredAlerts = allAlerts.filter((a) => a.alert_type !== "disconnection");
+    setAlerts(filteredAlerts);
+    setActiveAlerts(filteredAlerts.filter((a) => !a.resolved).length);
 
     // Instances
     setInstances((instancesRes.data ?? []) as WhatsAppInstance[]);
@@ -180,6 +181,17 @@ const AdminMonitoring = () => {
       .update({ resolved: true, resolved_at: new Date().toISOString() })
       .eq("id", alertId);
     toast.success("Alerta resolvido!");
+    fetchData();
+  };
+
+  const resolveAllAlerts = async () => {
+    const unresolvedIds = alerts.filter((a) => !a.resolved).map((a) => a.id);
+    if (unresolvedIds.length === 0) return;
+    await supabase
+      .from("system_alerts")
+      .update({ resolved: true, resolved_at: new Date().toISOString() })
+      .in("id", unresolvedIds);
+    toast.success(`${unresolvedIds.length} alertas resolvidos!`);
     fetchData();
   };
 
@@ -373,7 +385,19 @@ const AdminMonitoring = () => {
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
           <h2 className="text-sm font-semibold text-white">Alertas Recentes</h2>
-          <span className="ml-auto text-xs text-[hsl(220,10%,45%)]">Últimos 7 dias</span>
+          <span className="text-xs text-[hsl(220,10%,45%)]">Últimos 7 dias · Desconexões WhatsApp ocultas</span>
+          <div className="ml-auto flex items-center gap-2">
+            {alerts.some((a) => !a.resolved) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resolveAllAlerts}
+                className="text-xs border-[hsl(220,15%,20%)] text-emerald-400 hover:bg-emerald-500/10 h-7"
+              >
+                Limpar Todos
+              </Button>
+            )}
+          </div>
         </div>
         <div className="space-y-2 max-h-80 overflow-y-auto">
           {alerts.length === 0 && (
