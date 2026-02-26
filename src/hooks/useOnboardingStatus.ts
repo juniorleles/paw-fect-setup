@@ -1,23 +1,62 @@
-import { useQuery } from "@tanstack/react-query";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import React from "react";
 
-export const useOnboardingStatus = () => {
+interface OnboardingContextValue {
+  completed: boolean;
+  loading: boolean;
+  refetch: () => Promise<void>;
+}
+
+const OnboardingContext = createContext<OnboardingContextValue | null>(null);
+
+export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const userId = user?.id;
+  const [completed, setCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const fetchedForUser = useRef<string | null>(null);
 
-  const { data: completed, isLoading } = useQuery({
-    queryKey: ["onboarding-status", user?.id],
-    queryFn: async () => {
-      if (!user) return false;
-      const { data } = await supabase
-        .from("pet_shop_configs")
-        .select("activated")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      return data?.activated === true;
-    },
-    enabled: !!user,
-  });
+  const fetchStatus = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    if (fetchedForUser.current === userId) return;
+    fetchedForUser.current = userId;
 
-  return { completed: completed ?? false, loading: isLoading };
+    setLoading(true);
+    const { data } = await supabase
+      .from("pet_shop_configs")
+      .select("activated")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    setCompleted(data?.activated === true);
+    setLoading(false);
+  }, [userId]);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  const refetch = useCallback(async () => {
+    fetchedForUser.current = null;
+    await fetchStatus();
+  }, [fetchStatus]);
+
+  return React.createElement(
+    OnboardingContext.Provider,
+    { value: { completed, loading, refetch } },
+    children
+  );
+};
+
+export const useOnboardingStatus = (): OnboardingContextValue => {
+  const context = useContext(OnboardingContext);
+  if (!context) {
+    throw new Error("useOnboardingStatus must be used within OnboardingProvider");
+  }
+  return context;
 };
