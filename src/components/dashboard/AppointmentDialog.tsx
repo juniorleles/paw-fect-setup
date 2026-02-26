@@ -209,7 +209,7 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
               <SelectContent>
                 {services.map((s) => (
                   <SelectItem key={s.id} value={s.name}>
-                    {s.name} — R$ {Number(s.price).toFixed(2)}
+                    {s.name}{s.price != null ? ` — R$ ${Number(s.price).toFixed(2)}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
