@@ -490,10 +490,10 @@ const AdminMonitoring = () => {
                     {new Date(log.created_at).toLocaleString("pt-BR")}
                   </span>
                 </div>
-                <p className="text-sm text-white mt-1 break-all line-clamp-2">{log.error_message}</p>
+                <p className="text-sm text-white mt-1 whitespace-pre-wrap break-all">{log.error_message}</p>
                 {log.stack_trace && (
-                  <pre className="text-xs text-[hsl(220,10%,40%)] mt-2 overflow-x-auto font-mono bg-[hsl(220,20%,8%)] rounded p-2 max-h-20 overflow-y-auto whitespace-pre-wrap break-all">
-                    {log.stack_trace.slice(0, 300)}
+                  <pre className="text-xs text-[hsl(220,10%,40%)] mt-2 font-mono bg-[hsl(220,20%,8%)] rounded p-2 max-h-32 overflow-auto whitespace-pre-wrap break-all">
+                    {log.stack_trace}
                   </pre>
                 )}
               </div>
