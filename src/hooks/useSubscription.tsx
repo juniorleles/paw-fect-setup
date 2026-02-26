@@ -1,17 +1,30 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 export type SubscriptionStatus = "active" | "cancelled" | "expired" | "none";
 
-export const useSubscription = () => {
+interface SubscriptionContextValue {
+  status: SubscriptionStatus;
+  loading: boolean;
+  cancelling: boolean;
+  reactivating: boolean;
+  trialEndAt: string | null;
+  plan: string;
+  cancel: () => Promise<{ error?: string }>;
+  reactivate: () => Promise<{ error?: string; qr_code?: string }>;
+  refetch: () => Promise<void>;
+}
+
+const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
+
+export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>("none");
   const [trialEndAt, setTrialEndAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [reactivating, setReactivating] = useState(false);
-
   const [plan, setPlan] = useState<string>("starter");
 
   const fetchSubscription = useCallback(async () => {
@@ -67,5 +80,19 @@ export const useSubscription = () => {
     }
   };
 
-  return { status, loading, cancelling, reactivating, trialEndAt, plan, cancel, reactivate, refetch: fetchSubscription };
+  return (
+    <SubscriptionContext.Provider
+      value={{ status, loading, cancelling, reactivating, trialEndAt, plan, cancel, reactivate, refetch: fetchSubscription }}
+    >
+      {children}
+    </SubscriptionContext.Provider>
+  );
+};
+
+export const useSubscription = (): SubscriptionContextValue => {
+  const context = useContext(SubscriptionContext);
+  if (!context) {
+    throw new Error("useSubscription must be used within a SubscriptionProvider");
+  }
+  return context;
 };

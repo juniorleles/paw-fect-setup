@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { SubscriptionProvider } from "@/hooks/useSubscription";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -125,43 +126,45 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/landing" element={<Navigate to="/" replace />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/onboarding" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
-            <Route path="/appointments" element={<DashboardRoute><Appointments /></DashboardRoute>} />
-            
-            <Route path="/my-account" element={<DashboardRoute><MyAccount /></DashboardRoute>} />
-            <Route path="/support" element={<DashboardRoute><Support /></DashboardRoute>} />
-            <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
-            <Route path="/subscription-cancelled" element={<ProtectedRoute><SubscriptionCancelled /></ProtectedRoute>} />
-            <Route path="/upgrade" element={<ProtectedRoute><UpgradeRequired /></ProtectedRoute>} />
-            {/* Admin routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/monitoring" element={<AdminRoute><AdminMonitoring /></AdminRoute>} />
-            
-            <Route path="/admin/clients" element={<AdminRoute><AdminClients /></AdminRoute>} />
-            <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
-            <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
-            <Route path="/admin/financial" element={<AdminRoute><AdminFinancial /></AdminRoute>} />
-            <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
-            <Route path="/admin/ai-usage" element={<AdminRoute><AdminAiUsage /></AdminRoute>} />
-            <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-            <Route path="/admin/blocked" element={<AdminRoute><AdminBlocked /></AdminRoute>} />
-            {/* Legal pages */}
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/landing" element={<Navigate to="/" replace />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/onboarding" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
+                <Route path="/appointments" element={<DashboardRoute><Appointments /></DashboardRoute>} />
+                
+                <Route path="/my-account" element={<DashboardRoute><MyAccount /></DashboardRoute>} />
+                <Route path="/support" element={<DashboardRoute><Support /></DashboardRoute>} />
+                <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
+                <Route path="/subscription-cancelled" element={<ProtectedRoute><SubscriptionCancelled /></ProtectedRoute>} />
+                <Route path="/upgrade" element={<ProtectedRoute><UpgradeRequired /></ProtectedRoute>} />
+                {/* Admin routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/admin/monitoring" element={<AdminRoute><AdminMonitoring /></AdminRoute>} />
+                
+                <Route path="/admin/clients" element={<AdminRoute><AdminClients /></AdminRoute>} />
+                <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
+                <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
+                <Route path="/admin/financial" element={<AdminRoute><AdminFinancial /></AdminRoute>} />
+                <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
+                <Route path="/admin/ai-usage" element={<AdminRoute><AdminAiUsage /></AdminRoute>} />
+                <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
+                <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                <Route path="/admin/blocked" element={<AdminRoute><AdminBlocked /></AdminRoute>} />
+                {/* Legal pages */}
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </SubscriptionProvider>
+        </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
