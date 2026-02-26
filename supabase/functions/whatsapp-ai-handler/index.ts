@@ -156,7 +156,21 @@ async function getConversationHistory(
     .order("created_at", { ascending: true })
     .limit(maxMessages);
 
-  return (data || []).map((m: any) => ({ role: m.role, content: m.content }));
+  // Filter out error/fallback messages that pollute context
+  const FALLBACK_PHRASES = [
+    "Tive uma dificuldade técnica",
+    "Desculpe, não consegui processar",
+    "instabilidade temporária",
+  ];
+
+  return (data || [])
+    .map((m: any) => ({ role: m.role, content: m.content }))
+    .filter((m) => {
+      if (m.role === "assistant") {
+        return !FALLBACK_PHRASES.some((phrase) => m.content?.includes(phrase));
+      }
+      return true;
+    });
 }
 
 async function saveMessage(
@@ -691,6 +705,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: aiMessages,
+        temperature: 0.7,
       }),
     });
 
@@ -749,6 +764,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         body: JSON.stringify({
           model: "google/gemini-2.5-pro",
           messages: aiMessages,
+          temperature: 0.7,
         }),
       });
 
