@@ -98,19 +98,19 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
               {day.day}
             </span>
             {day.isOpen ? (
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
                 <select
                   value={day.openTime}
                   onChange={(e) => updateDay(i, { openTime: e.target.value })}
-                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  className="h-9 rounded-md border border-input bg-background px-1.5 sm:px-2 text-xs sm:text-sm w-[70px] sm:w-auto"
                 >
                   {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
-                <span className="text-muted-foreground text-sm">às</span>
+                <span className="text-muted-foreground text-xs sm:text-sm">às</span>
                 <select
                   value={day.closeTime}
                   onChange={(e) => updateDay(i, { closeTime: e.target.value })}
-                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  className="h-9 rounded-md border border-input bg-background px-1.5 sm:px-2 text-xs sm:text-sm w-[70px] sm:w-auto"
                 >
                   {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
