@@ -212,7 +212,7 @@ async function handleConfirmationResponse(
       .from("appointments")
       .update({ status: "confirmed" })
       .eq("id", nextAppt.id);
-    return `✅ Presença confirmada! ${nextAppt.pet_name} está esperado(a) para ${nextAppt.service} no dia ${nextAppt.date} às ${nextAppt.time}. Até lá! 🐾`;
+    return `✅ Presença confirmada! ${nextAppt.pet_name !== "—" ? nextAppt.pet_name + " está esperado(a) para " : ""}${nextAppt.service} no dia ${nextAppt.date} às ${nextAppt.time}. Até lá!`;
   }
 
   if (isCancel) {
@@ -241,10 +241,23 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
     .map((h: any) => `- ${h.day}: ${h.isOpen ? `${h.openTime} - ${h.closeTime}` : "Fechado"}`)
     .join("\n");
 
+  const nicheEmojis: Record<string, string> = {
+    petshop: "🐾🐶🐱",
+    veterinaria: "🐾🩺🐕",
+    salao: "💇‍♀️💅✨",
+    barbearia: "💈✂️🪒",
+    estetica: "🧖‍♀️✨💆‍♀️",
+    clinica: "🏥💊🩺",
+    escritorio: "📋💼📝",
+    outros: "📌✨👋",
+  };
+
+  const emojis = nicheEmojis[shopConfig.niche] || nicheEmojis.outros;
+
   const toneInstructions: Record<string, string> = {
-    formal: "Use linguagem formal e educada. Trate o cliente por 'senhor(a)'. Seja objetiva e profissional.",
-    friendly: "Use linguagem amigável e acolhedora. Trate o cliente pelo nome quando souber. Seja pessoal e calorosa.",
-    fun: "Use linguagem divertida e descontraída, com emojis moderados 💇✨. Seja animada e alegre, com humor leve!",
+    formal: "Use linguagem formal e educada. Trate o cliente por 'senhor(a)'. Seja objetiva e profissional. Evite emojis.",
+    friendly: "Use linguagem amigável e acolhedora. Trate o cliente pelo nome quando souber. Seja pessoal e calorosa. Use emojis com moderação.",
+    fun: `Use linguagem divertida e descontraída, com emojis moderados ${emojis}. Seja animada e alegre, com humor leve!`,
   };
 
   const nowDate = new Date();
