@@ -759,7 +759,6 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       body: JSON.stringify({
         model: "openai/gpt-5-mini",
         messages: aiMessages,
-        temperature: 0.7,
         max_completion_tokens: 4096,
       }),
     });
@@ -844,7 +843,6 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         body: JSON.stringify({
           model: "openai/gpt-5-nano",
           messages: retryMessages,
-          temperature: 0.5,
           max_completion_tokens: 4096,
         }),
       });
