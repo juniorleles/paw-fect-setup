@@ -735,7 +735,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "openai/gpt-5-mini",
         messages: aiMessages,
         temperature: 0.7,
         max_tokens: 4096,
@@ -820,7 +820,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "openai/gpt-5-nano",
           messages: retryMessages,
           temperature: 0.5,
           max_tokens: 4096,
@@ -864,7 +864,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       user_id: shopConfig.user_id,
       tokens_used: tokensUsed,
       request_type: "whatsapp_chat",
-      model: "gemini-3-flash-preview",
+      model: "gpt-5-mini",
       response_time_ms: aiResponseTimeMs,
     });
 
