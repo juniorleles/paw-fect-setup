@@ -6,6 +6,48 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function requestPairingCode(
+  baseUrl: string,
+  instanceName: string,
+  evoHeaders: Record<string, string>,
+  userPhone: string,
+  maxRetries = 5,
+  delayMs = 3000
+): Promise<{ pairingCode: string | null; qrBase64: string | null }> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    console.log(`Pairing code attempt ${attempt}/${maxRetries} (delay ${delayMs}ms)`);
+    await new Promise((r) => setTimeout(r, delayMs));
+
+    const connectUrl = `${baseUrl}/instance/connect/${instanceName}?number=${userPhone}`;
+    const connectRes = await fetch(connectUrl, {
+      method: "GET",
+      headers: evoHeaders,
+    });
+    const connectData = await connectRes.json();
+    console.log(`Attempt ${attempt} response:`, JSON.stringify({
+      pairingCode: connectData?.pairingCode,
+      hasBase64: !!(connectData?.base64 || connectData?.qrcode?.base64),
+    }));
+
+    const pairingCode = connectData?.pairingCode || null;
+    if (pairingCode) {
+      return { pairingCode, qrBase64: null };
+    }
+
+    // Increase delay for next attempt
+    delayMs = Math.min(delayMs + 1000, 6000);
+  }
+
+  // Final attempt - get whatever is available (QR fallback)
+  const fallbackRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
+    method: "GET",
+    headers: evoHeaders,
+  });
+  const fallbackData = await fallbackRes.json();
+  const qrBase64 = fallbackData?.base64 || fallbackData?.qrcode?.base64 || null;
+  return { pairingCode: null, qrBase64 };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -92,7 +134,6 @@ Deno.serve(async (req) => {
       );
     }
 
-
     // Get user phone for pairing code
     const { data: config } = await serviceClient
       .from("pet_shop_configs")
@@ -101,7 +142,6 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     let userPhone = config?.phone?.replace(/\D/g, "") || null;
-    // Ensure phone has country code (Brazil = 55)
     if (userPhone && !userPhone.startsWith("55")) {
       userPhone = "55" + userPhone;
     }
@@ -114,26 +154,21 @@ Deno.serve(async (req) => {
       });
     } catch { /* instance might not exist */ }
 
-    // Small delay for clean state
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 1500));
 
-    // Build webhook URL for this project
     const webhookUrl = `${supabaseUrl}/functions/v1/evolution-webhook`;
 
-    // Create fresh instance with webhook configured
+    // For mobile: create WITHOUT qrcode to allow pairing code generation
+    // For desktop: create WITH qrcode for immediate QR
     const createBody: Record<string, unknown> = {
       instanceName,
       integration: "WHATSAPP-BAILEYS",
-      qrcode: true,
+      qrcode: !isMobile, // false for mobile, true for desktop
       webhook: {
         url: webhookUrl,
         byEvents: false,
         base64: false,
-        events: [
-          "CONNECTION_UPDATE",
-          "MESSAGES_UPSERT",
-          "QRCODE_UPDATED",
-        ],
+        events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT", "QRCODE_UPDATED"],
       },
     };
 
@@ -146,7 +181,7 @@ Deno.serve(async (req) => {
     });
 
     const createData = await createRes.json();
-    console.log("Create instance response:", JSON.stringify(createData));
+    console.log("Create instance response status:", createRes.status);
 
     // Update status to pending
     await serviceClient
@@ -154,23 +189,12 @@ Deno.serve(async (req) => {
       .update({ whatsapp_status: "pending" })
       .eq("user_id", user.id);
 
-    // For mobile, request pairing code via connect endpoint with number query param
+    // For mobile, request pairing code with retry logic
     if (isMobile && userPhone) {
-      await new Promise(r => setTimeout(r, 3000));
-      
-      // Pass phone number as query parameter to get pairing code
-      const connectUrl = `${baseUrl}/instance/connect/${instanceName}?number=${userPhone}`;
-      console.log("Requesting pairing code from:", connectUrl);
-      
-      const connectRes = await fetch(connectUrl, {
-        method: "GET",
-        headers: evoHeaders,
-      });
-      const connectData = await connectRes.json();
-      console.log("Connect response (pairing):", JSON.stringify(connectData));
+      const { pairingCode, qrBase64 } = await requestPairingCode(
+        baseUrl, instanceName, evoHeaders, userPhone, 5, 3000
+      );
 
-      const pairingCode = connectData?.pairingCode || null;
-      
       if (pairingCode) {
         return new Response(
           JSON.stringify({ success: true, pairingCode, mode: "pairing" }),
@@ -178,22 +202,26 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Fallback: return QR code for mobile
-      const qrBase64 = connectData?.base64 || connectData?.qrcode?.base64 || null;
+      // Fallback to QR
       return new Response(
-        JSON.stringify({ success: true, qrCode: qrBase64, mode: "qr", note: "Pairing code not available, showing QR" }),
+        JSON.stringify({
+          success: true,
+          qrCode: qrBase64,
+          mode: "qr",
+          note: "Pairing code not available after retries, showing QR",
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // For desktop, get QR code from connect
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 2000));
     const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
       method: "GET",
       headers: evoHeaders,
     });
     const connectData = await connectRes.json();
-    console.log("Connect response:", JSON.stringify(connectData));
+    console.log("Connect response:", JSON.stringify({ hasBase64: !!connectData?.base64 }));
 
     const qrBase64 = connectData?.base64 || connectData?.qrcode?.base64 || null;
 
