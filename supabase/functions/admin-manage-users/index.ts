@@ -130,6 +130,21 @@ Deno.serve(async (req) => {
     }
 
     if (action === "list-users") {
+      // Only list users who have the admin role
+      const { data: adminRoles, error: rolesErr } = await adminClient
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      if (rolesErr) {
+        return new Response(JSON.stringify({ error: rolesErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const adminUserIds = new Set((adminRoles || []).map((r: any) => r.user_id));
+
       const { data: users, error: listErr } = await adminClient.auth.admin.listUsers();
       if (listErr) {
         return new Response(JSON.stringify({ error: listErr.message }), {
@@ -138,12 +153,14 @@ Deno.serve(async (req) => {
         });
       }
 
-      const simplified = users.users.map((u) => ({
-        id: u.id,
-        email: u.email,
-        created_at: u.created_at,
-        last_sign_in_at: u.last_sign_in_at,
-      }));
+      const simplified = users.users
+        .filter((u) => adminUserIds.has(u.id))
+        .map((u) => ({
+          id: u.id,
+          email: u.email,
+          created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at,
+        }));
 
       return new Response(JSON.stringify({ users: simplified }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
