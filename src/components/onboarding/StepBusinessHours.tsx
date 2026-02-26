@@ -19,6 +19,16 @@ const TIMES = Array.from({ length: 48 }, (_, i) => {
   return `${h}:${m}`;
 });
 
+const DAY_ABBR: Record<string, string> = {
+  "Segunda-feira": "Seg",
+  "Terça-feira": "Ter",
+  "Quarta-feira": "Qua",
+  "Quinta-feira": "Qui",
+  "Sexta-feira": "Sex",
+  "Sábado": "Sáb",
+  "Domingo": "Dom",
+};
+
 const StepBusinessHours = ({ data, onChange, plan }: Props) => {
   const maxAllowed = plan === "professional" ? STRIPE_PLANS.professional.maxAttendants : STRIPE_PLANS.starter.maxAttendants;
   const updateDay = (index: number, updates: Partial<DaySchedule>) => {
@@ -94,8 +104,9 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
               checked={day.isOpen}
               onCheckedChange={(checked) => updateDay(i, { isOpen: checked })}
             />
-            <span className={`font-semibold text-sm min-w-[80px] sm:min-w-[100px] ${!day.isOpen ? "text-muted-foreground" : ""}`}>
-              {day.day}
+            <span className={`font-semibold text-sm min-w-[36px] sm:min-w-[100px] ${!day.isOpen ? "text-muted-foreground" : ""}`}>
+              <span className="sm:hidden">{DAY_ABBR[day.day] ?? day.day}</span>
+              <span className="hidden sm:inline">{day.day}</span>
             </span>
             {day.isOpen ? (
               <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
