@@ -79,9 +79,8 @@ Deno.serve(async (req) => {
       const msgArray = Array.isArray(messages) ? messages : [messages];
 
       for (const msg of msgArray) {
-        // Allow fromMe messages for testing purposes
-        // Only skip if it's a message sent by the bot (has a specific marker)
-        if (msg.key?.fromMe && msg.message?.conversation?.startsWith("[BOT]")) continue;
+        // Block all messages from the connected number itself to prevent loops
+        if (msg.key?.fromMe) continue;
         
         const textContent = msg.message?.conversation 
           || msg.message?.extendedTextMessage?.text
