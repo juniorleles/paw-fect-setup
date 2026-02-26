@@ -11,31 +11,28 @@ export const useAdminAuth = () => {
     let mounted = true;
 
     const checkAdmin = async (userId: string) => {
-      const { data, error } = await supabaseAdmin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .eq("role", "admin")
-        .maybeSingle();
-      return !!data && !error;
+      try {
+        const { data, error } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .eq("role", "admin")
+          .maybeSingle();
+        return !!data && !error;
+      } catch {
+        return false;
+      }
     };
 
-    // Get initial session
-    supabaseAdmin.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
-        const admin = await checkAdmin(currentUser.id);
-        if (mounted) setIsAdmin(admin);
-      } else {
-        setIsAdmin(false);
+    // Safety timeout — if nothing resolves in 5s, stop loading
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        console.warn("[useAdminAuth] timeout — forcing loading=false");
+        setLoading(false);
       }
-      if (mounted) setLoading(false);
-    });
+    }, 5000);
 
-    // Listen for changes after initial load
+    // Use onAuthStateChange which fires INITIAL_SESSION immediately
     const { data: { subscription } } = supabaseAdmin.auth.onAuthStateChange(
       async (_event, session) => {
         if (!mounted) return;
@@ -48,12 +45,16 @@ export const useAdminAuth = () => {
         } else {
           setIsAdmin(false);
         }
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          clearTimeout(timeout);
+        }
       }
     );
 
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
