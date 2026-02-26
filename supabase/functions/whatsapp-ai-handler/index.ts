@@ -735,10 +735,10 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: aiMessages,
         temperature: 0.7,
-        max_tokens: 8192,
+        max_tokens: 4096,
       }),
     });
 
@@ -820,10 +820,10 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-5-mini",
+          model: "google/gemini-2.5-flash",
           messages: retryMessages,
-          temperature: 0.3,
-          max_tokens: 8192,
+          temperature: 0.5,
+          max_tokens: 4096,
         }),
       });
 
@@ -864,7 +864,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       user_id: shopConfig.user_id,
       tokens_used: tokensUsed,
       request_type: "whatsapp_chat",
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       response_time_ms: aiResponseTimeMs,
     });
 
