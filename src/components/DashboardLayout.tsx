@@ -20,9 +20,9 @@ import { Button } from "@/components/ui/button";
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Agendamentos", url: "/appointments", icon: CalendarDays },
+  { title: "Configurações", url: "/settings", icon: Settings },
   { title: "Minha Conta", url: "/my-account", icon: UserCircle },
   { title: "Suporte", url: "/support", icon: Headphones },
-  { title: "Configurações", url: "/settings", icon: Settings },
 ];
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
