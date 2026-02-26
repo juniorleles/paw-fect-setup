@@ -214,6 +214,11 @@ const WhatsAppStatusBadge = () => {
               </>
             ) : qrCode ? (
               <>
+                {isMobile && (
+                  <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 rounded-lg px-3 py-2 text-center">
+                    Não foi possível gerar o código de pareamento. Use o QR Code abaixo escaneando com outro dispositivo, ou tente novamente.
+                  </div>
+                )}
                 <img
                   src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
                   alt="QR Code WhatsApp"
