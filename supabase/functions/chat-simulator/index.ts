@@ -24,7 +24,12 @@ interface SimulatorMessage {
 
 function buildSimulatorPrompt(config: SimulatorConfig, simulatedAppointments: string[]): string {
   const servicesText = config.services
-    .map((s) => `- ${s.name}: R$${s.price} (${s.duration} min)`)
+    .map((s) => {
+      const parts = [`- ${s.name}`];
+      if (s.price != null) parts.push(`R$${s.price}`);
+      if (s.duration != null) parts.push(`${s.duration} min`);
+      return parts.length > 1 ? `${parts[0]}: ${parts.slice(1).join(" | ")}` : parts[0];
+    })
     .join("\n");
 
   const hoursText = config.businessHours
