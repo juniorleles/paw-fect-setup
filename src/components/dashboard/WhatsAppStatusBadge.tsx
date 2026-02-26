@@ -14,6 +14,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const QR_EXPIRY_SECONDS = 45;
 
@@ -225,9 +231,18 @@ const WhatsAppStatusBadge = () => {
                     <Hash className="w-3.5 h-3.5" />
                     Código
                     {isMobile && (
-                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-primary text-primary-foreground leading-none animate-pulse">
-                        Recomendado
-                      </span>
+                      <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-primary text-primary-foreground leading-none animate-pulse cursor-help">
+                              Recomendado
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                            Permite conectar direto pelo celular, sem precisar de outro dispositivo
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="qr" className="gap-1.5 text-xs">
