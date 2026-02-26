@@ -224,6 +224,11 @@ const WhatsAppStatusBadge = () => {
                   <TabsTrigger value="pairing" className="gap-1.5 text-xs">
                     <Hash className="w-3.5 h-3.5" />
                     Código
+                    {isMobile && (
+                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-primary text-primary-foreground leading-none">
+                        Recomendado
+                      </span>
+                    )}
                   </TabsTrigger>
                   <TabsTrigger value="qr" className="gap-1.5 text-xs">
                     <QrCode className="w-3.5 h-3.5" />
