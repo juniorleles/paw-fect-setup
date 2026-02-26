@@ -21,7 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const { plan: subscriptionPlan } = useSubscription();
+  const { plan: subscriptionPlan, refetch: refetchSubscription } = useSubscription();
   const { refetch: refetchOnboarding } = useOnboardingStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -196,7 +196,7 @@ const Index = () => {
       }
     }
 
-    await refetchOnboarding();
+    await Promise.all([refetchOnboarding(), refetchSubscription()]);
     setActivated(true);
     toast({ title: "Secretária ativada!", description: "Sua instância WhatsApp foi criada com sucesso." });
   };
