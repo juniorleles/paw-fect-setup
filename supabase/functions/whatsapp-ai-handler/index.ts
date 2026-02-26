@@ -306,9 +306,9 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
   const emojis = nicheEmojis[shopConfig.niche] || nicheEmojis.outros;
 
   const toneInstructions: Record<string, string> = {
-    formal: "Use linguagem formal e educada. Trate o cliente por 'senhor(a)'. Seja objetiva e profissional. Evite emojis.",
-    friendly: "Use linguagem amigável e acolhedora. Trate o cliente pelo nome quando souber. Seja pessoal e calorosa. Pode usar 1-2 emojis como complemento, mas a resposta DEVE ser principalmente TEXTO ESCRITO.",
-    fun: `Use linguagem divertida e descontraída. Seja animada e alegre, com humor leve! Pode usar 1-2 emojis como complemento (ex: ${emojis}), mas a resposta DEVE ser principalmente TEXTO ESCRITO. NUNCA responda apenas com emojis.`,
+    formal: "Use linguagem formal e educada. Trate o cliente por 'senhor(a)'. Seja objetiva e profissional. NÃO use emojis.",
+    friendly: "Use linguagem amigável e acolhedora. Trate o cliente pelo nome quando souber. Seja pessoal e calorosa. Pode usar no máximo 1 emoji por mensagem como complemento, mas a resposta DEVE ser OBRIGATORIAMENTE composta por TEXTO ESCRITO em português. NUNCA responda apenas com emojis.",
+    fun: "Use linguagem divertida e descontraída. Seja animada e alegre, com humor leve! Pode usar no máximo 1-2 emojis como complemento ao final de frases, mas TODA resposta DEVE OBRIGATORIAMENTE começar com TEXTO ESCRITO em português. PROIBIDO responder apenas com emojis. Sempre escreva pelo menos 2 frases de texto antes de qualquer emoji. NUNCA envie uma mensagem que contenha apenas emojis ou símbolos.",
   };
 
   const nowDate = new Date();
@@ -735,7 +735,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: aiMessages,
         temperature: 0.7,
         max_tokens: 1024,
