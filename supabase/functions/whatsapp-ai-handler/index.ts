@@ -796,9 +796,22 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         .trim();
       return cleaned.length === 0;
     };
+
+    // Check if response has a valid action block (even if text is emoji-only)
+    const hasActionBlock = (text: string | null | undefined): boolean => {
+      if (!text) return false;
+      return /<action>\s*\{.*?\}\s*<\/action>/s.test(text);
+    };
+
+    // If reply has an action but text is emoji-only, keep the action and add a generic confirmation text
+    if (reply && hasActionBlock(reply) && isEmojiOnly(reply)) {
+      console.log("Reply has action but emoji-only text, adding confirmation text");
+      const actionBlock = reply.match(/<action>.*?<\/action>/s)?.[0] || "";
+      reply = `Pronto, tudo certo! Já registrei para você. 😊\n${actionBlock}`;
+    }
     
-    // Retry with alternative model if response is empty or emoji-only
-    if (!reply || reply.trim() === "" || isEmojiOnly(reply)) {
+    // Retry with alternative model if response is empty or emoji-only (and no action)
+    if (!reply || reply.trim() === "" || (isEmojiOnly(reply) && !hasActionBlock(reply))) {
       console.warn("Empty or emoji-only AI reply, retrying with openai/gpt-5-mini...", JSON.stringify({ content_preview: reply?.substring(0, 100) }));
       
       // Build retry messages with an extra reinforcement instruction
@@ -834,7 +847,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     }
 
     // Final fallback if still empty or emoji-only after retry
-    if (!reply || reply.trim() === "" || isEmojiOnly(reply)) {
+    if (!reply || reply.trim() === "" || (isEmojiOnly(reply) && !hasActionBlock(reply))) {
       console.error("Empty AI reply after retry. Full response:", JSON.stringify(aiData).substring(0, 1000));
       await serviceClient.from("admin_error_logs").insert({
         error_message: `Resposta vazia da IA (após retry) para instância ${instanceName}`,
