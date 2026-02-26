@@ -158,18 +158,32 @@ async function getConversationHistory(
     .order("created_at", { ascending: true })
     .limit(maxMessages);
 
-  // Filter out error/fallback messages that pollute context
+  // Filter out error/fallback messages and emoji-only responses that pollute context
   const FALLBACK_PHRASES = [
     "Tive uma dificuldade técnica",
     "Desculpe, não consegui processar",
     "instabilidade temporária",
   ];
 
+  // Helper: check if a message contains actual text (not just emojis)
+  const hasActualText = (text: string | null | undefined): boolean => {
+    if (!text) return false;
+    const cleaned = text
+      .replace(/<action>.*?<\/action>/gs, "")
+      .replace(/[\p{Emoji_Presentation}\p{Emoji}\p{Extended_Pictographic}]/gu, "")
+      .replace(/[\s\p{P}\p{S}]/gu, "")
+      .trim();
+    return cleaned.length > 0;
+  };
+
   const filtered = (data || [])
     .map((m: any) => ({ role: m.role, content: m.content }))
     .filter((m) => {
       if (m.role === "assistant") {
-        return !FALLBACK_PHRASES.some((phrase) => m.content?.includes(phrase));
+        // Remove fallback messages
+        if (FALLBACK_PHRASES.some((phrase) => m.content?.includes(phrase))) return false;
+        // Remove emoji-only responses (legacy pollution)
+        if (!hasActualText(m.content)) return false;
       }
       return true;
     });
