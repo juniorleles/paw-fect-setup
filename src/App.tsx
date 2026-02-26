@@ -127,8 +127,8 @@ const App = () => (
       <Toaster />
       <Sonner />
         <AuthProvider>
-          <SubscriptionProvider>
-            <OnboardingProvider>
+          <OnboardingProvider>
+            <SubscriptionProvider>
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<Landing />} />
@@ -164,8 +164,8 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
-            </OnboardingProvider>
-          </SubscriptionProvider>
+            </SubscriptionProvider>
+          </OnboardingProvider>
         </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
