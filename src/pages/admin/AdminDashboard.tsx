@@ -99,6 +99,10 @@ const AdminDashboard = () => {
         const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
         const monthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()}`;
 
+        // 6 months ago for chart data
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        const sixMonthsAgoStr = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, "0")}-01T00:00:00`;
+
         const [
           clientsRes,
           activeSubs,
@@ -118,9 +122,10 @@ const AdminDashboard = () => {
           supabase.from("payment_history").select("id", { count: "exact", head: true }).eq("status", "declined"),
           supabase.from("conversation_messages").select("id", { count: "exact", head: true }).gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
           supabase.from("ai_usage").select("id", { count: "exact", head: true }).gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
-          supabase.from("payment_history").select("amount, paid_at").eq("status", "paid").order("paid_at", { ascending: true }),
-          supabase.from("pet_shop_configs").select("created_at").eq("activated", true).order("created_at", { ascending: true }),
-          supabase.from("conversation_messages").select("created_at").order("created_at", { ascending: true }),
+          // Charts: only fetch last 6 months
+          supabase.from("payment_history").select("amount, paid_at").eq("status", "paid").gte("paid_at", sixMonthsAgoStr).order("paid_at", { ascending: true }).limit(1000),
+          supabase.from("pet_shop_configs").select("created_at").eq("activated", true).order("created_at", { ascending: true }).limit(500),
+          supabase.from("conversation_messages").select("created_at").gte("created_at", sixMonthsAgoStr).order("created_at", { ascending: true }).limit(1000),
         ]);
 
         const payments = paymentsMonth.data ?? [];

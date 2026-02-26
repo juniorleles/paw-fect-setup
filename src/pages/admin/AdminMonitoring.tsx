@@ -78,12 +78,14 @@ const AdminMonitoring = () => {
         .from("ai_usage")
         .select("created_at, response_time_ms, tokens_used")
         .gte("created_at", last24h)
-        .order("created_at", { ascending: true }),
+        .order("created_at", { ascending: true })
+        .limit(500),
       supabase
         .from("conversation_messages")
         .select("created_at")
         .gte("created_at", last24h)
-        .order("created_at", { ascending: true }),
+        .order("created_at", { ascending: true })
+        .limit(1000),
       supabase
         .from("system_alerts")
         .select("*")
@@ -93,7 +95,8 @@ const AdminMonitoring = () => {
       supabase
         .from("pet_shop_configs")
         .select("shop_name, evolution_instance_name, whatsapp_status, user_id")
-        .eq("activated", true),
+        .eq("activated", true)
+        .limit(200),
       supabase
         .from("admin_error_logs")
         .select("id", { count: "exact", head: true })
