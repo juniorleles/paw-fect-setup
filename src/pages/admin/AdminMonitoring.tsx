@@ -169,10 +169,6 @@ const AdminMonitoring = () => {
 
   useEffect(() => {
     fetchData();
-
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
   }, [fetchData]);
 
   const resolveAlert = async (alertId: string) => {
@@ -227,7 +223,7 @@ const AdminMonitoring = () => {
             <Activity className="w-6 h-6 text-emerald-400" />
             Monitoramento em Tempo Real
           </h1>
-          <p className="text-sm text-[hsl(220,10%,50%)]">Atualizado a cada 30 segundos</p>
+          <p className="text-sm text-[hsl(220,10%,50%)]">Clique em Atualizar para recarregar os dados</p>
         </div>
         <Button
           variant="outline"
