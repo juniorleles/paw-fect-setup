@@ -728,7 +728,36 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     }
 
     const aiData = await aiResponse.json();
-    let reply = aiData.choices?.[0]?.message?.content || "Desculpe, não consegui processar sua mensagem.";
+    console.log("AI response structure:", JSON.stringify({
+      choices_length: aiData.choices?.length,
+      first_choice_role: aiData.choices?.[0]?.message?.role,
+      content_length: aiData.choices?.[0]?.message?.content?.length,
+      content_preview: aiData.choices?.[0]?.message?.content?.substring(0, 200),
+      finish_reason: aiData.choices?.[0]?.finish_reason,
+      error: aiData.error,
+    }));
+    
+    let reply = aiData.choices?.[0]?.message?.content;
+    
+    if (!reply) {
+      console.error("Empty AI reply. Full response:", JSON.stringify(aiData).substring(0, 1000));
+      // Log for admin visibility
+      await serviceClient.from("admin_error_logs").insert({
+        error_message: `Resposta vazia da IA para instância ${instanceName}`,
+        endpoint: "whatsapp-ai-handler",
+        severity: "error",
+        user_id: shopConfig.user_id,
+        stack_trace: JSON.stringify(aiData).substring(0, 500),
+      });
+      // Graceful fallback
+      const fallbackMsg = `Olá! Tive uma dificuldade técnica, mas pode repetir sua mensagem que vou te atender! 😊`;
+      await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
+      await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", fallbackMsg);
+      return new Response(JSON.stringify({ success: true, reply: fallbackMsg }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Track AI usage with latency
     const tokensUsed = aiData.usage?.total_tokens || 0;
