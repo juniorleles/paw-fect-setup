@@ -32,7 +32,17 @@ const AdminLogin = () => {
       console.log("[AdminLogin] signIn returned, error:", err);
       setSubmitting(false);
       if (err) {
-        setError("Credenciais inválidas.");
+        const msg = err?.message || "";
+        console.error("[AdminLogin] error detail:", msg, err);
+        if (msg.includes("Invalid login")) {
+          setError("Email ou senha incorretos. Verifique e tente novamente.");
+        } else if (msg.includes("Email not confirmed")) {
+          setError("Email não confirmado. Verifique sua caixa de entrada.");
+        } else if (msg.includes("timeout")) {
+          setError("Tempo de conexão esgotado. Tente novamente.");
+        } else {
+          setError(`Erro: ${msg || "Credenciais inválidas."}`);
+        }
       }
     } catch (err: any) {
       console.error("[AdminLogin] signIn threw:", err);
