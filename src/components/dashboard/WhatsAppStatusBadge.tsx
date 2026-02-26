@@ -188,7 +188,7 @@ const WhatsAppStatusBadge = () => {
             className="gap-1.5 text-xs"
           >
             {reconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            {status === "pending" ? "Conectar" : "Reconectar"}
+            Conectar
           </Button>
         )}
       </div>

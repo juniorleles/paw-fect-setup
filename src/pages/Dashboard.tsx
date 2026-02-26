@@ -34,6 +34,7 @@ import { ptBR } from "date-fns/locale";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import TrialBanner from "@/components/dashboard/TrialBanner";
+import WhatsAppStatusBadge from "@/components/dashboard/WhatsAppStatusBadge";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -221,6 +222,30 @@ const Dashboard = () => {
       {/* ─── Trial Banner ─── */}
       <TrialBanner />
 
+      {/* ─── WhatsApp Connection Banner ─── */}
+      {whatsappStatus !== "connected" && (
+        <Card className="border-none shadow-lg bg-gradient-to-r from-primary/15 via-primary/5 to-transparent overflow-hidden">
+          <CardContent className="py-5 px-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Zap className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-foreground">Conecte seu WhatsApp</p>
+                  <p className="text-sm text-muted-foreground">
+                    Sua secretária <span className="font-semibold text-primary">{data.assistantName}</span> está pronta! Conecte o WhatsApp para começar a atender automaticamente.
+                  </p>
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <WhatsAppStatusBadge />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ─── 1. Hero Section ─── */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -391,14 +416,7 @@ const Dashboard = () => {
                   </p>
                   <p className="text-xs text-muted-foreground">WhatsApp</p>
                   {whatsappStatus !== "connected" && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto p-0 text-xs text-destructive"
-                      onClick={() => navigate("/settings")}
-                    >
-                      Reconectar
-                    </Button>
+                    <p className="text-xs text-destructive font-medium">Não conectado</p>
                   )}
                 </div>
               </div>
