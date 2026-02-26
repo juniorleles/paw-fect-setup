@@ -12,5 +12,7 @@ export const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLI
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    // Bypass navigator.locks to avoid deadlock with the main supabase client
+    lock: (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => fn(),
   }
 });
