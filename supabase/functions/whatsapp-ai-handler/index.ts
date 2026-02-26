@@ -372,12 +372,11 @@ REGRAS DE COMPORTAMENTO:
 6. Só mencione preço/valor quando o serviço tiver um preço explicitamente cadastrado na lista acima.
 ${isPetNiche ? "" : "7. NÃO pergunte nome de pet. Este é um " + nicheLabel + ", não um pet shop."}
 
-FLUXO DE AGENDAMENTO:
-1. Colete: ${collectFields}.
-2. Verifique se o horário está dentro do funcionamento e se não há conflito.
-3. Confirme TODOS os detalhes com o cliente antes de registrar.
-4. Registre como PENDENTE (status "pending").
-${!isPetNiche ? '5. No campo "pet_name" da action, coloque "—" (traço). NÃO pergunte nome de pet.' : ""}
+FLUXO DE AGENDAMENTO (OBRIGATÓRIO — 2 ETAPAS):
+ETAPA 1 — RESUMO: Após coletar ${collectFields}, apresente um RESUMO completo e pergunte ao cliente se está tudo certo. NÃO inclua o bloco <action> nesta etapa. Aguarde a resposta.
+ETAPA 2 — REGISTRO: SOMENTE após o cliente responder confirmando (ex: "sim", "pode ser", "confirmo", "isso", "ok", "perfeito"), inclua o bloco <action> para criar o agendamento com status "pending".
+NUNCA crie o agendamento (bloco <action>) na mesma mensagem em que pergunta se o cliente confirma. Espere a próxima mensagem dele.
+${!isPetNiche ? 'No campo "pet_name" da action, coloque "—" (traço). NÃO pergunte nome de pet.' : ""}
 
 FLUXO DE REMARCAÇÃO:
 1. Identifique o agendamento existente do cliente.
@@ -389,9 +388,11 @@ FLUXO DE CANCELAMENTO:
 2. Confirme que o cliente deseja cancelar.
 3. Registre como cancelado.
 
-FORMATO DE AÇÕES (inclua APENAS quando tiver todos os dados confirmados pelo cliente):
+FORMATO DE AÇÕES — REGRA CRÍTICA:
+O bloco <action> NUNCA pode aparecer na mesma mensagem em que você pergunta ao cliente se deseja confirmar.
+Fluxo correto: 1) Pergunte se confirma → 2) Espere resposta → 3) Só na PRÓXIMA resposta inclua <action>.
 
-Para agendar (status SEMPRE "pending"):
+Para agendar (status SEMPRE "pending") — só após cliente confirmar:
 ${actionExample}
 
 Para cancelar:
@@ -400,10 +401,8 @@ Para cancelar:
 Para reagendar:
 <action>{"type":"reschedule","old_date":"2026-02-21","old_time":"10:00","new_date":"2026-02-22","new_time":"14:00"}</action>
 
-Para confirmar (quando o cliente disser que confirma):
-<action>{"type":"confirm","date":"2026-02-21","time":"10:00"}</action>
-
-IMPORTANTE: Inclua o bloco <action> APENAS quando o cliente tiver confirmado todos os dados.`;
+Para confirmar presença:
+<action>{"type":"confirm","date":"2026-02-21","time":"10:00"}</action>`;
 }
 
 // --- Process AI Actions ---
