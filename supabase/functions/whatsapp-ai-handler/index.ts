@@ -167,6 +167,51 @@ function phoneMatches(a: string, b: string): boolean {
   return cleanA === cleanB || cleanA.endsWith(cleanB) || cleanB.endsWith(cleanA);
 }
 
+function normalizeQuestionText(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/<action>.*?<\/action>/gs, "")
+    .replace(/[^\p{L}\p{N}\s?]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractPrimaryQuestion(text: string): string {
+  const normalized = normalizeQuestionText(text);
+  const pieces = normalized
+    .split("?")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  if (pieces.length === 0) return "";
+  return pieces[pieces.length - 1];
+}
+
+function shouldSuppressRepeatedQuestion(lastAssistant: string, currentReply: string): boolean {
+  const prevQ = extractPrimaryQuestion(lastAssistant);
+  const currQ = extractPrimaryQuestion(currentReply);
+
+  if (!prevQ || !currQ) return false;
+  if (prevQ.length < 6 || currQ.length < 6) return false;
+
+  return prevQ === currQ || prevQ.includes(currQ) || currQ.includes(prevQ);
+}
+
+function removeRepeatedQuestion(reply: string): string {
+  const lines = reply
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const withoutQuestions = lines.filter((line) => !line.includes("?"));
+  const sanitized = withoutQuestions.join("\n").trim();
+
+  if (sanitized) return sanitized;
+  return "Perfeito, informação anotada. Vou seguir com o seu atendimento.";
+}
+
 async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
   const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
   const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
@@ -1009,6 +1054,15 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         message: `Latência alta da IA: ${aiResponseTimeMs}ms`,
         details: { response_time_ms: aiResponseTimeMs, instance: instanceName, user_id: shopConfig.user_id },
       });
+    }
+
+    const lastAssistantMessage = [...conversationHistory]
+      .reverse()
+      .find((m) => m.role === "assistant")?.content || "";
+
+    if (shouldSuppressRepeatedQuestion(lastAssistantMessage, reply)) {
+      console.log("Suppressing repeated consecutive question in AI reply");
+      reply = removeRepeatedQuestion(reply);
     }
 
     // Process actions (create/cancel/reschedule/confirm)
