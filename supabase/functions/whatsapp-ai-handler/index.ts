@@ -387,11 +387,12 @@ SAUDAÇÃO POR HORÁRIO (use APENAS na PRIMEIRA mensagem da conversa):
 NUNCA use saudação que não corresponda ao horário atual.
 IMPORTANTE: NÃO repita a saudação em mensagens seguintes. Após a primeira mensagem, vá direto ao assunto de forma natural e fluida, como em uma conversa real de WhatsApp.
 
-AGENDAMENTOS EXISTENTES (apenas para verificar DISPONIBILIDADE de horários — NÃO liste para o cliente a menos que ele peça explicitamente "meus agendamentos" ou "listar agendamentos"):
+AGENDAMENTOS EXISTENTES (para verificar DISPONIBILIDADE de horários — NÃO liste para o cliente automaticamente):
 ${existingAppointments || "Nenhum agendamento."}
 
-AGENDAMENTOS DESTE CLIENTE (telefone: ${cleanPhone}) — use apenas como referência interna, NÃO liste automaticamente:
+AGENDAMENTOS DESTE CLIENTE (telefone: ${cleanPhone}):
 ${customerApptsText}
+REGRA: Se o cliente perguntar sobre "agendamentos pendentes", "pendente de confirmação", "meus agendamentos", "algum agendamento", ou variações similares → liste os agendamentos DESTE CLIENTE acima, indicando o status de cada um (pendente, confirmado, etc). Responda de forma clara e objetiva.
 
 CAPACIDADE DE ATENDIMENTO SIMULTÂNEO: ${maxConcurrent} atendente${maxConcurrent > 1 ? "s" : ""} por horário.
 
