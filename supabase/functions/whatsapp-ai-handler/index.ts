@@ -435,6 +435,7 @@ ETAPA 1 — RESUMO: Após coletar ${collectFields}, apresente um RESUMO completo
 ETAPA 2 — REGISTRO: SOMENTE após o cliente responder confirmando (ex: "sim", "pode ser", "confirmo", "isso", "ok", "perfeito"), inclua o bloco <action> para criar o agendamento com status "pending".
 NUNCA crie o agendamento (bloco <action>) na mesma mensagem em que pergunta se o cliente confirma. Espere a próxima mensagem dele.
 IMPORTANTE: Ao confirmar o agendamento para o cliente, NÃO mencione o status interno ("pendente", "pending"). Apenas confirme que o agendamento foi registrado/marcado com sucesso. O status é informação interna do sistema.
+ENDEREÇO: Ao confirmar o agendamento, inclua o endereço do estabelecimento na mensagem de confirmação (ex: "Nos vemos na [endereço], [bairro], [cidade]/[estado]!"). Também informe o endereço sempre que o cliente perguntar onde fica ou como chegar. NÃO ofereça enviar mapa ou localização.
 ${!isPetNiche ? 'No campo "pet_name" da action, coloque "—" (traço). NÃO pergunte nome de pet.' : ""}
 
 FLUXO DE REMARCAÇÃO:
