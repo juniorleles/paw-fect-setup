@@ -125,18 +125,22 @@ Deno.serve(async (req) => {
         await sleep(BUFFER_DELAY_MS);
 
         // Check if newer unprocessed messages arrived from same sender
-        const { data: newerMessages } = await serviceClient
+        // Check if this invocation should be the one to process.
+        // Use the latest unprocessed message ID to break ties when created_at matches.
+        const { data: latestPending } = await serviceClient
           .from("message_buffer")
           .select("id")
           .eq("instance_name", instanceName)
           .eq("sender_phone", senderPhone)
           .eq("processed", false)
-          .gt("created_at", bufferedAt)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .limit(1);
 
-        if (newerMessages && newerMessages.length > 0) {
-          // A newer message exists — that invocation will handle the batch
-          console.log(`Skipping message ${bufferedId}: newer messages exist, deferring to later invocation`);
+        const latestId = latestPending?.[0]?.id;
+        if (latestId && latestId !== bufferedId) {
+          // A newer (or higher-ID) message exists — that invocation will handle the batch
+          console.log(`Skipping message ${bufferedId}: deferring to ${latestId}`);
           continue;
         }
 
