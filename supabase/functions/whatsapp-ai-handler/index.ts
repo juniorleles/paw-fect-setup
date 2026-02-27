@@ -26,8 +26,10 @@ interface PetShopConfig {
 
 // Helper: get service duration in minutes
 function getServiceDuration(services: any[], serviceName: string): number {
-  const svc = services.find((s: any) => s.name === serviceName);
-  return svc?.duration || 30;
+  const normalized = (serviceName || "").trim().toLowerCase();
+  const svc = services.find((s: any) => (s.name || "").trim().toLowerCase() === normalized);
+  const duration = svc?.duration || 30;
+  return duration;
 }
 
 // Helper: convert HH:MM to minutes since midnight
@@ -53,10 +55,14 @@ function buildOccupancyMap(
   const occupancy = new Map<string, number>();
   const dayApts = appointments.filter((a: any) => a.date === dateStr && a.status !== "cancelled");
 
+  console.log(`[OCCUPANCY] Date: ${dateStr}, appointments: ${dayApts.length}, services config: ${services.map((s: any) => `${s.name}(${s.duration || '?'}min)`).join(', ')}`);
+
   for (const apt of dayApts) {
     const aptStart = timeToMinutes(apt.time);
     const aptDuration = getServiceDuration(services, apt.service);
     const slotsOccupied = Math.max(1, Math.ceil(aptDuration / slotInterval));
+
+    console.log(`[OCCUPANCY] Apt: ${apt.service} at ${apt.time} → duration=${aptDuration}min, slotsOccupied=${slotsOccupied}`);
 
     for (let i = 0; i < slotsOccupied; i++) {
       const slotTime = minutesToTime(aptStart + i * slotInterval);
@@ -64,6 +70,7 @@ function buildOccupancyMap(
     }
   }
 
+  console.log(`[OCCUPANCY] Final map: ${JSON.stringify(Object.fromEntries(occupancy))}`);
   return occupancy;
 }
 
