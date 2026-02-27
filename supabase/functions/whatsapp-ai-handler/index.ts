@@ -434,6 +434,7 @@ FLUXO DE AGENDAMENTO (OBRIGATÓRIO — 2 ETAPAS):
 ETAPA 1 — RESUMO: Após coletar ${collectFields}, apresente um RESUMO completo e pergunte ao cliente se está tudo certo. NÃO inclua o bloco <action> nesta etapa. Aguarde a resposta.
 ETAPA 2 — REGISTRO: SOMENTE após o cliente responder confirmando (ex: "sim", "pode ser", "confirmo", "isso", "ok", "perfeito"), inclua o bloco <action> para criar o agendamento com status "pending".
 NUNCA crie o agendamento (bloco <action>) na mesma mensagem em que pergunta se o cliente confirma. Espere a próxima mensagem dele.
+IMPORTANTE: Ao confirmar o agendamento para o cliente, NÃO mencione o status interno ("pendente", "pending"). Apenas confirme que o agendamento foi registrado/marcado com sucesso. O status é informação interna do sistema.
 ${!isPetNiche ? 'No campo "pet_name" da action, coloque "—" (traço). NÃO pergunte nome de pet.' : ""}
 
 FLUXO DE REMARCAÇÃO:
