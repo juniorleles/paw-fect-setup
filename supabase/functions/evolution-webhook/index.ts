@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BUFFER_DELAY_MS = 4000; // Wait 4 seconds for more messages
+const BUFFER_DELAY_MS = 5000; // Wait 5 seconds for more messages
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
