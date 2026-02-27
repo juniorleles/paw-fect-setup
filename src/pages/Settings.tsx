@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,26 +64,26 @@ const Settings = () => {
     setData((prev) => ({ ...prev, ...partial }));
   }, []);
 
-  const handleSave = async () => {
+  const saveToDb = useCallback(async (dataToSave: OnboardingData) => {
     if (!user || !configId) return;
     setSaving(true);
     const { error } = await supabase
       .from("pet_shop_configs")
       .update({
-        phone: data.phone,
-        phone_verified: data.phoneVerified,
-        niche: data.niche,
-        shop_name: data.shopName,
-        address: data.address,
-        neighborhood: data.neighborhood,
-        city: data.city,
-        state: data.state,
-        business_hours: data.businessHours as any,
-        services: data.services as any,
-        voice_tone: data.voiceTone,
-        assistant_name: data.assistantName,
+        phone: dataToSave.phone,
+        phone_verified: dataToSave.phoneVerified,
+        niche: dataToSave.niche,
+        shop_name: dataToSave.shopName,
+        address: dataToSave.address,
+        neighborhood: dataToSave.neighborhood,
+        city: dataToSave.city,
+        state: dataToSave.state,
+        business_hours: dataToSave.businessHours as any,
+        services: dataToSave.services as any,
+        voice_tone: dataToSave.voiceTone,
+        assistant_name: dataToSave.assistantName,
         max_concurrent_appointments: Math.min(
-          data.maxConcurrentAppointments,
+          dataToSave.maxConcurrentAppointments,
           subscriptionPlan === "professional" ? STRIPE_PLANS.professional.maxAttendants : STRIPE_PLANS.starter.maxAttendants
         ),
       })
@@ -95,6 +95,32 @@ const Settings = () => {
       return;
     }
     toast({ title: "Configurações salvas!", description: "Todas as alterações foram aplicadas." });
+  }, [user, configId, subscriptionPlan, toast]);
+
+  // Auto-save with debounce
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadRef = useRef(true);
+
+  useEffect(() => {
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      return;
+    }
+    if (!configId) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      saveToDb(data);
+    }, 1500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [data, configId, saveToDb]);
+
+  const handleSave = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    saveToDb(data);
   };
 
   if (loading) {
