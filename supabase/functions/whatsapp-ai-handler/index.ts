@@ -24,6 +24,49 @@ interface PetShopConfig {
 
 // --- Compute Available Slots ---
 
+// Helper: get service duration in minutes
+function getServiceDuration(services: any[], serviceName: string): number {
+  const svc = services.find((s: any) => s.name === serviceName);
+  return svc?.duration || 30;
+}
+
+// Helper: convert HH:MM to minutes since midnight
+function timeToMinutes(t: string): number {
+  const [h, m] = t.slice(0, 5).split(":").map(Number);
+  return h * 60 + m;
+}
+
+// Helper: convert minutes since midnight to HH:MM
+function minutesToTime(mins: number): string {
+  const h = String(Math.floor(mins / 60)).padStart(2, "0");
+  const m = String(mins % 60).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+// Build a map of how many concurrent bookings exist at each minute-slot for a given date
+function buildOccupancyMap(
+  dateStr: string,
+  appointments: any[],
+  services: any[],
+  slotInterval: number
+): Map<string, number> {
+  const occupancy = new Map<string, number>();
+  const dayApts = appointments.filter((a: any) => a.date === dateStr && a.status !== "cancelled");
+
+  for (const apt of dayApts) {
+    const aptStart = timeToMinutes(apt.time);
+    const aptDuration = getServiceDuration(services, apt.service);
+    const slotsOccupied = Math.max(1, Math.ceil(aptDuration / slotInterval));
+
+    for (let i = 0; i < slotsOccupied; i++) {
+      const slotTime = minutesToTime(aptStart + i * slotInterval);
+      occupancy.set(slotTime, (occupancy.get(slotTime) || 0) + 1);
+    }
+  }
+
+  return occupancy;
+}
+
 function computeAvailableSlots(
   businessHours: any[],
   appointments: any[],
@@ -39,9 +82,7 @@ function computeAvailableSlots(
 
   const dayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
-  // Get the shortest service duration to determine slot interval
-  const minDuration = Math.min(...services.map((s: any) => s.duration || 30), 30);
-  const slotInterval = minDuration;
+  const slotInterval = 30;
 
   const lines: string[] = [];
 
@@ -51,32 +92,23 @@ function computeAvailableSlots(
     const dateStr = date.toISOString().split("T")[0];
     const weekday = dayNames[date.getDay()];
 
-    // Find business hours for this weekday
     const daySchedule = businessHours.find((h: any) => h.day === weekday);
     if (!daySchedule || !daySchedule.isOpen) continue;
 
     const [openH, openM] = daySchedule.openTime.split(":").map(Number);
     const [closeH, closeM] = daySchedule.closeTime.split(":").map(Number);
 
-    // Count bookings per time slot for this date
-    const bookedCount: Record<string, number> = {};
-    for (const apt of appointments) {
-      if (apt.date === dateStr && apt.status !== "cancelled") {
-        // Normalize time to HH:MM (DB stores HH:MM:SS)
-        const normalizedTime = apt.time.slice(0, 5);
-        bookedCount[normalizedTime] = (bookedCount[normalizedTime] || 0) + 1;
-      }
-    }
+    // Build occupancy map considering service durations
+    const occupancy = buildOccupancyMap(dateStr, appointments, services, slotInterval);
 
     const freeSlots: string[] = [];
     let h = openH, m = openM;
     while (h < closeH || (h === closeH && m < closeM)) {
       const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 
-      // Skip past times for today
       const isPast = d === 0 && (h < currentHour || (h === currentHour && m <= currentMin));
       if (!isPast) {
-        const booked = bookedCount[timeStr] || 0;
+        const booked = occupancy.get(timeStr) || 0;
         const available = maxConcurrent - booked;
         if (available > 0) {
           freeSlots.push(maxConcurrent > 1 ? `${timeStr} (${available}/${maxConcurrent} vagas)` : timeStr);
@@ -417,7 +449,14 @@ REGRA: Se o cliente perguntar sobre "agendamentos pendentes", "pendente de confi
 
 CAPACIDADE DE ATENDIMENTO SIMULTÂNEO: ${maxConcurrent} atendente${maxConcurrent > 1 ? "s" : ""} por horário.
 
-HORÁRIOS DISPONÍVEIS NOS PRÓXIMOS 7 DIAS:
+DURAÇÃO DOS SERVIÇOS — REGRA CRÍTICA:
+Cada serviço tem uma duração definida. Ao verificar disponibilidade, considere que um agendamento OCUPA MÚLTIPLOS SLOTS de 30 minutos consecutivos com base na duração do serviço.
+Exemplo: "Pintura + Escova" de 90 min agendada às 14:00 ocupa os slots 14:00, 14:30 e 15:00.
+Portanto, se alguém já tem um serviço de 90 min às 14:00, os horários 14:00, 14:30 e 15:00 estão OCUPADOS.
+NUNCA sugira um horário que cairia dentro do intervalo de duração de um agendamento existente.
+Se o cliente pedir um horário que conflita com a duração de outro serviço, informe que está ocupado e sugira o próximo horário livre APÓS o término do serviço em andamento.
+
+HORÁRIOS DISPONÍVEIS NOS PRÓXIMOS 7 DIAS (já consideram a duração dos serviços):
 ${availableSlots || "Nenhum horário disponível."}
 IMPORTANTE: Use SEMPRE esta lista para sugerir horários livres. NÃO invente horários. Se o cliente pedir um horário que não está nesta lista, informe que está lotado e sugira alternativas da lista.
 

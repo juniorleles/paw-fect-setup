@@ -9,6 +9,7 @@ interface Props {
   appointments: Appointment[];
   businessHours: DaySchedule[];
   maxConcurrent?: number;
+  services?: { name: string; duration?: number }[];
 }
 
 const DAY_MAP: Record<number, string> = {
@@ -36,7 +37,17 @@ function generateSlots(openTime: string, closeTime: string, intervalMin = 30): s
   return slots;
 }
 
-const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1 }: Props) => {
+function timeToMinutes(t: string): number {
+  const [h, m] = t.slice(0, 5).split(":").map(Number);
+  return h * 60 + m;
+}
+
+function getServiceDuration(services: { name: string; duration?: number }[], serviceName: string): number {
+  const svc = services.find((s) => s.name === serviceName);
+  return svc?.duration || 30;
+}
+
+const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1, services = [] }: Props) => {
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
   const todayDayName = DAY_MAP[now.getDay()];
@@ -50,11 +61,17 @@ const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1 }: Pr
     const allSlots = generateSlots(todaySchedule.openTime, todaySchedule.closeTime);
     const todayApts = appointments.filter((a) => a.date === todayStr && a.status !== "cancelled");
 
-    // Count bookings per time slot
+    // Build occupancy map considering service durations
     const bookingsPerSlot = new Map<string, number>();
     todayApts.forEach((a) => {
-      const t = a.time.slice(0, 5);
-      bookingsPerSlot.set(t, (bookingsPerSlot.get(t) || 0) + 1);
+      const aptStart = timeToMinutes(a.time);
+      const aptDuration = getServiceDuration(services, a.service);
+      const slotsOccupied = Math.max(1, Math.ceil(aptDuration / 30));
+      for (let i = 0; i < slotsOccupied; i++) {
+        const slotMin = aptStart + i * 30;
+        const slotTime = `${String(Math.floor(slotMin / 60)).padStart(2, "0")}:${String(slotMin % 60).padStart(2, "0")}`;
+        bookingsPerSlot.set(slotTime, (bookingsPerSlot.get(slotTime) || 0) + 1);
+      }
     });
 
     const nowTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
