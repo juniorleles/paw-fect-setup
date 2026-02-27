@@ -1,0 +1,1 @@
+DELETE FROM conversation_messages WHERE phone = '5511985346958'
