@@ -175,12 +175,12 @@ const Appointments = () => {
             )}
           </p>
         </div>
-        <AppointmentDialog services={services} onSave={addAppointment} isPetNiche={isPetNiche} appointments={appointments} maxConcurrent={maxConcurrent} />
+        <AppointmentDialog services={services} onSave={addAppointment} isPetNiche={isPetNiche} appointments={appointments} maxConcurrent={maxConcurrent} allServices={services} />
       </div>
 
       {/* Availability */}
       {businessHours.length > 0 && (
-        <AvailabilityCard appointments={appointments} businessHours={businessHours} maxConcurrent={maxConcurrent} />
+        <AvailabilityCard appointments={appointments} businessHours={businessHours} maxConcurrent={maxConcurrent} services={services} />
       )}
 
       {/* Stats */}
@@ -265,6 +265,7 @@ const Appointments = () => {
           isPetNiche={isPetNiche}
           appointments={appointments}
           maxConcurrent={maxConcurrent}
+          allServices={services}
         />
       )}
 
@@ -276,6 +277,7 @@ const Appointments = () => {
           isPetNiche={isPetNiche}
           appointments={appointments}
           maxConcurrent={maxConcurrent}
+          allServices={services}
           trigger={
             <Button size="lg" className="rounded-full w-14 h-14 shadow-lg">
               <Plus className="w-6 h-6" />

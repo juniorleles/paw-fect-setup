@@ -33,6 +33,7 @@ interface Props {
   isPetNiche?: boolean;
   appointments?: Appointment[];
   maxConcurrent?: number;
+  allServices?: Service[];
 }
 
 const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
@@ -46,6 +47,7 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
   isPetNiche = true,
   appointments = [],
   maxConcurrent = 1,
+  allServices,
 }, ref) => {
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -71,18 +73,40 @@ const AppointmentDialog = forwardRef<HTMLDivElement, Props>(({
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
-  // Check if the selected date+time slot is full
+  // Check if the selected date+time slot is full (considering service durations)
   const isSlotFull = (() => {
-    if (!date || !time || maxConcurrent <= 0) return false;
-    const timeNormalized = time.slice(0, 5);
-    const bookingsAtSlot = appointments.filter(
-      (a) =>
-        a.date === date &&
-        a.time.slice(0, 5) === timeNormalized &&
-        a.status !== "cancelled" &&
-        (!isEditing || a.id !== editingAppointment?.id)
-    ).length;
-    return bookingsAtSlot >= maxConcurrent;
+    if (!date || !time || !service || maxConcurrent <= 0) return false;
+
+    // Get duration of the service being booked
+    const selectedService = (allServices || services).find(s => s.name === service);
+    const newDuration = selectedService?.duration || 30;
+    const slotsNeeded = Math.max(1, Math.ceil(newDuration / 30));
+    const newStartMin = (() => { const [h, m] = time.split(":").map(Number); return h * 60 + m; })();
+
+    // For each slot the new appointment would occupy, check if it conflicts
+    for (let i = 0; i < slotsNeeded; i++) {
+      const checkMin = newStartMin + i * 30;
+      let conflictsAtSlot = 0;
+
+      for (const a of appointments) {
+        if (a.date !== date || a.status === "cancelled") continue;
+        if (isEditing && a.id === editingAppointment?.id) continue;
+
+        const aptStartMin = (() => { const [h, m] = a.time.slice(0, 5).split(":").map(Number); return h * 60 + m; })();
+        const aptService = (allServices || services).find(s => s.name === a.service);
+        const aptDuration = aptService?.duration || 30;
+        const aptEndMin = aptStartMin + aptDuration;
+
+        // Does this existing appointment cover checkMin?
+        if (checkMin >= aptStartMin && checkMin < aptEndMin) {
+          conflictsAtSlot++;
+        }
+      }
+
+      if (conflictsAtSlot >= maxConcurrent) return true;
+    }
+
+    return false;
   })();
 
   const resetForm = () => {
