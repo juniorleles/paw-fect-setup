@@ -1,0 +1,1 @@
+UPDATE pet_shop_configs SET whatsapp_status = 'connected' WHERE user_id = 'b6734f16-fbd8-4ca4-aa16-ca8b7406a04c';
