@@ -189,6 +189,15 @@ function extractPrimaryQuestion(text: string): string {
   return pieces[pieces.length - 1];
 }
 
+function countQuestions(text: string): number {
+  const normalized = normalizeQuestionText(text);
+  return (normalized.match(/\?/g) || []).length;
+}
+
+function hasAnyQuestion(text: string): boolean {
+  return countQuestions(text) > 0;
+}
+
 function shouldSuppressRepeatedQuestion(lastAssistant: string, currentReply: string): boolean {
   const prevQ = extractPrimaryQuestion(lastAssistant);
   const currQ = extractPrimaryQuestion(currentReply);
@@ -197,6 +206,37 @@ function shouldSuppressRepeatedQuestion(lastAssistant: string, currentReply: str
   if (prevQ.length < 6 || currQ.length < 6) return false;
 
   return prevQ === currQ || prevQ.includes(currQ) || currQ.includes(prevQ);
+}
+
+function shouldSuppressConsecutiveQuestion(lastAssistant: string, currentReply: string): boolean {
+  return hasAnyQuestion(lastAssistant) && hasAnyQuestion(currentReply);
+}
+
+function enforceSingleQuestionPerReply(reply: string): string {
+  const lines = reply
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  let questionKept = false;
+  const compact: string[] = [];
+
+  for (const line of lines) {
+    const isQuestion = line.includes("?");
+    if (!isQuestion) {
+      compact.push(line);
+      continue;
+    }
+
+    if (!questionKept) {
+      compact.push(line);
+      questionKept = true;
+    }
+  }
+
+  const sanitized = compact.join("\n").trim();
+  if (sanitized) return sanitized;
+  return "Perfeito, informação anotada. Vou seguir com o seu atendimento.";
 }
 
 function removeRepeatedQuestion(reply: string): string {
@@ -1060,8 +1100,12 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       .reverse()
       .find((m) => m.role === "assistant")?.content || "";
 
-    if (shouldSuppressRepeatedQuestion(lastAssistantMessage, reply)) {
-      console.log("Suppressing repeated consecutive question in AI reply");
+    // Guardrail 1: never send more than one question in a single message
+    reply = enforceSingleQuestionPerReply(reply);
+
+    // Guardrail 2: never send a question right after another assistant question
+    if (shouldSuppressRepeatedQuestion(lastAssistantMessage, reply) || shouldSuppressConsecutiveQuestion(lastAssistantMessage, reply)) {
+      console.log("Suppressing consecutive question in AI reply");
       reply = removeRepeatedQuestion(reply);
     }
 
