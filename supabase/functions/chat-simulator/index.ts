@@ -149,7 +149,8 @@ Mensagem 3 (ETAPA 2 - você): "Agendamento confirmado!" → COM <action>
 EXEMPLO ERRADO (NUNCA faça isso):
 Mensagem 1 (você): "Podemos confirmar?" + <action> → PROIBIDO! Isso pula a etapa de confirmação.
 
-IMPORTANTE: Inclua o bloco <action> APENAS quando o cliente tiver confirmado todos os dados na mensagem ANTERIOR.`;
+IMPORTANTE: Inclua o bloco <action> APENAS quando o cliente tiver confirmado todos os dados na mensagem ANTERIOR.
+REGRA PÓS-AGENDAMENTO: Após registrar/confirmar um agendamento com <action>, a resposta deve ser APENAS uma confirmação breve. NÃO faça NENHUMA pergunta adicional na mesma mensagem. Encerre de forma limpa.`;
 }
 
 Deno.serve(async (req) => {
