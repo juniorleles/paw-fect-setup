@@ -43,8 +43,21 @@ function timeToMinutes(t: string): number {
 }
 
 function getServiceDuration(services: { name: string; duration?: number }[], serviceName: string): number {
-  const svc = services.find((s) => s.name === serviceName);
-  return svc?.duration || 30;
+  const normalized = (serviceName || "").trim().toLowerCase();
+  const svc = services.find((s) => (s.name || "").trim().toLowerCase() === normalized);
+  if (svc) return svc.duration || 30;
+
+  // Combined services (e.g. "Pintura cabelo + Escova")
+  if (normalized.includes("+")) {
+    const parts = normalized.split("+").map((p) => p.trim());
+    let total = 0;
+    for (const part of parts) {
+      const match = services.find((s) => (s.name || "").trim().toLowerCase() === part);
+      total += match?.duration || 30;
+    }
+    return total;
+  }
+  return 30;
 }
 
 const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1, services = [] }: Props) => {

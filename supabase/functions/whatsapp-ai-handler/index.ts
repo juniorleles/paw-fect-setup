@@ -27,9 +27,23 @@ interface PetShopConfig {
 // Helper: get service duration in minutes
 function getServiceDuration(services: any[], serviceName: string): number {
   const normalized = (serviceName || "").trim().toLowerCase();
+
+  // Direct match first
   const svc = services.find((s: any) => (s.name || "").trim().toLowerCase() === normalized);
-  const duration = svc?.duration || 30;
-  return duration;
+  if (svc) return svc.duration || 30;
+
+  // Combined services (e.g. "Pintura cabelo + Escova") — sum individual durations
+  if (normalized.includes("+")) {
+    const parts = normalized.split("+").map((p: string) => p.trim());
+    let totalDuration = 0;
+    for (const part of parts) {
+      const match = services.find((s: any) => (s.name || "").trim().toLowerCase() === part);
+      totalDuration += match?.duration || 30;
+    }
+    return totalDuration;
+  }
+
+  return 30;
 }
 
 // Helper: convert HH:MM to minutes since midnight
