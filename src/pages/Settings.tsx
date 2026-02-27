@@ -67,7 +67,7 @@ const Settings = () => {
   const handleSave = async () => {
     if (!user || !configId) return;
     setSaving(true);
-    await supabase
+    const { error } = await supabase
       .from("pet_shop_configs")
       .update({
         phone: data.phone,
@@ -89,6 +89,11 @@ const Settings = () => {
       })
       .eq("id", configId);
     setSaving(false);
+    if (error) {
+      console.error("Erro ao salvar configurações:", error);
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: "Configurações salvas!", description: "Todas as alterações foram aplicadas." });
   };
 
