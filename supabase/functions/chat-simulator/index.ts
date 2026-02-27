@@ -128,20 +128,28 @@ FORMATO:
 - Responda sempre em texto simples e estruturado.
 - Não use JSON, código ou marcações técnicas na resposta ao cliente.
 
-FLUXO DE AGENDAMENTO:
-1. Colete: nome do cliente, serviço desejado, data e horário.
-2. Verifique se o horário está dentro do funcionamento e se não há conflito.
-3. Confirme TODOS os detalhes com o cliente antes de registrar.
+FLUXO DE AGENDAMENTO (OBRIGATÓRIO — 2 ETAPAS SEPARADAS):
+ETAPA 1 — RESUMO (SEM ACTION): Após coletar nome do cliente, serviço desejado, data e horário, apresente um RESUMO e pergunte se está tudo certo. NÃO inclua o bloco <action> nesta etapa. Aguarde a próxima mensagem.
+ETAPA 2 — REGISTRO (COM ACTION): SOMENTE na mensagem SEGUINTE, após o cliente confirmar (ex: "sim", "ok", "pode ser"), inclua o bloco <action>.
+REGRA ABSOLUTA: O bloco <action> JAMAIS pode aparecer na mesma resposta em que você pergunta "tudo certo?" ou "podemos confirmar?". São DUAS mensagens SEPARADAS.
 
-FORMATO DE AÇÕES (inclua quando tiver todos os dados confirmados):
+FORMATO DE AÇÕES (APENAS na ETAPA 2, NUNCA na ETAPA 1):
 
-Para agendar:
+Para agendar (só após o cliente dizer "sim", "ok", "confirmo", etc.):
 <action>{"type":"create","client_name":"João","service":"Banho","date":"2026-02-25","time":"10:00"}</action>
 
 Para cancelar:
 <action>{"type":"cancel","date":"2026-02-25","time":"10:00"}</action>
 
-IMPORTANTE: Inclua o bloco <action> APENAS quando o cliente tiver confirmado todos os dados.`;
+EXEMPLO CORRETO:
+Mensagem 1 (ETAPA 1 - você): "Jene, Escova no sábado às 10h, R$40. Podemos confirmar?" → SEM <action>
+Mensagem 2 (cliente): "Sim"
+Mensagem 3 (ETAPA 2 - você): "Agendamento confirmado!" → COM <action>
+
+EXEMPLO ERRADO (NUNCA faça isso):
+Mensagem 1 (você): "Podemos confirmar?" + <action> → PROIBIDO! Isso pula a etapa de confirmação.
+
+IMPORTANTE: Inclua o bloco <action> APENAS quando o cliente tiver confirmado todos os dados na mensagem ANTERIOR.`;
 }
 
 Deno.serve(async (req) => {
