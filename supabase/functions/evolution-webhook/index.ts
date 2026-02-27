@@ -6,6 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const BUFFER_DELAY_MS = 4000; // Wait 4 seconds for more messages
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -94,7 +100,69 @@ Deno.serve(async (req) => {
 
         console.log(`Message from ${senderPhone}: ${textContent.substring(0, 100)}`);
 
-        // Forward to AI handler
+        // Insert into message buffer instead of immediately processing
+        const { data: buffered, error: bufferErr } = await serviceClient
+          .from("message_buffer")
+          .insert({
+            instance_name: instanceName,
+            sender_phone: senderPhone,
+            content: textContent,
+          })
+          .select("id, created_at")
+          .single();
+
+        if (bufferErr) {
+          console.error("Buffer insert error:", bufferErr.message);
+          continue;
+        }
+
+        const bufferedId = buffered.id;
+        const bufferedAt = buffered.created_at;
+
+        console.log(`Buffered message ${bufferedId}, waiting ${BUFFER_DELAY_MS}ms...`);
+
+        // Wait for more messages
+        await sleep(BUFFER_DELAY_MS);
+
+        // Check if newer unprocessed messages arrived from same sender
+        const { data: newerMessages } = await serviceClient
+          .from("message_buffer")
+          .select("id")
+          .eq("instance_name", instanceName)
+          .eq("sender_phone", senderPhone)
+          .eq("processed", false)
+          .gt("created_at", bufferedAt)
+          .limit(1);
+
+        if (newerMessages && newerMessages.length > 0) {
+          // A newer message exists — that invocation will handle the batch
+          console.log(`Skipping message ${bufferedId}: newer messages exist, deferring to later invocation`);
+          continue;
+        }
+
+        // This is the latest message — gather ALL unprocessed messages from this sender
+        const { data: allPending } = await serviceClient
+          .from("message_buffer")
+          .select("id, content")
+          .eq("instance_name", instanceName)
+          .eq("sender_phone", senderPhone)
+          .eq("processed", false)
+          .order("created_at", { ascending: true });
+
+        if (!allPending || allPending.length === 0) continue;
+
+        // Mark all as processed
+        const pendingIds = allPending.map((m: any) => m.id);
+        await serviceClient
+          .from("message_buffer")
+          .update({ processed: true })
+          .in("id", pendingIds);
+
+        // Combine messages
+        const combinedMessage = allPending.map((m: any) => m.content).join("\n");
+        console.log(`Processing ${allPending.length} combined messages from ${senderPhone}: ${combinedMessage.substring(0, 200)}`);
+
+        // Forward combined message to AI handler
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         try {
           const aiRes = await fetch(`${supabaseUrl}/functions/v1/whatsapp-ai-handler`, {
@@ -102,7 +170,7 @@ Deno.serve(async (req) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               instanceName,
-              message: textContent,
+              message: combinedMessage,
               senderPhone,
             }),
           });
@@ -111,6 +179,14 @@ Deno.serve(async (req) => {
           console.error("AI handler call error:", aiErr);
         }
       }
+
+      // Cleanup old processed buffer entries (older than 1 hour)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      await serviceClient
+        .from("message_buffer")
+        .delete()
+        .eq("processed", true)
+        .lt("created_at", oneHourAgo);
     }
 
     return new Response(JSON.stringify({ ok: true }), {
