@@ -83,6 +83,12 @@ ${hoursText}
 
 DATA/HORA ATUAL: ${brWeekday}, ${brDate} às ${brTime}
 
+SAUDAÇÃO OBRIGATÓRIA POR HORÁRIO:
+- Das 06:00 às 11:59 → use "Bom dia"
+- Das 12:00 às 17:59 → use "Boa tarde"
+- Das 18:00 às 05:59 → use "Boa noite"
+NUNCA use uma saudação que não corresponda ao horário atual.
+
 AGENDAMENTOS EXISTENTES (simulados):
 ${existingApptsText}
 
