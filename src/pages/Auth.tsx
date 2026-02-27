@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { Navigate } from "react-router-dom";
@@ -16,7 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
   const { completed: onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
