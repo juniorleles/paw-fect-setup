@@ -83,11 +83,12 @@ ${hoursText}
 
 DATA/HORA ATUAL: ${brWeekday}, ${brDate} às ${brTime}
 
-SAUDAÇÃO OBRIGATÓRIA POR HORÁRIO:
-- Das 06:00 às 11:59 → use "Bom dia"
-- Das 12:00 às 17:59 → use "Boa tarde"
-- Das 18:00 às 05:59 → use "Boa noite"
-NUNCA use uma saudação que não corresponda ao horário atual.
+SAUDAÇÃO POR HORÁRIO (use APENAS na PRIMEIRA mensagem da conversa):
+- Das 06:00 às 11:59 → "Bom dia"
+- Das 12:00 às 17:59 → "Boa tarde"
+- Das 18:00 às 05:59 → "Boa noite"
+NUNCA use saudação que não corresponda ao horário atual.
+IMPORTANTE: NÃO repita a saudação em mensagens seguintes. Após a primeira mensagem, vá direto ao assunto de forma natural e fluida, como em uma conversa real de WhatsApp.
 
 AGENDAMENTOS EXISTENTES (simulados):
 ${existingApptsText}
