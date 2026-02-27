@@ -203,6 +203,33 @@ export type Database = {
         }
         Relationships: []
       }
+      message_buffer: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          instance_name: string
+          processed: boolean
+          sender_phone: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          instance_name: string
+          processed?: boolean
+          sender_phone: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          instance_name?: string
+          processed?: boolean
+          sender_phone?: string
+        }
+        Relationships: []
+      }
       payment_history: {
         Row: {
           amount: number
