@@ -602,6 +602,11 @@ REGRAS OBRIGATÓRIAS:
 4. NUNCA invente informações. Se não souber, pergunte.
 5. Se um serviço NÃO tem preço cadastrado, NÃO mencione valor.
 6. Siga rigorosamente o tom de voz configurado.
+7. PERGUNTAS FORA DO SEU DOMÍNIO (ex: "aceita cartão?", "tem estacionamento?", "fazem promoção?", "tem Wi-Fi?", formas de pagamento, etc.):
+   - Você NÃO tem essa informação. NÃO invente respostas.
+   - Responda de forma honesta e breve: "Não tenho essa informação, mas posso passar seu contato para o responsável te responder! 😊"
+   - Se o cliente insistir, reforce que você cuida de agendamentos e dúvidas sobre serviços/horários, e que o responsável poderá ajudar com o restante.
+   - NUNCA diga "posso verificar pra você" se você não tem como verificar. Isso é mentir.
 ${isPetNiche ? "" : "7. NÃO pergunte nome de pet. Este é um " + nicheLabel + ", não um pet shop."}
 
 ESTILO DE RESPOSTA — REGRA CRÍTICA:
