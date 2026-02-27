@@ -355,6 +355,24 @@ async function saveMessage(
     .insert({ user_id: userId, phone, role, content });
 }
 
+async function getLatestAssistantMessage(
+  serviceClient: any,
+  userId: string,
+  phone: string
+): Promise<string> {
+  const { data } = await serviceClient
+    .from("conversation_messages")
+    .select("content")
+    .eq("user_id", userId)
+    .eq("phone", phone)
+    .eq("role", "assistant")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data?.content || "";
+}
+
 // --- Confirmation Quick Responses ---
 
 async function handleConfirmationResponse(
@@ -1096,9 +1114,11 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       });
     }
 
-    const lastAssistantMessage = [...conversationHistory]
-      .reverse()
-      .find((m) => m.role === "assistant")?.content || "";
+    const lastAssistantMessage = await getLatestAssistantMessage(
+      serviceClient,
+      shopConfig.user_id,
+      cleanPhone
+    );
 
     // Guardrail 1: never send more than one question in a single message
     reply = enforceSingleQuestionPerReply(reply);
@@ -1111,6 +1131,17 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
 
     // Process actions (create/cancel/reschedule/confirm)
     reply = await processAction(serviceClient, shopConfig, cleanPhone, reply);
+
+    // Re-check against latest persisted assistant message to avoid race conditions
+    const latestAssistantBeforeSend = await getLatestAssistantMessage(
+      serviceClient,
+      shopConfig.user_id,
+      cleanPhone
+    );
+    if (shouldSuppressConsecutiveQuestion(latestAssistantBeforeSend, reply)) {
+      console.log("Suppressing race-condition consecutive question in AI reply");
+      reply = removeRepeatedQuestion(reply);
+    }
 
     // Save assistant reply to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
