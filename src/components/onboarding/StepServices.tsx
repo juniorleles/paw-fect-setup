@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { OnboardingData, Service, NICHE_SUGGESTIONS } from "@/types/onboarding";
-import { Briefcase, Plus, Trash2, Sparkles } from "lucide-react";
+import { Briefcase, Plus, Trash2, Sparkles, Pencil, Check, X } from "lucide-react";
 
 interface Props {
   data: OnboardingData;
@@ -18,16 +18,21 @@ const StepServices = ({ data, onChange, errors }: Props) => {
   const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("");
   const [category, setCategory] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editDuration, setEditDuration] = useState("");
+  const [editCategory, setEditCategory] = useState("");
 
   const suggestions = NICHE_SUGGESTIONS[data.niche] ?? NICHE_SUGGESTIONS.outros;
 
   const addService = () => {
-    if (!name || !duration) return;
+    if (!name) return;
     const service: Service = {
       id: crypto.randomUUID(),
       name,
       price: price ? parseFloat(price) : undefined,
-      duration: parseInt(duration),
+      duration: duration ? parseInt(duration) : undefined,
       category: category || undefined,
       active: true,
     };
@@ -54,6 +59,34 @@ const StepServices = ({ data, onChange, errors }: Props) => {
       ),
     });
   };
+
+  const startEdit = (s: Service) => {
+    setEditingId(s.id);
+    setEditName(s.name);
+    setEditPrice(s.price != null ? String(s.price) : "");
+    setEditDuration(s.duration != null ? String(s.duration) : "");
+    setEditCategory(s.category ?? "");
+  };
+
+  const saveEdit = () => {
+    if (!editingId || !editName) return;
+    onChange({
+      services: data.services.map((s) =>
+        s.id === editingId
+          ? {
+              ...s,
+              name: editName,
+              price: editPrice ? parseFloat(editPrice) : undefined,
+              duration: editDuration ? parseInt(editDuration) : undefined,
+              category: editCategory || undefined,
+            }
+          : s
+      ),
+    });
+    setEditingId(null);
+  };
+
+  const cancelEdit = () => setEditingId(null);
 
   return (
     <Card className="border-none shadow-xl bg-card">
@@ -104,7 +137,7 @@ const StepServices = ({ data, onChange, errors }: Props) => {
             <Input placeholder="Preço R$ (opcional)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
             <Input placeholder="Duração (min)" type="number" value={duration} onChange={(e) => setDuration(e.target.value)} />
           </div>
-          <Button onClick={addService} disabled={!name || !duration} size="sm" className="w-full">
+          <Button onClick={addService} disabled={!name} size="sm" className="w-full">
             <Plus className="w-4 h-4 mr-1" /> Adicionar serviço
           </Button>
         </div>
@@ -114,30 +147,55 @@ const StepServices = ({ data, onChange, errors }: Props) => {
           <div className="space-y-2">
             <Label className="font-semibold text-sm">Serviços cadastrados ({data.services.length})</Label>
             {data.services.map((s) => (
-              <div
-                key={s.id}
-                className={`flex items-center justify-between p-3 rounded-xl transition-opacity ${
-                  s.active === false ? "bg-secondary/50 opacity-60" : "bg-secondary"
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Switch
-                    checked={s.active !== false}
-                    onCheckedChange={() => toggleActive(s.id)}
-                    className="flex-shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate">{s.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {s.price != null ? `R$ ${Number(s.price).toFixed(2)}` : "Sem preço"}
-                      {s.duration != null ? ` · ${s.duration} min` : ""}
-                      {s.category ? ` · ${s.category}` : ""}
-                    </p>
+              <div key={s.id}>
+                {editingId === s.id ? (
+                  <div className="p-3 rounded-xl bg-secondary space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Input placeholder="Nome" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                      <Input placeholder="Categoria" value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
+                      <Input placeholder="Preço R$" type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
+                      <Input placeholder="Duração (min)" type="number" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="ghost" size="sm" onClick={cancelEdit}>
+                        <X className="w-4 h-4 mr-1" /> Cancelar
+                      </Button>
+                      <Button size="sm" onClick={saveEdit} disabled={!editName}>
+                        <Check className="w-4 h-4 mr-1" /> Salvar
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => removeService(s.id)} className="text-destructive hover:text-destructive flex-shrink-0">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                ) : (
+                  <div
+                    className={`flex items-center justify-between p-3 rounded-xl transition-opacity ${
+                      s.active === false ? "bg-secondary/50 opacity-60" : "bg-secondary"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Switch
+                        checked={s.active !== false}
+                        onCheckedChange={() => toggleActive(s.id)}
+                        className="flex-shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm truncate">{s.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {s.price != null ? `R$ ${Number(s.price).toFixed(2)}` : "Sem preço"}
+                          {s.duration != null ? ` · ${s.duration} min` : ""}
+                          {s.category ? ` · ${s.category}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button variant="ghost" size="icon" onClick={() => startEdit(s)} className="text-muted-foreground hover:text-foreground">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => removeService(s.id)} className="text-destructive hover:text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
