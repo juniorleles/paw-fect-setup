@@ -252,6 +252,18 @@ function removeRepeatedQuestion(reply: string): string {
   return "Perfeito, informação anotada. Vou seguir com o seu atendimento.";
 }
 
+function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
+  if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
+
+  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar)|gostaria\s+de\s+agendar)/i.test(userMessage);
+  if (!bookingIntent) return reply;
+
+  const asksDateOrTime = /(qual\s+dia|que\s+dia|pra\s+qual\s+dia|data|qual\s+hor[aá]rio|que\s+hor[aá]rio|pra\s+qual\s+hor[aá]rio|dia\s+e\s+hor[aá]rio|quando\s+quer)/i.test(reply);
+  if (asksDateOrTime) return reply;
+
+  return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
+}
+
 async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
   const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
   const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
@@ -1120,6 +1132,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       });
     }
 
+    // Deterministic safeguard: booking intent must always ask date/time when missing
+    reply = enforceBookingDateTimeQuestion(message, reply);
+
     // Track AI usage with latency
     const tokensUsed = aiData.usage?.total_tokens || 0;
     await serviceClient.from("ai_usage").insert({
@@ -1146,11 +1161,16 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       cleanPhone
     );
 
+    // Preserve scheduling questions (service choice + date/time) in booking flows
+    const isBookingFlowMessage = /(agendar|agendamento|marcar|quero\s+(agendar|marcar|fazer|cortar)|gostaria\s+de\s+agendar|pra\s+qual\s+dia|qual\s+dia|qual\s+hor[aá]rio|hor[aá]rio)/i.test(message);
+
     // Guardrail 1: never send more than one question in a single message
-    reply = enforceSingleQuestionPerReply(reply);
+    if (!isBookingFlowMessage) {
+      reply = enforceSingleQuestionPerReply(reply);
+    }
 
     // Guardrail 2: never send a question right after another assistant question
-    if (shouldSuppressRepeatedQuestion(lastAssistantMessage, reply) || shouldSuppressConsecutiveQuestion(lastAssistantMessage, reply)) {
+    if (!isBookingFlowMessage && (shouldSuppressRepeatedQuestion(lastAssistantMessage, reply) || shouldSuppressConsecutiveQuestion(lastAssistantMessage, reply))) {
       console.log("Suppressing consecutive question in AI reply");
       reply = removeRepeatedQuestion(reply);
     }
@@ -1164,7 +1184,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       shopConfig.user_id,
       cleanPhone
     );
-    if (shouldSuppressConsecutiveQuestion(latestAssistantBeforeSend, reply)) {
+    if (!isBookingFlowMessage && shouldSuppressConsecutiveQuestion(latestAssistantBeforeSend, reply)) {
       console.log("Suppressing race-condition consecutive question in AI reply");
       reply = removeRepeatedQuestion(reply);
     }
