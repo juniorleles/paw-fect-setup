@@ -444,3 +444,34 @@ Deno.test("SCENARIO: full flow → 'Às 8' after manicure selected → must NOT 
   assertEquals(result.includes("Escova: R$"), false, "Should NOT list services");
   assertEquals(result.includes("08:00") || result.includes("08:30") || result.includes("Manicure") || result.includes("horário"), true, "Should reference time or confirm");
 });
+
+Deno.test("SCENARIO: exact screenshot — 'Às 8:30' after disambiguation → must confirm manicure, NOT ask service", () => {
+  const services = [
+    { name: "Escova", price: 50, duration: 30 },
+    { name: "Manicure", price: 50, duration: 60 },
+    { name: "Pedicure", price: 50, duration: 60 },
+  ];
+
+  const conversationHistory = [
+    { role: "user", content: "Quero marcar manicure hj\nOps amanhã" },
+    { role: "assistant", content: "Sem problemas! Como hoje já passamos do horário, amanhã (sábado, 28/02) atendemos das 08:00 às 13:00.\n\nPerfeito! Qual horário você prefere?" },
+    { role: "user", content: "Eu quero às 8h" },
+    { role: "assistant", content: "Para às 08:00 de amanhã, tenho disponibilidade para:\n\n· 08:00\n· 08:30\n\nPerfeito! Qual horário você prefere?" },
+    { role: "user", content: "Às 8:30" },
+  ];
+
+  const rawReply = "Combinado! Para eu deixar tudo prontinho, qual serviço você gostaria de agendar para amanhã às 08:30? 😊";
+
+  const result = enforceKnownServiceNoRedundantQuestion("Às 8:30", rawReply, services, conversationHistory);
+
+  console.log("\n=== SCENARIO 3 (EXACT SCREENSHOT) ===");
+  console.log("Input: 'Às 8:30'");
+  console.log("Service from history: Manicure");
+  console.log("Output:\n" + result);
+  console.log("=== END ===\n");
+
+  assertEquals(result.includes("qual serviço"), false, "Should NOT ask for service");
+  assertEquals(result.includes("Qual serviço"), false, "Should NOT ask for service (cap)");
+  assertEquals(result.includes("Manicure") || result.includes("manicure"), true, "Should mention the service Manicure");
+  assertEquals(result.includes("08:30"), true, "Should mention the chosen time");
+});
