@@ -290,7 +290,6 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
   const normalizedUserMessage = normalize(userMessage || "");
   const normalizedReply = normalize(reply || "");
 
-  // Search for service in current message first
   const serviceList = (services || [])
     .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
     .filter((s: { original: string; normalized: string }) => s.normalized.length > 1);
@@ -298,13 +297,11 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
   let matchedService = serviceList
     .find((s: { original: string; normalized: string }) => normalizedUserMessage.includes(s.normalized))?.original;
 
-  // If not found in current message, search recent conversation history
   if (!matchedService && conversationHistory) {
     const allNormalized = conversationHistory
-      .slice(-10)
+      .slice(-12)
       .map((m) => ({ role: m.role, normalized: normalize(m.content || "") }));
 
-    // Prioritize user messages
     for (const msg of [...allNormalized].reverse()) {
       if (msg.role !== "user") continue;
       matchedService = serviceList
@@ -312,7 +309,6 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
       if (matchedService) break;
     }
 
-    // Fallback: any message (including assistant)
     if (!matchedService) {
       for (const msg of [...allNormalized].reverse()) {
         matchedService = serviceList
@@ -322,17 +318,14 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     }
   }
 
-  // BROAD detection: normalize the reply and check for ANY mention of asking for service
-  // This catches unicode variants (ç, ê, etc.) reliably.
-  const serviceQuestionPattern = /(qual\s+servico|que\s+servico|servico\s+voce\s+(quer|prefere|deseja)|qual\s+servico\s+e\s+que\s+horario|qual\s+seria\s+o\s+servico|qual\s+desses.*servico|servico\s+deseja\s+agendar|qual.*servico.*agendar|e\s+qual\s+servico|algum\s+servico\s+para|qual\s+servico\s+deseja\s+fazer)/i;
-
+  const serviceQuestionPattern = /(qual\s+servico|que\s+servico|servico\s+voce\s+(quer|prefere|deseja)|qual\s+servico\s+e\s+que\s+horario|qual\s+seria\s+o\s+servico|qual\s+desses.*servico|servico\s+deseja\s+agendar|qual.*servico.*agendar|e\s+qual\s+servico|algum\s+servico\s+para|qual\s+servico\s+deseja\s+fazer|gostaria\s+de\s+agendar\s+qual\s+servico)/i;
   const asksForServiceAgain = serviceQuestionPattern.test(normalizedReply);
 
   const dateCorrectionOnly = /(ops|opa|corrigindo|na\s+verdade|muda|troca|amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}h|\d{1,2}:\d{2})/i.test(normalizedUserMessage);
 
   if (!matchedService) {
     if (asksForServiceAgain && dateCorrectionOnly) {
-      console.log("[ServiceGuard] No service matched, but date-correction context detected. Stripping redundant service question.");
+      console.log("[ServiceGuard] No service matched, but date/time correction context detected. Stripping redundant service question.");
     } else {
       console.log("[ServiceGuard] No service matched in message or history");
       return reply;
@@ -344,6 +337,77 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
   if (!asksForServiceAgain) {
     console.log("[ServiceGuard] Reply does NOT ask for service again, no changes needed");
     return reply;
+  }
+
+  const extractUserTimeIntent = (text: string): { exact?: string; hour?: string } => {
+    const exactMatch = text.match(/\b([01]?\d|2[0-3])[:h]([0-5]\d)\b/i);
+    if (exactMatch) {
+      const hh = exactMatch[1].padStart(2, "0");
+      return { exact: `${hh}:${exactMatch[2]}` };
+    }
+
+    const hourWithAs = text.match(/(?:\b(?:as|às)\s*)([01]?\d|2[0-3])\b/i);
+    if (hourWithAs) return { hour: hourWithAs[1].padStart(2, "0") };
+
+    const hourWithH = text.match(/\b([01]?\d|2[0-3])h\b/i);
+    if (hourWithH) return { hour: hourWithH[1].padStart(2, "0") };
+
+    return {};
+  };
+
+  const getLastAssistantMessageFromHistory = (): string => {
+    if (!conversationHistory || conversationHistory.length === 0) return "";
+    for (let i = conversationHistory.length - 1; i >= 0; i--) {
+      const msg = conversationHistory[i];
+      if (msg.role === "assistant") return msg.content || "";
+    }
+    return "";
+  };
+
+  const extractAvailableSlotsFromText = (text: string): string[] => {
+    if (!text) return [];
+    const matches = text.match(/\b([01]\d|2[0-3]):[0-5]\d\b/g) || [];
+    return [...new Set(matches)];
+  };
+
+  const inferDateLabel = (): string => {
+    const userNorm = normalize(userMessage || "");
+    if (/\bamanha\b/.test(userNorm)) return "amanhã";
+    if (/\bhoje\b/.test(userNorm)) return "hoje";
+
+    const weekdayMatch = userNorm.match(/\b(segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/);
+    if (weekdayMatch) return weekdayMatch[1];
+
+    const lastAssistant = normalize(getLastAssistantMessageFromHistory());
+    if (/\bamanha\b/.test(lastAssistant)) return "amanhã";
+    if (/\bhoje\b/.test(lastAssistant)) return "hoje";
+
+    const assistantWeekdayMatch = lastAssistant.match(/\b(segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/);
+    if (assistantWeekdayMatch) return assistantWeekdayMatch[1];
+
+    return "o dia combinado";
+  };
+
+  const userTimeIntent = extractUserTimeIntent(userMessage || "");
+  if (matchedService && (userTimeIntent.exact || userTimeIntent.hour)) {
+    const lastAssistantMessage = getLastAssistantMessageFromHistory();
+    const availableSlots = extractAvailableSlotsFromText(lastAssistantMessage);
+
+    const compatibleSlots = availableSlots.filter((slot) => {
+      if (userTimeIntent.exact) return slot === userTimeIntent.exact;
+      if (userTimeIntent.hour) return slot.startsWith(`${userTimeIntent.hour}:`);
+      return false;
+    });
+
+    if (compatibleSlots.length > 1) {
+      const optionsText = compatibleSlots.join(" ou ");
+      return `Perfeito 😊 Você prefere ${optionsText}?`;
+    }
+
+    if (compatibleSlots.length === 1) {
+      const chosenTime = compatibleSlots[0];
+      return `Perfeito 😊 ${matchedService} para ${inferDateLabel()} às ${chosenTime}. Deseja confirmar?`;
+    }
   }
 
   console.log("[ServiceGuard] Reply asks for service again — removing redundant question");
@@ -371,9 +435,7 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
       skippingServiceOptions = false;
     }
 
-    // Check if this line asks for service (using normalized text)
     if (serviceQuestionPattern.test(normalizedLine)) {
-      // If it also mentions horário, replace with a clean version
       if (/horario/i.test(normalizedLine)) {
         if (matchedService) {
           cleaned.push(`Perfeito, ${matchedService}! Qual horário você prefere?`);
@@ -381,7 +443,6 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
           cleaned.push("Perfeito! Qual horário você prefere?");
         }
       }
-      // Otherwise just drop the line
       continue;
     }
 
