@@ -276,7 +276,13 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
 
-function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: string, services: any[], conversationHistory?: { role: string; content: string }[]): string {
+function enforceKnownServiceNoRedundantQuestion(
+  userMessage: string,
+  reply: string,
+  services: any[],
+  conversationHistory?: { role: string; content: string }[],
+  knownServiceHint?: string | null,
+): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
 
   const normalize = (text: string) => text
@@ -296,6 +302,11 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
 
   let matchedService = serviceList
     .find((s: { original: string; normalized: string }) => normalizedUserMessage.includes(s.normalized))?.original;
+
+  if (!matchedService && knownServiceHint) {
+    const normalizedKnownService = normalize(knownServiceHint);
+    matchedService = serviceList.find((s: { original: string; normalized: string }) => s.normalized === normalizedKnownService)?.original || knownServiceHint;
+  }
 
   if (!matchedService && conversationHistory) {
     const allNormalized = conversationHistory
@@ -590,6 +601,44 @@ async function getConversationHistory(
   // Ensure conversation doesn't end with orphaned user messages without a response
   // and limit to last 10 messages to keep context manageable
   return cleaned.slice(-10);
+}
+
+async function findLastMentionedService(
+  serviceClient: any,
+  userId: string,
+  phone: string,
+  services: any[],
+): Promise<string | null> {
+  const normalize = (text: string) => (text || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const serviceList = (services || [])
+    .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
+    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1);
+
+  if (serviceList.length === 0) return null;
+
+  const { data } = await serviceClient
+    .from("conversation_messages")
+    .select("role, content")
+    .eq("user_id", userId)
+    .eq("phone", phone)
+    .order("created_at", { ascending: false })
+    .limit(60);
+
+  const messages = data || [];
+  for (const msg of messages) {
+    const normalizedMessage = normalize(msg.content || "");
+    const found = serviceList.find((s: { original: string; normalized: string }) => normalizedMessage.includes(s.normalized));
+    if (found) return found.original;
+  }
+
+  return null;
 }
 
 async function saveMessage(
@@ -1126,9 +1175,9 @@ Deno.serve(async (req) => {
     // Save user message to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "user", message);
 
-    // Get conversation history
+    // Get conversation history and robust service memory for guardrails
     const conversationHistory = await getConversationHistory(serviceClient, shopConfig.user_id, cleanPhone);
-
+    const lastMentionedService = await findLastMentionedService(serviceClient, shopConfig.user_id, cleanPhone, shopConfig.services || []);
     // Load appointments for context
     const today = new Date().toISOString().split("T")[0];
     const { data: appointments } = await serviceClient
@@ -1377,7 +1426,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
 
     // Deterministic safeguards for booking flow
     reply = enforceBookingDateTimeQuestion(message, reply);
-    reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory);
+    reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory, lastMentionedService);
     reply = enforceBookingDateTimeQuestion(message, reply);
 
     // Track AI usage with latency
