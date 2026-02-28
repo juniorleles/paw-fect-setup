@@ -64,13 +64,21 @@ function removeRepeatedQuestion(reply: string): string {
   return "Perfeito, informação anotada. Vou seguir com o seu atendimento.";
 }
 
-// ---- Simulate the full pipeline ----
-function applyGuardrails(lastAssistantMsg: string, rawReply: string): string {
-  // Guardrail 1: max 1 question per reply
-  let reply = enforceSingleQuestionPerReply(rawReply);
+function isBookingFlowContext(userMessage: string, reply: string): boolean {
+  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage || "");
+  const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
+  return bookingIntent || schedulingReply;
+}
 
-  // Guardrail 2: no question after a question
-  if (shouldSuppressRepeatedQuestion(lastAssistantMsg, reply) || shouldSuppressConsecutiveQuestion(lastAssistantMsg, reply)) {
+// ---- Simulate the full pipeline ----
+function applyGuardrails(userMessage: string, lastAssistantMsg: string, rawReply: string): string {
+  const isBookingFlowMessage = isBookingFlowContext(userMessage, rawReply);
+
+  // Guardrail 1: max 1 question per reply (except booking flow)
+  let reply = isBookingFlowMessage ? rawReply : enforceSingleQuestionPerReply(rawReply);
+
+  // Guardrail 2: no question after a question (except booking flow)
+  if (!isBookingFlowMessage && (shouldSuppressRepeatedQuestion(lastAssistantMsg, reply) || shouldSuppressConsecutiveQuestion(lastAssistantMsg, reply))) {
     reply = removeRepeatedQuestion(reply);
   }
   return reply;
@@ -101,9 +109,10 @@ Deno.test("shouldSuppressConsecutiveQuestion: allows question after statement", 
 });
 
 Deno.test("Full pipeline: two questions in reply after previous question → only statement remains", () => {
+  const userMessage = "ok";
   const lastAssistant = "Quer que eu reserve às 16:30 ou prefere outro horário da lista? 😊";
   const rawReply = "Perfeito 😊\nQual seu nome para registrar o agendamento?";
-  const result = applyGuardrails(lastAssistant, rawReply);
+  const result = applyGuardrails(userMessage, lastAssistant, rawReply);
   
   const hasQuestion = result.includes("?");
   assertEquals(hasQuestion, false, "No questions should remain");
@@ -111,11 +120,21 @@ Deno.test("Full pipeline: two questions in reply after previous question → onl
 });
 
 Deno.test("Full pipeline: question after statement → question preserved", () => {
+  const userMessage = "ok";
   const lastAssistant = "Entendido, anotei o horário das 16h.";
   const rawReply = "Qual seu nome para registrar o agendamento?";
-  const result = applyGuardrails(lastAssistant, rawReply);
+  const result = applyGuardrails(userMessage, lastAssistant, rawReply);
   
   assertEquals(result.includes("?"), true, "Question should be preserved");
+});
+
+Deno.test("Booking flow: preserve time-choice question even after previous question", () => {
+  const userMessage = "Quero manicure sábado";
+  const lastAssistant = "Perfeito! Qual serviço você prefere?";
+  const rawReply = "Manicure para sábado (28/02/2026).\nHorários disponíveis:\n• 08:00 • 08:30 • 09:00\nQual horário você prefere?";
+  const result = applyGuardrails(userMessage, lastAssistant, rawReply);
+
+  assertEquals(result.includes("Qual horário você prefere?"), true, "Must preserve booking question");
 });
 
 Deno.test("removeRepeatedQuestion: fallback when only question in reply", () => {
@@ -126,12 +145,13 @@ Deno.test("removeRepeatedQuestion: fallback when only question in reply", () => 
 
 Deno.test("Full pipeline: exact screenshot scenario", () => {
   // Simulating the exact scenario from the user's screenshot
+  const userMessage = "ok";
   const lastAssistant = "Fechamos às 18:00 hoje.\nEscova 30 min + Manicure 60 min = 90 min.\nEx.: começando às 16:30, termina às 18:00.\nQuer que eu reserve às 16:30 ou prefere outro horário da lista? 😊";
   
   // This is the problematic second message
   const rawReply = "Perfeito 😊\nQual seu nome para registrar o agendamento?";
   
-  const result = applyGuardrails(lastAssistant, rawReply);
+  const result = applyGuardrails(userMessage, lastAssistant, rawReply);
   
   const hasQuestion = result.includes("?");
   assertEquals(hasQuestion, false, "Should NOT have any question since previous message had a question");

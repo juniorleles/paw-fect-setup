@@ -252,18 +252,21 @@ function removeRepeatedQuestion(reply: string): string {
   return "Perfeito, informação anotada. Vou seguir com o seu atendimento.";
 }
 
+function isBookingFlowContext(userMessage: string, reply: string): boolean {
+  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage || "");
+  const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
+  return bookingIntent || schedulingReply;
+}
+
 function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
 
-  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage);
-  if (!bookingIntent) return reply;
+  if (!isBookingFlowContext(userMessage, reply)) return reply;
 
-  // Check if reply already contains a question (any question mark)
   const hasQuestion = /\?/.test(reply);
   if (hasQuestion) return reply;
 
-  // Check if reply lists available times without asking client to choose
-  const listsAvailableTimes = /(hor[aá]rios?\s+dispon[ií]ve|dispon[ií]ve)/i.test(reply);
+  const listsAvailableTimes = /hor[aá]rios?\s+dispon[ií]veis?/i.test(reply);
   if (listsAvailableTimes) {
     return `${reply.trim()}\nQual horário você prefere?`;
   }
@@ -1170,7 +1173,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     );
 
     // Preserve scheduling questions (service choice + date/time) in booking flows
-    const isBookingFlowMessage = /(agendar|agendamento|marcar|quero\s+(agendar|marcar|fazer|cortar)|gostaria\s+de\s+agendar|pra\s+qual\s+dia|qual\s+dia|qual\s+hor[aá]rio|hor[aá]rio)/i.test(message);
+    const isBookingFlowMessage = isBookingFlowContext(message, reply);
 
     // Guardrail 1: never send more than one question in a single message
     if (!isBookingFlowMessage) {
