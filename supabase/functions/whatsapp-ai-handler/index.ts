@@ -270,8 +270,23 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   const hasQuestion = /\?/.test(reply);
   if (hasQuestion) return reply;
 
+  // If user already provided a time/date, do NOT ask again
+  const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const userAlreadyProvidedTime = /\b([01]?\d|2[0-3])[:h]([0-5]\d)?\b/.test(userNorm) || /[àa]s\s+\d{1,2}/i.test(userNorm);
+  const userAlreadyProvidedDate = /\b(amanh[aã]|hoje|segunda|terca|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}\/\d{1,2})\b/i.test(userNorm);
+
+  if (userAlreadyProvidedTime) {
+    console.log("[BookingGuard] User already provided time, skipping date/time question append");
+    return reply;
+  }
+
   const listsAvailableTimes = /hor[aá]rios?\s+dispon[ií]veis?/i.test(reply);
   if (listsAvailableTimes) {
+    return `${reply.trim()}\nQual horário você prefere?`;
+  }
+
+  // If user provided date but no time, ask only for time
+  if (userAlreadyProvidedDate) {
     return `${reply.trim()}\nQual horário você prefere?`;
   }
 

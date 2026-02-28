@@ -31,6 +31,12 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   const hasQuestion = /\?/.test(reply);
   if (hasQuestion) return reply;
 
+  // If user already provided a time, do NOT ask again
+  const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const userAlreadyProvidedTime = /\b([01]?\d|2[0-3])[:h]([0-5]\d)?\b/.test(userNorm) || /[àa]s\s+\d{1,2}/i.test(userNorm);
+
+  if (userAlreadyProvidedTime) return reply;
+
   const listsAvailableTimes = /(hor[aá]rios?\s+dispon[ií]ve|dispon[ií]ve)/i.test(reply);
   if (listsAvailableTimes) {
     return `${reply.trim()}\nQual horário você prefere?`;
