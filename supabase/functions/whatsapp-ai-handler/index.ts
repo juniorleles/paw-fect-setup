@@ -288,46 +288,59 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     .trim();
 
   const normalizedUserMessage = normalize(userMessage || "");
+  const normalizedReply = normalize(reply || "");
 
   // Search for service in current message first
-  let matchedService = (services || [])
+  const serviceList = (services || [])
     .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
-    .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && normalizedUserMessage.includes(s.normalized))?.original;
+    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1);
 
-  // If not found in current message, search recent conversation history (prioritize user messages)
+  let matchedService = serviceList
+    .find((s: { original: string; normalized: string }) => normalizedUserMessage.includes(s.normalized))?.original;
+
+  // If not found in current message, search recent conversation history
   if (!matchedService && conversationHistory) {
-    const recentUserMessages = conversationHistory
-      .filter((m) => m.role === "user")
-      .slice(-8)
-      .map((m) => normalize(m.content || ""));
+    const allNormalized = conversationHistory
+      .slice(-10)
+      .map((m) => ({ role: m.role, normalized: normalize(m.content || "") }));
 
-    for (const histMsg of recentUserMessages.reverse()) {
-      matchedService = (services || [])
-        .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
-        .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && histMsg.includes(s.normalized))?.original;
+    // Prioritize user messages
+    for (const msg of [...allNormalized].reverse()) {
+      if (msg.role !== "user") continue;
+      matchedService = serviceList
+        .find((s: { original: string; normalized: string }) => msg.normalized.includes(s.normalized))?.original;
       if (matchedService) break;
     }
 
-    // Fallback: if user messages are too curtas/ambíguas (ex: "ops amanhã"),
-    // recover service from any recent message in context (assistant + user).
+    // Fallback: any message (including assistant)
     if (!matchedService) {
-      const recentMessages = conversationHistory
-        .slice(-10)
-        .map((m) => normalize(m.content || ""));
-
-      for (const histMsg of recentMessages.reverse()) {
-        matchedService = (services || [])
-          .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
-          .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && histMsg.includes(s.normalized))?.original;
+      for (const msg of [...allNormalized].reverse()) {
+        matchedService = serviceList
+          .find((s: { original: string; normalized: string }) => msg.normalized.includes(s.normalized))?.original;
         if (matchedService) break;
       }
     }
   }
 
-  if (!matchedService) return reply;
+  if (!matchedService) {
+    console.log("[ServiceGuard] No service matched in message or history");
+    return reply;
+  }
 
-  const asksForServiceAgain = /(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere)|qual\s+servi[cç]o\s+e\s+que\s+hor[aá]rio|qual\s+seria\s+o\s+servi[cç]o|qual\s+desses.*servi[cç]o)/i.test(reply);
-  if (!asksForServiceAgain) return reply;
+  console.log(`[ServiceGuard] Matched service: "${matchedService}" | Checking reply for redundant question...`);
+
+  // BROAD detection: normalize the reply and check for ANY mention of asking for service
+  // This catches all unicode variants (ç, ê, etc.) reliably
+  const serviceQuestionPattern = /(qual\s+servico|que\s+servico|servico\s+voce\s+(quer|prefere|deseja)|qual\s+servico\s+e\s+que\s+horario|qual\s+seria\s+o\s+servico|qual\s+desses.*servico|servico\s+deseja\s+agendar|qual.*servico.*agendar|e\s+qual\s+servico)/i;
+
+  const asksForServiceAgain = serviceQuestionPattern.test(normalizedReply);
+  
+  if (!asksForServiceAgain) {
+    console.log("[ServiceGuard] Reply does NOT ask for service again, no changes needed");
+    return reply;
+  }
+
+  console.log("[ServiceGuard] Reply asks for service again — removing redundant question");
 
   const lines = reply.split("\n");
   const cleaned: string[] = [];
@@ -335,27 +348,30 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
+    const normalizedLine = normalize(line);
 
-    if (/^op[cç][oõ]es?\s+de\s+servi[cç]o:?$/i.test(line)) {
+    if (/^opc(ao|oes|oe)\s+de\s+servico/i.test(normalizedLine)) {
       skippingServiceOptions = true;
       continue;
     }
 
     if (skippingServiceOptions) {
-      if (/^hor[aá]rios?\s+dispon[ií]veis?/i.test(line)) {
+      if (/^horarios?\s+disponiveis?/i.test(normalizedLine)) {
         skippingServiceOptions = false;
         cleaned.push(rawLine);
         continue;
       }
-
       if (line === "" || /^[•\-·]/.test(line)) continue;
       skippingServiceOptions = false;
     }
 
-    if (/(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere)|qual\s+seria\s+o\s+servi[cç]o|qual\s+desses.*servi[cç]o)/i.test(line)) {
-      if (/hor[aá]rio/i.test(line)) {
-        cleaned.push(`Perfeito, ${matchedService}. Qual horário você prefere?`);
+    // Check if this line asks for service (using normalized text)
+    if (serviceQuestionPattern.test(normalizedLine)) {
+      // If it also mentions horário, replace with a clean version
+      if (/horario/i.test(normalizedLine)) {
+        cleaned.push(`Perfeito, ${matchedService}! Qual horário você prefere?`);
       }
+      // Otherwise just drop the line
       continue;
     }
 
@@ -368,7 +384,9 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  return sanitized || `Perfeito, ${matchedService}. Qual horário você prefere?`;
+  const result = sanitized || `Perfeito, ${matchedService}! Qual horário você prefere?`;
+  console.log(`[ServiceGuard] Final result: "${result.substring(0, 200)}"`);
+  return result;
 }
 
 async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
