@@ -1004,7 +1004,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
       // Send a graceful fallback message instead of exposing the error
-      const fallbackMsg = `Olá! No momento estou com uma instabilidade temporária. Por favor, tente novamente em alguns minutinhos! 🐾`;
+      const nicheEmojiMap: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+      const fallbackEmoji = nicheEmojiMap[shopConfig.niche] || nicheEmojiMap.outros;
+      const fallbackMsg = `Olá! No momento estou com uma instabilidade temporária. Por favor, tente novamente em alguns minutinhos! ${fallbackEmoji}`;
       await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
       await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", fallbackMsg);
       return new Response(JSON.stringify({ success: true, reply: fallbackMsg }), {
@@ -1052,7 +1054,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       });
 
       // Send a graceful fallback instead of exposing the error
-      const fallbackMsg = `Olá! Estou com uma instabilidade temporária, mas já já volto! Tente novamente em alguns minutinhos 🐾`;
+      const nicheEmojiMap2: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+      const fallbackEmoji2 = nicheEmojiMap2[shopConfig.niche] || nicheEmojiMap2.outros;
+      const fallbackMsg = `Olá! Estou com uma instabilidade temporária, mas já já volto! Tente novamente em alguns minutinhos ${fallbackEmoji2}`;
       await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
       await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", fallbackMsg);
       return new Response(JSON.stringify({ success: true, reply: fallbackMsg }), {
