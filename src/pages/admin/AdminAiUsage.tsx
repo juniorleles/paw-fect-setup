@@ -18,8 +18,8 @@ const AdminAiUsage = () => {
     fetch();
   }, []);
 
-  // Estimated cost: ~$0.075 per 1M input tokens for Gemini Flash
-  const estimatedCost = (totalTokens / 1_000_000) * 0.075;
+  // Estimated cost: ~$0.01 per 1M input tokens for Gemini 3 Flash
+  const estimatedCost = (totalTokens / 1_000_000) * 0.01;
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-blue-400" /></div>;
@@ -28,7 +28,7 @@ const AdminAiUsage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Consumo Gemini Flash</h1>
+        <h1 className="text-2xl font-bold text-white">Consumo Gemini 3 Flash</h1>
         <p className="text-sm text-[hsl(220,10%,50%)]">Monitoramento de uso de IA</p>
       </div>
 
