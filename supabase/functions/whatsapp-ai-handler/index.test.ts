@@ -66,8 +66,9 @@ function removeRepeatedQuestion(reply: string): string {
 
 function isBookingFlowContext(userMessage: string, reply: string): boolean {
   const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage || "");
+  const dateTimeReference = /\b(amanh[aã]|hoje|segunda|terça|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}[h:]|\d{1,2}:\d{2})\b/i.test(userMessage || "");
   const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
-  return bookingIntent || schedulingReply;
+  return bookingIntent || dateTimeReference || schedulingReply;
 }
 
 // ---- Simulate the full pipeline ----
@@ -135,6 +136,15 @@ Deno.test("Booking flow: preserve time-choice question even after previous quest
   const result = applyGuardrails(userMessage, lastAssistant, rawReply);
 
   assertEquals(result.includes("Qual horário você prefere?"), true, "Must preserve booking question");
+});
+
+Deno.test("Booking flow: 'ops amanhã' date correction preserves scheduling question", () => {
+  const userMessage = "Ops amanhã";
+  const lastAssistant = "Manicure para hoje.\nHorários disponíveis:\n• 14:00 • 15:00\nQual horário você prefere?";
+  const rawReply = "Manicure para amanhã (01/03/2026).\nHorários disponíveis:\n• 08:00 • 09:00 • 10:00\nQual horário você prefere?";
+  const result = applyGuardrails(userMessage, lastAssistant, rawReply);
+
+  assertEquals(result.includes("Qual horário você prefere?"), true, "Must preserve booking question after date correction");
 });
 
 Deno.test("removeRepeatedQuestion: fallback when only question in reply", () => {
