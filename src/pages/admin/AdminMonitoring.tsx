@@ -15,6 +15,9 @@ import {
   Bell,
   AlertCircle,
   FileWarning,
+  ShieldCheck,
+  Timer,
+  Copy,
 } from "lucide-react";
 import {
   LineChart,
@@ -69,6 +72,8 @@ const AdminMonitoring = () => {
   const [messagesLast24h, setMessagesLast24h] = useState(0);
   const [activeAlerts, setActiveAlerts] = useState(0);
   const [errorLogs, setErrorLogs] = useState<any[]>([]);
+  const [bufferStats, setBufferStats] = useState({ totalBuffered: 0, duplicatesBlocked: 0, avgBatchSize: 0 });
+  const [timeoutRequests, setTimeoutRequests] = useState<any[]>([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -76,7 +81,7 @@ const AdminMonitoring = () => {
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
     const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [aiUsageRes, messagesRes, alertsRes, instancesRes, errorsRes, errorLogsRes] = await Promise.all([
+    const [aiUsageRes, messagesRes, alertsRes, instancesRes, errorsRes, errorLogsRes, bufferRes, timeoutsRes] = await Promise.all([
       supabase
         .from("ai_usage")
         .select("created_at, response_time_ms, tokens_used")
@@ -110,6 +115,21 @@ const AdminMonitoring = () => {
         .gte("created_at", last7d)
         .order("created_at", { ascending: false })
         .limit(30),
+      // Buffer stats: total buffered messages in last 24h
+      supabase
+        .from("message_buffer")
+        .select("id, processed, sender_phone, instance_name, created_at")
+        .gte("created_at", last24h)
+        .order("created_at", { ascending: false })
+        .limit(500),
+      // Timeout requests: AI responses > 15s in last 24h
+      supabase
+        .from("ai_usage")
+        .select("created_at, response_time_ms, user_id, request_type")
+        .gte("created_at", last24h)
+        .gt("response_time_ms", 15000)
+        .order("created_at", { ascending: false })
+        .limit(20),
     ]);
 
     // Process latency by hour
@@ -176,8 +196,30 @@ const AdminMonitoring = () => {
     const totalAiReqs = aiData.length;
     setErrorRate(totalAiReqs > 0 ? Math.round((totalErrors / totalAiReqs) * 100) : 0);
 
-    // Error logs
-    setErrorLogs(errorLogsRes.data ?? []);
+    // Buffer stats
+    const bufferData = bufferRes.data ?? [];
+    const totalBuffered = bufferData.length;
+    // Estimate duplicates: count messages with same sender+content within 2 min windows
+    const seenKeys = new Set<string>();
+    let duplicatesBlocked = 0;
+    for (const b of bufferData) {
+      const key = `${b.sender_phone}|${b.instance_name}`;
+      if (seenKeys.has(key) && !b.processed) {
+        duplicatesBlocked++;
+      }
+      seenKeys.add(key);
+    }
+    // Average batch size: group by sender_phone, count processed ones
+    const senderGroups: Record<string, number> = {};
+    bufferData.filter((b: any) => b.processed).forEach((b: any) => {
+      senderGroups[b.sender_phone] = (senderGroups[b.sender_phone] || 0) + 1;
+    });
+    const groupValues = Object.values(senderGroups);
+    const avgBatch = groupValues.length > 0 ? Math.round((groupValues.reduce((a, b) => a + b, 0) / groupValues.length) * 10) / 10 : 0;
+    setBufferStats({ totalBuffered, duplicatesBlocked, avgBatchSize: avgBatch });
+
+    // Timeout requests
+    setTimeoutRequests(timeoutsRes.data ?? []);
 
     setLoading(false);
   }, []);
@@ -455,6 +497,71 @@ const AdminMonitoring = () => {
           ))}
         </div>
       </div>
+      {/* Buffer & Timeout Monitor */}
+      <div className="bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <h2 className="text-sm font-semibold text-white">Saúde do Pipeline de Mensagens</h2>
+          <span className="text-xs text-[hsl(220,10%,45%)]">Últimas 24h</span>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div className="p-3 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+            <div className="flex items-center gap-2 mb-1">
+              <Copy className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-xs text-[hsl(220,10%,50%)]">Mensagens bufferizadas</span>
+            </div>
+            <p className="text-xl font-bold text-white">{bufferStats.totalBuffered}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-xs text-[hsl(220,10%,50%)]">Duplicatas bloqueadas</span>
+            </div>
+            <p className="text-xl font-bold text-white">{bufferStats.duplicatesBlocked}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+            <div className="flex items-center gap-2 mb-1">
+              <MessageSquare className="w-3.5 h-3.5 text-violet-400" />
+              <span className="text-xs text-[hsl(220,10%,50%)]">Média msgs/lote</span>
+            </div>
+            <p className="text-xl font-bold text-white">{bufferStats.avgBatchSize || "—"}</p>
+          </div>
+        </div>
+
+        {/* Timeout list */}
+        <div className="mt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Timer className="w-4 h-4 text-amber-400" />
+            <h3 className="text-sm font-medium text-white">Timeouts da IA ({">"}15s)</h3>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              timeoutRequests.length > 0 ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-400"
+            }`}>
+              {timeoutRequests.length}
+            </span>
+          </div>
+          {timeoutRequests.length === 0 ? (
+            <p className="text-sm text-[hsl(220,10%,45%)] text-center py-3">🎉 Nenhum timeout detectado!</p>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {timeoutRequests.map((t: any, i: number) => (
+                <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+                  <Timer className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-white font-mono">{(t.response_time_ms / 1000).toFixed(1)}s</span>
+                    <span className="text-xs text-[hsl(220,10%,45%)] ml-2">{t.request_type}</span>
+                  </div>
+                  <span className="text-xs text-[hsl(220,10%,45%)]">
+                    {new Date(t.created_at).toLocaleString("pt-BR")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Error Logs */}
       <div className="bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
