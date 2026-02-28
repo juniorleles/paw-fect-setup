@@ -125,7 +125,6 @@ Deno.serve(async (req) => {
         await sleep(BUFFER_DELAY_MS);
 
         // Check if newer unprocessed messages arrived from same sender
-        // Check if this invocation should be the one to process.
         // Use the latest unprocessed message ID to break ties when created_at matches.
         const { data: latestPending } = await serviceClient
           .from("message_buffer")
@@ -144,27 +143,37 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // This is the latest message — gather ALL unprocessed messages from this sender
-        const { data: allPending } = await serviceClient
+        // Atomically claim all unprocessed messages by marking them processed
+        // This prevents race conditions where two invocations process the same batch
+        const batchId = crypto.randomUUID();
+        const { count: claimedCount } = await serviceClient
+          .from("message_buffer")
+          .update({ processed: true })
+          .eq("instance_name", instanceName)
+          .eq("sender_phone", senderPhone)
+          .eq("processed", false);
+
+        if (!claimedCount || claimedCount === 0) {
+          console.log(`No messages to claim for ${senderPhone} — another invocation already processed them`);
+          continue;
+        }
+
+        // Now fetch the messages we just claimed (they're the ones most recently marked processed)
+        // We use a tight time window to get only the batch we just processed
+        const { data: allClaimed } = await serviceClient
           .from("message_buffer")
           .select("id, content")
           .eq("instance_name", instanceName)
           .eq("sender_phone", senderPhone)
-          .eq("processed", false)
+          .eq("processed", true)
+          .gte("created_at", bufferedAt)
           .order("created_at", { ascending: true });
 
-        if (!allPending || allPending.length === 0) continue;
-
-        // Mark all as processed
-        const pendingIds = allPending.map((m: any) => m.id);
-        await serviceClient
-          .from("message_buffer")
-          .update({ processed: true })
-          .in("id", pendingIds);
+        if (!allClaimed || allClaimed.length === 0) continue;
 
         // Combine messages
-        const combinedMessage = allPending.map((m: any) => m.content).join("\n");
-        console.log(`Processing ${allPending.length} combined messages from ${senderPhone}: ${combinedMessage.substring(0, 200)}`);
+        const combinedMessage = allClaimed.map((m: any) => m.content).join("\n");
+        console.log(`Processing ${allClaimed.length} combined messages from ${senderPhone}: ${combinedMessage.substring(0, 200)}`);
 
         // Forward combined message to AI handler
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
