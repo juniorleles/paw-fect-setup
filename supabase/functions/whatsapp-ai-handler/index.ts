@@ -276,7 +276,7 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
 
-function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: string, services: any[]): string {
+function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: string, services: any[], conversationHistory?: { role: string; content: string }[]): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
 
   const normalize = (text: string) => text
@@ -288,13 +288,30 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     .trim();
 
   const normalizedUserMessage = normalize(userMessage || "");
-  const matchedService = (services || [])
+
+  // Search for service in current message first
+  let matchedService = (services || [])
     .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
     .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && normalizedUserMessage.includes(s.normalized))?.original;
 
+  // If not found in current message, search recent conversation history (last 5 user messages)
+  if (!matchedService && conversationHistory) {
+    const recentUserMessages = conversationHistory
+      .filter(m => m.role === "user")
+      .slice(-5)
+      .map(m => normalize(m.content || ""));
+    
+    for (const histMsg of recentUserMessages.reverse()) {
+      matchedService = (services || [])
+        .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
+        .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && histMsg.includes(s.normalized))?.original;
+      if (matchedService) break;
+    }
+  }
+
   if (!matchedService) return reply;
 
-  const asksForServiceAgain = /(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere)|qual\s+servi[cç]o\s+e\s+que\s+hor[aá]rio)/i.test(reply);
+  const asksForServiceAgain = /(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere)|qual\s+servi[cç]o\s+e\s+que\s+hor[aá]rio|qual\s+seria\s+o\s+servi[cç]o|qual\s+desses.*servi[cç]o)/i.test(reply);
   if (!asksForServiceAgain) return reply;
 
   const lines = reply.split("\n");
@@ -320,7 +337,7 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
       skippingServiceOptions = false;
     }
 
-    if (/(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere))/i.test(line)) {
+    if (/(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere)|qual\s+seria\s+o\s+servi[cç]o|qual\s+desses.*servi[cç]o)/i.test(line)) {
       if (/hor[aá]rio/i.test(line)) {
         cleaned.push(`Perfeito, ${matchedService}. Qual horário você prefere?`);
       }
@@ -1214,7 +1231,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
 
     // Deterministic safeguards for booking flow
     reply = enforceBookingDateTimeQuestion(message, reply);
-    reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || []);
+    reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory);
     reply = enforceBookingDateTimeQuestion(message, reply);
 
     // Track AI usage with latency
