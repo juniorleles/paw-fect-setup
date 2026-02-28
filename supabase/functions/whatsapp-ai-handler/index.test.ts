@@ -83,44 +83,129 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     .trim();
 
   const normalizedUserMessage = normalize(userMessage || "");
-  let matchedService = (services || [])
+  const normalizedReply = normalize(reply || "");
+
+  const serviceList = (services || [])
     .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
-    .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && normalizedUserMessage.includes(s.normalized))?.original;
+    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1);
+
+  let matchedService = serviceList
+    .find((s: { original: string; normalized: string }) => normalizedUserMessage.includes(s.normalized))?.original;
 
   if (!matchedService && conversationHistory) {
-    const recentUserMessages = conversationHistory
-      .filter(m => m.role === "user")
-      .slice(-5)
-      .map(m => normalize(m.content || ""));
-    for (const histMsg of recentUserMessages.reverse()) {
-      matchedService = (services || [])
-        .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
-        .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && histMsg.includes(s.normalized))?.original;
+    const allNormalized = conversationHistory
+      .slice(-12)
+      .map((m) => ({ role: m.role, normalized: normalize(m.content || "") }));
+    for (const msg of [...allNormalized].reverse()) {
+      if (msg.role !== "user") continue;
+      matchedService = serviceList
+        .find((s: { original: string; normalized: string }) => msg.normalized.includes(s.normalized))?.original;
       if (matchedService) break;
+    }
+    if (!matchedService) {
+      for (const msg of [...allNormalized].reverse()) {
+        matchedService = serviceList
+          .find((s: { original: string; normalized: string }) => msg.normalized.includes(s.normalized))?.original;
+        if (matchedService) break;
+      }
     }
   }
 
-  if (!matchedService) return reply;
+  const serviceQuestionPattern = /(qual\s+servico|que\s+servico|servico\s+voce\s+(quer|prefere|deseja)|qual\s+servico\s+e\s+que\s+horario|qual\s+seria\s+o\s+servico|qual\s+desses.*servico|servico\s+deseja\s+agendar|qual.*servico.*agendar|e\s+qual\s+servico|algum\s+servico\s+para|qual\s+servico\s+deseja\s+fazer|gostaria\s+de\s+agendar\s+qual\s+servico)/i;
+  const asksForServiceAgain = serviceQuestionPattern.test(normalizedReply);
 
-  const asksForServiceAgain = /(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere)|qual\s+servi[cç]o\s+e\s+que\s+hor[aá]rio|qual\s+seria\s+o\s+servi[cç]o|qual\s+desses.*servi[cç]o)/i.test(reply);
-  if (!asksForServiceAgain) return reply;
+  const listsServiceOptions = (() => {
+    if (!matchedService) return false;
+    let count = 0;
+    for (const svc of serviceList) {
+      if (normalizedReply.includes(svc.normalized)) count++;
+    }
+    return count >= 3 && /[•\-·]/.test(reply);
+  })();
+
+  const dateCorrectionOnly = /(ops|opa|corrigindo|na\s+verdade|muda|troca|amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}h|\d{1,2}:\d{2})/i.test(normalizedUserMessage);
+
+  const extractUserTimeIntent = (text: string): { exact?: string; hour?: string } => {
+    const norm = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const exactMatch = norm.match(/\b([01]?\d|2[0-3])[:h]([0-5]\d)\b/);
+    if (exactMatch) return { exact: `${exactMatch[1].padStart(2, "0")}:${exactMatch[2]}` };
+    const hourWithAs = norm.match(/(?:\b(?:as)\s*)([01]?\d|2[0-3])\b/);
+    if (hourWithAs) return { hour: hourWithAs[1].padStart(2, "0") };
+    const hourWithH = norm.match(/\b([01]?\d|2[0-3])h\b/);
+    if (hourWithH) return { hour: hourWithH[1].padStart(2, "0") };
+    return {};
+  };
+
+  const getLastAssistantMessageFromHistory = (): string => {
+    if (!conversationHistory || conversationHistory.length === 0) return "";
+    for (let i = conversationHistory.length - 1; i >= 0; i--) {
+      if (conversationHistory[i].role === "assistant") return conversationHistory[i].content || "";
+    }
+    return "";
+  };
+
+  const extractAvailableSlotsFromText = (text: string): string[] => {
+    if (!text) return [];
+    return [...new Set(text.match(/\b([01]\d|2[0-3]):[0-5]\d\b/g) || [])];
+  };
+
+  const inferDateLabel = (): string => {
+    const userNorm = normalize(userMessage || "");
+    if (/\bamanha\b/.test(userNorm)) return "amanhã";
+    if (/\bhoje\b/.test(userNorm)) return "hoje";
+    const lastAssistant = normalize(getLastAssistantMessageFromHistory());
+    if (/\bamanha\b/.test(lastAssistant)) return "amanhã";
+    if (/\bhoje\b/.test(lastAssistant)) return "hoje";
+    return "o dia combinado";
+  };
+
+  // PRIORITY: service known + user provides time → intercept immediately
+  if (matchedService) {
+    const userTimeIntent = extractUserTimeIntent(userMessage || "");
+    if (userTimeIntent.exact || userTimeIntent.hour) {
+      const lastAssistantMessage = getLastAssistantMessageFromHistory();
+      const availableSlots = extractAvailableSlotsFromText(lastAssistantMessage);
+      const compatibleSlots = availableSlots.filter((slot) => {
+        if (userTimeIntent.exact) return slot === userTimeIntent.exact;
+        if (userTimeIntent.hour) return slot.startsWith(`${userTimeIntent.hour}:`);
+        return false;
+      });
+      if (compatibleSlots.length > 1) return `Perfeito 😊 Você prefere ${compatibleSlots.join(" ou ")}?`;
+      if (compatibleSlots.length === 1) return `Perfeito 😊 ${matchedService} para ${inferDateLabel()} às ${compatibleSlots[0]}. Deseja confirmar?`;
+      if (asksForServiceAgain || listsServiceOptions) return `Perfeito, ${matchedService}! Qual horário você prefere?`;
+    }
+  }
+
+  if (!matchedService) {
+    if ((asksForServiceAgain || listsServiceOptions) && dateCorrectionOnly) {
+      // strip
+    } else {
+      return reply;
+    }
+  }
+
+  if (!asksForServiceAgain && !listsServiceOptions) return reply;
 
   const lines = reply.split("\n");
   const cleaned: string[] = [];
   for (const rawLine of lines) {
     const line = rawLine.trim();
-    if (/(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere)|qual\s+seria\s+o\s+servi[cç]o|qual\s+desses.*servi[cç]o)/i.test(line)) {
-      if (/hor[aá]rio/i.test(line)) {
-        cleaned.push(`Perfeito, ${matchedService}. Qual horário você prefere?`);
+    const normalizedLine = normalize(line);
+    if (/^[•\-·]/.test(line)) {
+      const isSvcListing = serviceList.some((s: { original: string; normalized: string }) => normalizedLine.includes(s.normalized));
+      if (isSvcListing && /r\$|\d+\s*min/.test(normalizedLine)) continue;
+    }
+    if (serviceQuestionPattern.test(normalizedLine)) {
+      if (/horario/i.test(normalizedLine) && matchedService) {
+        cleaned.push(`Perfeito, ${matchedService}! Qual horário você prefere?`);
       }
       continue;
     }
     cleaned.push(rawLine);
   }
 
-  const sanitized = cleaned.join("\n").trim();
-  if (sanitized) return sanitized;
-  return `Perfeito, ${matchedService}! Qual horário você prefere?`;
+  const sanitized = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return sanitized || (matchedService ? `Perfeito, ${matchedService}! Qual horário você prefere?` : "Perfeito! Qual horário você prefere?");
 }
 
 
@@ -295,4 +380,67 @@ Deno.test("History dedup: keeps distinct consecutive user messages needed for co
   assertEquals(cleaned.length, 3, "Distinct consecutive user messages must be preserved");
   assertEquals(cleaned[0].content, "Quero marcar manicure hj");
   assertEquals(cleaned[1].content, "Ops amanhã");
+});
+
+// ====================== SCENARIO TEST: "Quero marcar manicure hj" + "Ops amanhã" ======================
+
+Deno.test("SCENARIO: 'Quero marcar manicure hj' → 'Ops amanhã' → AI must NOT ask for service again", () => {
+  const services = [
+    { name: "Escova", price: 50, duration: 30 },
+    { name: "Manicure", price: 50, duration: 60 },
+    { name: "Pedicure", price: 50, duration: 60 },
+    { name: "Pintura cabelo", price: 100, duration: 60 },
+  ];
+
+  const conversationHistory = [
+    { role: "user", content: "Quero marcar manicure hj" },
+    { role: "assistant", content: "Manicure para hoje! 💅\nHorários disponíveis:\n• 14:00\n• 15:00\n• 16:00\nQual horário você prefere?" },
+    { role: "user", content: "Ops amanhã" },
+  ];
+
+  const rawReply = "Sem problemas! Para amanhã, sábado (01/03), temos estes horários disponíveis:\n\n• 08:00, 08:30, 09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 12:00 e 12:30.\n\nQual serviço você gostaria de agendar e em qual desses horários? 😊";
+
+  const result = enforceKnownServiceNoRedundantQuestion("Ops amanhã", rawReply, services, conversationHistory);
+
+  console.log("\n=== SCENARIO RESULT ===");
+  console.log("Input: 'Ops amanhã'");
+  console.log("Service from history: Manicure");
+  console.log("Output:\n" + result);
+  console.log("=== END ===\n");
+
+  assertEquals(result.includes("qual serviço"), false, "Should NOT ask 'qual serviço'");
+  assertEquals(result.includes("Qual serviço"), false, "Should NOT ask 'Qual serviço'");
+  assertEquals(result.includes("gostaria de agendar"), false, "Should NOT ask 'gostaria de agendar'");
+  assertEquals(result.includes("08:00") || result.includes("horário"), true, "Should preserve time info");
+});
+
+Deno.test("SCENARIO: full flow → 'Às 8' after manicure selected → must NOT list services", () => {
+  const services = [
+    { name: "Escova", price: 50, duration: 30 },
+    { name: "Manicure", price: 50, duration: 60 },
+    { name: "Pedicure", price: 50, duration: 60 },
+  ];
+
+  const conversationHistory = [
+    { role: "user", content: "Quero marcar manicure hj" },
+    { role: "assistant", content: "Manicure para hoje! 💅\nHorários disponíveis:\n• 14:00 • 15:00\nQual horário você prefere?" },
+    { role: "user", content: "Ops amanhã" },
+    { role: "assistant", content: "Sem problemas! Para amanhã temos:\n• 08:00\n• 08:30\n• 09:00\nQual horário você prefere?" },
+    { role: "user", content: "Às 8" },
+  ];
+
+  const rawReply = "Para às 08:00 temos disponibilidade! 😊\n\nQual serviço você gostaria de agendar?\n\n• Escova: R$50\n• Manicure: R$50\n• Pedicure: R$50";
+
+  const result = enforceKnownServiceNoRedundantQuestion("Às 8", rawReply, services, conversationHistory);
+
+  console.log("\n=== SCENARIO 2 RESULT ===");
+  console.log("Input: 'Às 8'");
+  console.log("Service from history: Manicure");
+  console.log("Output:\n" + result);
+  console.log("=== END ===\n");
+
+  assertEquals(result.includes("Qual serviço"), false, "Should NOT ask for service");
+  assertEquals(result.includes("qual serviço"), false, "Should NOT ask for service (lc)");
+  assertEquals(result.includes("Escova: R$"), false, "Should NOT list services");
+  assertEquals(result.includes("08:00") || result.includes("08:30") || result.includes("Manicure") || result.includes("horário"), true, "Should reference time or confirm");
 });

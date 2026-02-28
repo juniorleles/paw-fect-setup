@@ -321,45 +321,40 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
   const serviceQuestionPattern = /(qual\s+servico|que\s+servico|servico\s+voce\s+(quer|prefere|deseja)|qual\s+servico\s+e\s+que\s+horario|qual\s+seria\s+o\s+servico|qual\s+desses.*servico|servico\s+deseja\s+agendar|qual.*servico.*agendar|e\s+qual\s+servico|algum\s+servico\s+para|qual\s+servico\s+deseja\s+fazer|gostaria\s+de\s+agendar\s+qual\s+servico)/i;
   const asksForServiceAgain = serviceQuestionPattern.test(normalizedReply);
 
+  // Detect service LISTING in the reply (e.g. bullet list with service names and prices)
+  const listsServiceOptions = (() => {
+    if (!matchedService) return false;
+    let serviceNamesFoundInReply = 0;
+    for (const svc of serviceList) {
+      if (normalizedReply.includes(svc.normalized)) serviceNamesFoundInReply++;
+    }
+    // If 3+ services are mentioned AND it looks like a list → it's listing services
+    return serviceNamesFoundInReply >= 3 && /[•\-·]/.test(reply);
+  })();
+
   const dateCorrectionOnly = /(ops|opa|corrigindo|na\s+verdade|muda|troca|amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}h|\d{1,2}:\d{2})/i.test(normalizedUserMessage);
 
-  if (!matchedService) {
-    if (asksForServiceAgain && dateCorrectionOnly) {
-      console.log("[ServiceGuard] No service matched, but date/time correction context detected. Stripping redundant service question.");
-    } else {
-      console.log("[ServiceGuard] No service matched in message or history");
-      return reply;
-    }
-  } else {
-    console.log(`[ServiceGuard] Matched service: "${matchedService}" | Checking reply for redundant question...`);
-  }
-
-  if (!asksForServiceAgain) {
-    console.log("[ServiceGuard] Reply does NOT ask for service again, no changes needed");
-    return reply;
-  }
-
+  // --- Helper functions ---
   const extractUserTimeIntent = (text: string): { exact?: string; hour?: string } => {
-    const exactMatch = text.match(/\b([01]?\d|2[0-3])[:h]([0-5]\d)\b/i);
+    // Normalize accents so "Às" → "as", "às" → "as"
+    const norm = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+    const exactMatch = norm.match(/\b([01]?\d|2[0-3])[:h]([0-5]\d)\b/i);
     if (exactMatch) {
       const hh = exactMatch[1].padStart(2, "0");
       return { exact: `${hh}:${exactMatch[2]}` };
     }
-
-    const hourWithAs = text.match(/(?:\b(?:as|às)\s*)([01]?\d|2[0-3])\b/i);
+    const hourWithAs = norm.match(/(?:\b(?:as)\s*)([01]?\d|2[0-3])\b/);
     if (hourWithAs) return { hour: hourWithAs[1].padStart(2, "0") };
-
-    const hourWithH = text.match(/\b([01]?\d|2[0-3])h\b/i);
+    const hourWithH = norm.match(/\b([01]?\d|2[0-3])h\b/);
     if (hourWithH) return { hour: hourWithH[1].padStart(2, "0") };
-
     return {};
   };
 
   const getLastAssistantMessageFromHistory = (): string => {
     if (!conversationHistory || conversationHistory.length === 0) return "";
     for (let i = conversationHistory.length - 1; i >= 0; i--) {
-      const msg = conversationHistory[i];
-      if (msg.role === "assistant") return msg.content || "";
+      if (conversationHistory[i].role === "assistant") return conversationHistory[i].content || "";
     }
     return "";
   };
@@ -374,43 +369,65 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     const userNorm = normalize(userMessage || "");
     if (/\bamanha\b/.test(userNorm)) return "amanhã";
     if (/\bhoje\b/.test(userNorm)) return "hoje";
-
     const weekdayMatch = userNorm.match(/\b(segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/);
     if (weekdayMatch) return weekdayMatch[1];
-
     const lastAssistant = normalize(getLastAssistantMessageFromHistory());
     if (/\bamanha\b/.test(lastAssistant)) return "amanhã";
     if (/\bhoje\b/.test(lastAssistant)) return "hoje";
-
     const assistantWeekdayMatch = lastAssistant.match(/\b(segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/);
     if (assistantWeekdayMatch) return assistantWeekdayMatch[1];
-
     return "o dia combinado";
   };
 
-  const userTimeIntent = extractUserTimeIntent(userMessage || "");
-  if (matchedService && (userTimeIntent.exact || userTimeIntent.hour)) {
-    const lastAssistantMessage = getLastAssistantMessageFromHistory();
-    const availableSlots = extractAvailableSlotsFromText(lastAssistantMessage);
+  // --- PRIORITY CHECK: If service is known AND user is providing a time, intercept immediately ---
+  if (matchedService) {
+    const userTimeIntent = extractUserTimeIntent(userMessage || "");
+    if (userTimeIntent.exact || userTimeIntent.hour) {
+      const lastAssistantMessage = getLastAssistantMessageFromHistory();
+      const availableSlots = extractAvailableSlotsFromText(lastAssistantMessage);
 
-    const compatibleSlots = availableSlots.filter((slot) => {
-      if (userTimeIntent.exact) return slot === userTimeIntent.exact;
-      if (userTimeIntent.hour) return slot.startsWith(`${userTimeIntent.hour}:`);
-      return false;
-    });
+      const compatibleSlots = availableSlots.filter((slot) => {
+        if (userTimeIntent.exact) return slot === userTimeIntent.exact;
+        if (userTimeIntent.hour) return slot.startsWith(`${userTimeIntent.hour}:`);
+        return false;
+      });
 
-    if (compatibleSlots.length > 1) {
-      const optionsText = compatibleSlots.join(" ou ");
-      return `Perfeito 😊 Você prefere ${optionsText}?`;
-    }
+      if (compatibleSlots.length > 1) {
+        const optionsText = compatibleSlots.join(" ou ");
+        console.log(`[ServiceGuard] Service "${matchedService}" known + ambiguous time → disambiguating: ${optionsText}`);
+        return `Perfeito 😊 Você prefere ${optionsText}?`;
+      }
 
-    if (compatibleSlots.length === 1) {
-      const chosenTime = compatibleSlots[0];
-      return `Perfeito 😊 ${matchedService} para ${inferDateLabel()} às ${chosenTime}. Deseja confirmar?`;
+      if (compatibleSlots.length === 1) {
+        const chosenTime = compatibleSlots[0];
+        const dateLabel = inferDateLabel();
+        console.log(`[ServiceGuard] Service "${matchedService}" known + exact time ${chosenTime} → confirming`);
+        return `Perfeito 😊 ${matchedService} para ${dateLabel} às ${chosenTime}. Deseja confirmar?`;
+      }
+
+      // If no compatible slots found from history but service is known and reply lists services, override
+      if (asksForServiceAgain || listsServiceOptions) {
+        console.log(`[ServiceGuard] Service "${matchedService}" known + time intent detected + reply asks for service → overriding`);
+        return `Perfeito, ${matchedService}! Qual horário você prefere?`;
+      }
     }
   }
 
-  console.log("[ServiceGuard] Reply asks for service again — removing redundant question");
+  if (!matchedService) {
+    if ((asksForServiceAgain || listsServiceOptions) && dateCorrectionOnly) {
+      console.log("[ServiceGuard] No service matched, but date/time correction context detected. Stripping redundant service question.");
+    } else {
+      console.log("[ServiceGuard] No service matched in message or history");
+      return reply;
+    }
+  }
+
+  if (!asksForServiceAgain && !listsServiceOptions) {
+    console.log("[ServiceGuard] Reply does NOT ask for service again, no changes needed");
+    return reply;
+  }
+
+  console.log("[ServiceGuard] Reply asks for service again — removing redundant question and service list");
 
   const lines = reply.split("\n");
   const cleaned: string[] = [];
@@ -433,6 +450,14 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
       }
       if (line === "" || /^[•\-·]/.test(line)) continue;
       skippingServiceOptions = false;
+    }
+
+    // Skip bullet lines that list service names with prices (e.g. "• Manicure: R$50")
+    if (/^[•\-·]/.test(line)) {
+      const isSvcListing = serviceList.some((s: { original: string; normalized: string }) => normalizedLine.includes(s.normalized));
+      if (isSvcListing && /r\$|\d+\s*min/.test(normalizedLine)) {
+        continue; // skip service listing bullet
+      }
     }
 
     if (serviceQuestionPattern.test(normalizedLine)) {
