@@ -781,6 +781,16 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
   const brTime = nowDate.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
   const brWeekday = nowDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" });
 
+  // Pre-calculate "amanhã" and "depois de amanhã" to avoid AI date errors
+  const tomorrowDate = new Date(nowDate.getTime() + 24 * 60 * 60 * 1000);
+  const dayAfterDate = new Date(nowDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const tomorrowStr = tomorrowDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const tomorrowWeekday = tomorrowDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" });
+  const tomorrowISO = `${tomorrowDate.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })}`;
+  const dayAfterStr = dayAfterDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const dayAfterWeekday = dayAfterDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" });
+  const dayAfterISO = `${dayAfterDate.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })}`;
+
   const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
   
   const nicheLabels: Record<string, string> = {
@@ -873,6 +883,9 @@ HORÁRIOS DE FUNCIONAMENTO:
 ${hoursText}
 
 DATA/HORA ATUAL: ${brWeekday}, ${brDate} às ${brTime}
+AMANHÃ: ${tomorrowWeekday}, ${tomorrowStr} (${tomorrowISO})
+DEPOIS DE AMANHÃ: ${dayAfterWeekday}, ${dayAfterStr} (${dayAfterISO})
+REGRA CRÍTICA DE DATAS: Quando o cliente disser "amanhã", use EXATAMENTE a data acima (${tomorrowWeekday}, ${tomorrowStr}). NUNCA calcule "amanhã" por conta própria. Use os valores pré-calculados.
 
 SAUDAÇÃO POR HORÁRIO (use APENAS na PRIMEIRA mensagem da conversa):
 - Das 06:00 às 11:59 → "Bom dia"
