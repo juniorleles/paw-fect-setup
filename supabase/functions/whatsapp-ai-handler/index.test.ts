@@ -475,3 +475,31 @@ Deno.test("SCENARIO: exact screenshot — 'Às 8:30' after disambiguation → mu
   assertEquals(result.includes("Manicure") || result.includes("manicure"), true, "Should mention the service Manicure");
   assertEquals(result.includes("08:30"), true, "Should mention the chosen time");
 });
+
+Deno.test("SCENARIO: AI already correct — mentions service+day correctly → guardrail must NOT override", () => {
+  const services = [
+    { name: "Manicure", price: 50, duration: 60 },
+    { name: "Pedicure", price: 60, duration: 60 },
+  ];
+
+  const conversationHistory = [
+    { role: "user", content: "Quero marcar manicure hj\nOps amanhã" },
+    { role: "assistant", content: "Para amanhã, domingo, o Studio Mara estará fechado.\n\nPosso agendar sua Manicure (R$50) para segunda-feira?\n\nTemos os seguintes horários disponíveis:\n• 08:00\n• 08:30\n• 09:00\n• 09:30\n\nQual desses você prefere? 😊" },
+    { role: "user", content: "Quero marcar às 08:00" },
+  ];
+
+  const rawReply = "Perfeito! Posso agendar sua Manicure para segunda-feira, dia 02/03, às 08:00?\n\nO valor do serviço é R$50.\n\nSe estiver tudo certinho, é só me avisar que eu já reservo seu horário! 😊";
+
+  const result = enforceKnownServiceNoRedundantQuestion("Quero marcar às 08:00", rawReply, services, conversationHistory);
+
+  console.log("\n=== SCENARIO 4 (AI ALREADY CORRECT) ===");
+  console.log("Input: 'Quero marcar às 08:00'");
+  console.log("Output:\n" + result);
+  console.log("=== END ===\n");
+
+  // The guardrail must NOT replace the AI's correct response
+  assertEquals(result.includes("segunda-feira"), true, "Must preserve 'segunda-feira' from AI response");
+  assertEquals(result.includes("Manicure"), true, "Must preserve 'Manicure'");
+  assertEquals(result.includes("08:00"), true, "Must preserve '08:00'");
+  assertEquals(result.includes("amanhã às 08:00. Deseja confirmar"), false, "Must NOT replace with wrong 'amanhã' guardrail");
+});
