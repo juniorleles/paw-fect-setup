@@ -68,7 +68,8 @@ function isBookingFlowContext(userMessage: string, reply: string): boolean {
   const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage || "");
   const dateTimeReference = /\b(amanh[aã]|hoje|segunda|terça|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}[h:]|\d{1,2}:\d{2})\b/i.test(userMessage || "") || /[àa]s\s+\d{1,2}/i.test((userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
   const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
-  return bookingIntent || dateTimeReference || schedulingReply;
+  const askingName = /(qual\s+(seu|o\s+seu)\s+nome|me\s+diz\s+(seu|o\s+seu)\s+nome|como\s+voc[eê]\s+se\s+chama|pra\s+eu\s+finalizar.*nome)/i.test(reply || "");
+  return bookingIntent || dateTimeReference || schedulingReply || askingName;
 }
 
 function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: string, services: any[], conversationHistory?: { role: string; content: string }[]): string {
@@ -255,14 +256,14 @@ Deno.test("shouldSuppressConsecutiveQuestion: allows question after statement", 
   assertEquals(result, false, "Should NOT suppress question after a statement");
 });
 
-Deno.test("Full pipeline: two questions in reply after previous question → only statement remains", () => {
+Deno.test("Full pipeline: name question after booking question → preserved (booking flow)", () => {
   const userMessage = "ok";
   const lastAssistant = "Quer que eu reserve às 16:30 ou prefere outro horário da lista? 😊";
   const rawReply = "Perfeito 😊\nQual seu nome para registrar o agendamento?";
   const result = applyGuardrails(userMessage, lastAssistant, rawReply);
   
-  const hasQuestion = result.includes("?");
-  assertEquals(hasQuestion, false, "No questions should remain");
+  // Name questions are part of booking flow and should be preserved
+  assertEquals(result.includes("nome"), true, "Name question should be preserved as part of booking flow");
   console.log("Final reply:", result);
 });
 
@@ -299,18 +300,16 @@ Deno.test("removeRepeatedQuestion: fallback when only question in reply", () => 
   assertEquals(result, "Perfeito, informação anotada. Vou seguir com o seu atendimento.");
 });
 
-Deno.test("Full pipeline: exact screenshot scenario", () => {
-  // Simulating the exact scenario from the user's screenshot
+Deno.test("Full pipeline: exact screenshot scenario — name question preserved in booking flow", () => {
   const userMessage = "ok";
   const lastAssistant = "Fechamos às 18:00 hoje.\nEscova 30 min + Manicure 60 min = 90 min.\nEx.: começando às 16:30, termina às 18:00.\nQuer que eu reserve às 16:30 ou prefere outro horário da lista? 😊";
   
-  // This is the problematic second message
   const rawReply = "Perfeito 😊\nQual seu nome para registrar o agendamento?";
   
   const result = applyGuardrails(userMessage, lastAssistant, rawReply);
   
-  const hasQuestion = result.includes("?");
-  assertEquals(hasQuestion, false, "Should NOT have any question since previous message had a question");
+  // Name question is part of booking flow — should be preserved
+  assertEquals(result.includes("nome"), true, "Name question should be preserved in booking flow");
   console.log("Screenshot scenario result:", result);
 });
 
