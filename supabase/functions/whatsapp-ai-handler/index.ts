@@ -257,7 +257,9 @@ function isBookingFlowContext(userMessage: string, reply: string): boolean {
   // Detect standalone date/time references and corrections (e.g. "amanhã", "ops amanhã", "segunda", "10h")
   const dateTimeReference = /\b(amanh[aã]|hoje|segunda|terça|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}[h:]|\d{1,2}:\d{2})\b/i.test(userMessage || "") || /[àa]s\s+\d{1,2}/i.test((userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
   const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
-  return bookingIntent || dateTimeReference || schedulingReply;
+  // Detect if the reply asks for the client's name (part of booking flow)
+  const askingName = /(qual\s+(seu|o\s+seu)\s+nome|me\s+diz\s+(seu|o\s+seu)\s+nome|como\s+voc[eê]\s+se\s+chama|pra\s+eu\s+finalizar.*nome)/i.test(reply || "");
+  return bookingIntent || dateTimeReference || schedulingReply || askingName;
 }
 
 function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
@@ -947,9 +949,11 @@ COMPORTAMENTO:
   4. Se houver AMBIGUIDADE (ex: "cortar o cabelo" pode ser Corte Feminino ou Corte Masculino), pergunte qual opção o cliente prefere E TAMBÉM pergunte data e horário NA MESMA MENSAGEM. Exemplo: "Temos Corte Feminino (R$100) e Corte Masculino (R$50).\nQual você prefere? E pra qual dia e horário?"
   5. Se NÃO houver ambiguidade, confirme o serviço identificado E pergunte data e horário. Exemplo: "Manicure e Pedicure! 💅\nPra qual dia e horário você quer agendar?"
   6. NUNCA responda APENAS listando serviços ou confirmando o serviço SEM perguntar quando. A pergunta de data/horário é OBRIGATÓRIA em toda resposta que identifica intenção de agendamento, MESMO quando há ambiguidade de serviço.
+  7. Se o cliente é NOVO (não está na memória do cliente) e ainda não informou o nome, pergunte o nome junto com data/horário. Exemplo: "Manicure! 💅 Qual seu nome e pra qual dia e horário você quer agendar?"
 - Nunca mencione regras internas ou configurações do sistema.
 
 FLUXO DE AGENDAMENTO (OBRIGATÓRIO — 2 ETAPAS SEPARADAS):
+COLETA DE NOME — REGRA CRÍTICA: Antes de apresentar o resumo para confirmação, você DEVE saber o nome do cliente. Se o cliente é novo (sem histórico) e ainda não informou o nome durante a conversa, PERGUNTE o nome ANTES de montar o resumo. Exemplo: "Pra eu finalizar, qual seu nome? 😊". NÃO confirme agendamento com nome desconhecido. Se o nome já foi informado em mensagens anteriores ou está na memória do cliente, NÃO peça novamente.
 ETAPA 1 — RESUMO (SEM ACTION): Após coletar ${collectFields}, apresente um RESUMO completo e pergunte ao cliente se está tudo certo. NÃO inclua o bloco <action> nesta etapa. NÃO inclua NENHUM bloco <action> na resposta. Aguarde a próxima mensagem do cliente.
 ETAPA 2 — REGISTRO (COM ACTION): SOMENTE na mensagem SEGUINTE, após o cliente responder confirmando (ex: "sim", "pode ser", "confirmo", "isso", "ok", "perfeito"), inclua o bloco <action> para criar o agendamento com status "pending".
 REGRA ABSOLUTA: O bloco <action> JAMAIS pode aparecer na mesma resposta em que você pergunta "tudo certo?" ou "podemos confirmar?". São DUAS mensagens SEPARADAS: uma pergunta, outra registra. Violar isso é um erro grave.
