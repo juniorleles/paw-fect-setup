@@ -254,8 +254,10 @@ function removeRepeatedQuestion(reply: string): string {
 
 function isBookingFlowContext(userMessage: string, reply: string): boolean {
   const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage || "");
+  // Detect standalone date/time references and corrections (e.g. "amanhã", "ops amanhã", "segunda", "10h")
+  const dateTimeReference = /\b(amanh[aã]|hoje|segunda|terça|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}[h:]|\d{1,2}:\d{2})\b/i.test(userMessage || "");
   const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
-  return bookingIntent || schedulingReply;
+  return bookingIntent || dateTimeReference || schedulingReply;
 }
 
 function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
