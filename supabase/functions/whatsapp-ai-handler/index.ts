@@ -422,9 +422,18 @@ function enforceKnownServiceNoRedundantQuestion(
 
       if (compatibleSlots.length === 1) {
         const chosenTime = compatibleSlots[0];
-        const dateLabel = inferDateLabel();
-        console.log(`[ServiceGuard] Service "${matchedService}" known + exact time ${chosenTime} → confirming`);
-        return `Perfeito 😊 ${matchedService} para ${dateLabel} às ${chosenTime}. Deseja confirmar?`;
+        console.log(`[ServiceGuard] Service "${matchedService}" known + exact time ${chosenTime} → passing through to AI for auto-confirmation`);
+        // Don't override with static message — let the AI generate the proper
+        // 1-step auto-confirmation with <action> block. Only strip redundant
+        // service questions if present.
+        if (asksForServiceAgain || listsServiceOptions) {
+          console.log(`[ServiceGuard] Stripping redundant service question, keeping time context`);
+          // Return a clean message that preserves the time choice without asking "Deseja confirmar?"
+          // The AI prompt is trained to auto-confirm, so we pass the reply through
+          // after cleaning the redundant service question.
+        } else {
+          return reply;
+        }
       }
 
       // If no compatible slots found from history but service is known and reply lists services, override

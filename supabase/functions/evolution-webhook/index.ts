@@ -98,6 +98,25 @@ Deno.serve(async (req) => {
         const senderPhone = msg.key?.remoteJid;
         if (!senderPhone || senderPhone.endsWith("@g.us")) continue; // Skip group messages
 
+        // --- Deduplication: skip if same message ID was already buffered recently ---
+        const msgId = msg.key?.id;
+        if (msgId) {
+          const twoMinAgo = new Date(Date.now() - 120_000).toISOString();
+          const { data: existing } = await serviceClient
+            .from("message_buffer")
+            .select("id")
+            .eq("instance_name", instanceName)
+            .eq("sender_phone", senderPhone)
+            .eq("content", textContent)
+            .gte("created_at", twoMinAgo)
+            .limit(1);
+
+          if (existing && existing.length > 0) {
+            console.log(`Duplicate message detected (msgId=${msgId}), skipping`);
+            continue;
+          }
+        }
+
         console.log(`Message from ${senderPhone}: ${textContent.substring(0, 100)}`);
 
         // Insert into message buffer instead of immediately processing
