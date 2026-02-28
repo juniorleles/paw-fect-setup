@@ -239,3 +239,41 @@ Deno.test("Redundant service guard: 'manicure' from history removes service ques
   assertEquals(result.includes("horários disponíveis") || result.includes("08:00"), true, "Should preserve time slots");
   console.log("Redundant service guard result:", result);
 });
+
+function removeConsecutiveDuplicateUserMessages(messages: { role: string; content: string }[]) {
+  const normalizeForDedup = (text: string) => (text || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const cleaned: { role: string; content: string }[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    const next = messages[i + 1];
+
+    if (msg.role === "user" && next && next.role === "user") {
+      const currentNorm = normalizeForDedup(msg.content || "");
+      const nextNorm = normalizeForDedup(next.content || "");
+      if (currentNorm === nextNorm) continue;
+    }
+
+    cleaned.push(msg);
+  }
+
+  return cleaned;
+}
+
+Deno.test("History dedup: keeps distinct consecutive user messages needed for context", () => {
+  const history = [
+    { role: "user", content: "Quero marcar manicure hj" },
+    { role: "user", content: "Ops amanhã" },
+    { role: "assistant", content: "Sem problemas!" },
+  ];
+
+  const cleaned = removeConsecutiveDuplicateUserMessages(history);
+  assertEquals(cleaned.length, 3, "Distinct consecutive user messages must be preserved");
+  assertEquals(cleaned[0].content, "Quero marcar manicure hj");
+  assertEquals(cleaned[1].content, "Ops amanhã");
+});
