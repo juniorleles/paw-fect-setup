@@ -255,11 +255,18 @@ function removeRepeatedQuestion(reply: string): string {
 function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
 
-  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar)|gostaria\s+de\s+agendar)/i.test(userMessage);
+  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage);
   if (!bookingIntent) return reply;
 
-  const asksDateOrTime = /(qual\s+dia|que\s+dia|pra\s+qual\s+dia|data|qual\s+hor[aá]rio|que\s+hor[aá]rio|pra\s+qual\s+hor[aá]rio|dia\s+e\s+hor[aá]rio|quando\s+quer)/i.test(reply);
-  if (asksDateOrTime) return reply;
+  // Check if reply already contains a question (any question mark)
+  const hasQuestion = /\?/.test(reply);
+  if (hasQuestion) return reply;
+
+  // Check if reply lists available times without asking client to choose
+  const listsAvailableTimes = /(hor[aá]rios?\s+dispon[ií]ve|dispon[ií]ve)/i.test(reply);
+  if (listsAvailableTimes) {
+    return `${reply.trim()}\nQual horário você prefere?`;
+  }
 
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
@@ -603,6 +610,7 @@ Se o cliente pedir um horário que conflita com a duração de outro serviço, i
 HORÁRIOS DISPONÍVEIS NOS PRÓXIMOS 7 DIAS (já consideram a duração dos serviços):
 ${availableSlots || "Nenhum horário disponível."}
 IMPORTANTE: Use SEMPRE esta lista para sugerir horários livres. NÃO invente horários. Se o cliente pedir um horário que não está nesta lista, informe que está lotado e sugira alternativas da lista.
+REGRA CRÍTICA: Quando listar horários disponíveis, SEMPRE termine com uma pergunta pedindo que o cliente escolha (ex: "Qual horário você prefere?"). NUNCA liste horários sem perguntar qual o cliente quer. A lista de horários sem pergunta NÃO é uma resposta válida.
 
 FUNÇÃO PRINCIPAL:
 Sua função é atender clientes, esclarecer dúvidas, coletar informações e ajudar em agendamentos.
