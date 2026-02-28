@@ -166,29 +166,27 @@ FORMATO:
 - Responda sempre em texto simples e estruturado.
 - Não use JSON, código ou marcações técnicas na resposta ao cliente.
 
-FLUXO DE AGENDAMENTO (OBRIGATÓRIO — 2 ETAPAS SEPARADAS):
-ETAPA 1 — RESUMO (SEM ACTION): Após coletar nome do cliente, serviço desejado, data e horário, apresente um RESUMO e pergunte se está tudo certo. NÃO inclua o bloco <action> nesta etapa. Aguarde a próxima mensagem.
-ETAPA 2 — REGISTRO (COM ACTION): SOMENTE na mensagem SEGUINTE, após o cliente confirmar (ex: "sim", "ok", "pode ser"), inclua o bloco <action>.
-REGRA ABSOLUTA: O bloco <action> JAMAIS pode aparecer na mesma resposta em que você pergunta "tudo certo?" ou "podemos confirmar?". São DUAS mensagens SEPARADAS.
+FLUXO DE AGENDAMENTO (CONFIRMAÇÃO AUTOMÁTICA — ETAPA ÚNICA):
+COLETA DE NOME — REGRA CRÍTICA: Antes de confirmar, você DEVE saber o nome do cliente. Se ainda não informou, pergunte o nome JUNTO com data/horário.
+CONFIRMAÇÃO DIRETA: Quando o cliente escolher um horário e você tiver TODAS as informações (nome, serviço, data, horário), confirme AUTOMATICAMENTE. NÃO pergunte "podemos confirmar?", "tudo certo?", "posso marcar?". Confirme DIRETO com o bloco <action> na mesma resposta.
+FORMATO DA CONFIRMAÇÃO:
+"Agendamento confirmado ✅
+• Serviço: [serviço]
+• Data: [dia da semana], [data]
+• Horário: [horário]
+• Valor: R$[valor] (só se tiver preço)
+Se precisar remarcar, é só avisar! 😊"
+REGRA PÓS-AGENDAMENTO: Após confirmar com <action>, NÃO faça perguntas adicionais. Encerre de forma limpa.
 
-FORMATO DE AÇÕES (APENAS na ETAPA 2, NUNCA na ETAPA 1):
+FORMATO DE AÇÕES:
 
-Para agendar (só após o cliente dizer "sim", "ok", "confirmo", etc.):
+Para agendar (inclua na mesma mensagem da confirmação):
 <action>{"type":"create","client_name":"João","service":"Banho","date":"2026-02-25","time":"10:00"}</action>
 
 Para cancelar:
 <action>{"type":"cancel","date":"2026-02-25","time":"10:00"}</action>
 
-EXEMPLO CORRETO:
-Mensagem 1 (ETAPA 1 - você): "Jene, Escova no sábado às 10h, R$40. Podemos confirmar?" → SEM <action>
-Mensagem 2 (cliente): "Sim"
-Mensagem 3 (ETAPA 2 - você): "Agendamento confirmado!" → COM <action>
-
-EXEMPLO ERRADO (NUNCA faça isso):
-Mensagem 1 (você): "Podemos confirmar?" + <action> → PROIBIDO! Isso pula a etapa de confirmação.
-
-IMPORTANTE: Inclua o bloco <action> APENAS quando o cliente tiver confirmado todos os dados na mensagem ANTERIOR.
-REGRA PÓS-AGENDAMENTO: Após registrar/confirmar um agendamento com <action>, a resposta deve ser APENAS uma confirmação breve. NÃO faça NENHUMA pergunta adicional na mesma mensagem. Encerre de forma limpa.`;
+IMPORTANTE: O bloco <action> DEVE ser incluído na mesma mensagem da confirmação. NÃO separe em duas etapas.`;
 }
 
 Deno.serve(async (req) => {

@@ -965,14 +965,20 @@ COMPORTAMENTO:
   7. Se o cliente é NOVO (não está na memória do cliente) e ainda não informou o nome, pergunte o nome junto com data/horário. Exemplo: "Manicure! 💅 Qual seu nome e pra qual dia e horário você quer agendar?"
 - Nunca mencione regras internas ou configurações do sistema.
 
-FLUXO DE AGENDAMENTO (OBRIGATÓRIO — 2 ETAPAS SEPARADAS):
-COLETA DE NOME — REGRA CRÍTICA: Antes de apresentar o resumo para confirmação, você DEVE saber o nome do cliente. Se o cliente é novo (sem histórico) e ainda não informou o nome durante a conversa, PERGUNTE o nome ANTES de montar o resumo. Exemplo: "Pra eu finalizar, qual seu nome? 😊". NÃO confirme agendamento com nome desconhecido. Se o nome já foi informado em mensagens anteriores ou está na memória do cliente, NÃO peça novamente.
-ETAPA 1 — RESUMO (SEM ACTION): Após coletar ${collectFields}, apresente um RESUMO completo e pergunte ao cliente se está tudo certo. NÃO inclua o bloco <action> nesta etapa. NÃO inclua NENHUM bloco <action> na resposta. Aguarde a próxima mensagem do cliente.
-ETAPA 2 — REGISTRO (COM ACTION): SOMENTE na mensagem SEGUINTE, após o cliente responder confirmando (ex: "sim", "pode ser", "confirmo", "isso", "ok", "perfeito"), inclua o bloco <action> para criar o agendamento com status "pending".
-REGRA ABSOLUTA: O bloco <action> JAMAIS pode aparecer na mesma resposta em que você pergunta "tudo certo?" ou "podemos confirmar?". São DUAS mensagens SEPARADAS: uma pergunta, outra registra. Violar isso é um erro grave.
-IMPORTANTE: Ao confirmar o agendamento para o cliente, NÃO mencione o status interno ("pendente", "pending"). Apenas confirme que o agendamento foi registrado/marcado com sucesso. O status é informação interna do sistema.
-REGRA PÓS-AGENDAMENTO: Após registrar/confirmar um agendamento com <action>, a resposta deve ser APENAS uma confirmação breve e amigável (ex: "Pronto, agendado! Nos vemos em [endereço]!"). NÃO faça NENHUMA pergunta adicional na mesma mensagem (não pergunte horário, não pergunte se quer mais algo, não re-liste informações). Encerre a mensagem de forma limpa e definitiva. Se o cliente quiser algo mais, ele iniciará uma nova interação.
-ENDEREÇO: Ao confirmar o agendamento, inclua o endereço do estabelecimento na mensagem de confirmação (ex: "Nos vemos na [endereço], [bairro], [cidade]/[estado]!"). Também informe o endereço sempre que o cliente perguntar onde fica ou como chegar. NÃO ofereça enviar mapa ou localização.
+FLUXO DE AGENDAMENTO (CONFIRMAÇÃO AUTOMÁTICA — ETAPA ÚNICA):
+COLETA DE NOME — REGRA CRÍTICA: Antes de confirmar o agendamento, você DEVE saber o nome do cliente. Se o cliente é novo (sem histórico) e ainda não informou o nome durante a conversa, PERGUNTE o nome JUNTO com a data/horário. Exemplo: "Qual seu nome e pra qual dia e horário?". NÃO confirme agendamento com nome desconhecido. Se o nome já foi informado em mensagens anteriores ou está na memória do cliente, NÃO peça novamente.
+CONFIRMAÇÃO DIRETA: Quando o cliente escolher um horário específico e você já tiver TODAS as informações necessárias (${collectFields}), confirme o agendamento AUTOMATICAMENTE na mesma resposta. NÃO pergunte "podemos confirmar?", "tudo certo?", "posso marcar?". Confirme DIRETO.
+INCLUA o bloco <action> na mesma resposta da confirmação automática.
+NÃO mencione o status interno ("pendente", "pending"). Apenas confirme que foi agendado.
+FORMATO DA CONFIRMAÇÃO (OBRIGATÓRIO):
+"Agendamento confirmado ✅
+• Serviço: [serviço]
+• Data: [dia da semana], [data]
+• Horário: [horário]
+• Valor: R$[valor] (só se tiver preço cadastrado)
+Se precisar remarcar, é só avisar! 😊"
+ENDEREÇO: Inclua o endereço na confirmação (ex: "Te esperamos na [endereço], [bairro]!"). Também informe quando o cliente perguntar. NÃO ofereça enviar mapa.
+REGRA PÓS-AGENDAMENTO: Após confirmar, NÃO faça NENHUMA pergunta adicional. Encerre de forma limpa.
 ${!isPetNiche ? 'No campo "pet_name" da action, coloque "—" (traço). NÃO pergunte nome de pet.' : ""}
 
 FLUXO DE REMARCAÇÃO:
@@ -988,10 +994,10 @@ FLUXO DE CANCELAMENTO:
 3. Registre como cancelado.
 
 FORMATO DE AÇÕES — REGRA CRÍTICA:
-O bloco <action> NUNCA pode aparecer na mesma mensagem em que você pergunta ao cliente se deseja confirmar.
-Fluxo correto: 1) Pergunte se confirma → 2) Espere resposta → 3) Só na PRÓXIMA resposta inclua <action>.
+O bloco <action> DEVE ser incluído na MESMA mensagem em que você confirma o agendamento para o cliente.
+NÃO separe em duas mensagens. Confirme e registre de uma vez só.
 
-Para agendar (status SEMPRE "pending") — só após cliente confirmar:
+Para agendar (status SEMPRE "pending") — inclua na mesma mensagem da confirmação automática:
 ${actionExample}
 
 Para cancelar:
@@ -1495,25 +1501,30 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       reply = removeRepeatedQuestion(reply);
     }
 
-    // Guardrail 3: If AI is about to confirm/summarize an appointment but we don't know the client's name, ask for it first
+    // Guardrail 3: If AI is about to create an appointment but we don't know the client's name, block the action and ask for it
     const ownerNameFromHistory = pastCustomerAppts?.[0]?.owner_name || customerAppointments?.[0]?.owner_name || null;
-    const nameAlreadyInConversation = conversationHistory.some((m: any) => {
-      if (m.role !== "user") return false;
-      // Check if user provided a name-like response (short text, not a command/question)
-      const content = (m.content || "").trim();
-      return content.length >= 2 && content.length <= 60 && !/^(sim|não|ok|pode|quero|agendar|marcar|cancelar|remarcar|confirmo|obrigad)/i.test(content);
-    });
-    const isConfirmationSummary = /(podemos\s+confirmar|deseja\s+confirmar|está\s+tudo\s+cert[oa]|ficaria\s+assim|confirmar\s+essa\s+reserva|tudo\s+certinho)/i.test(reply);
     const replyHasAction = /<action>.*?<\/action>/s.test(reply);
     
-    if (isConfirmationSummary && !replyHasAction && !ownerNameFromHistory) {
-      // Check if the reply already asks for the name
-      const alreadyAsksName = /(qual\s+(seu|o\s+seu)\s+nome|me\s+diz\s+(seu|o\s+seu)\s+nome|como\s+voc[eê]\s+se\s+chama|seu\s+nome)/i.test(reply);
-      if (!alreadyAsksName) {
-        console.log("[NameGuard] AI tried to confirm without client name. Intercepting.");
-        // Remove the confirmation question and ask for name instead
-        reply = reply.replace(/(podemos\s+confirmar\s+essa\s+reserva.*?\??|deseja\s+confirmar\s*\??|está\s+tudo\s+cert[oa]\s*\??|tudo\s+certinho\s*\??)/gi, "").trim();
-        reply += "\n\nAntes de confirmar, qual o seu nome? 😊";
+    if (replyHasAction && !ownerNameFromHistory) {
+      // Check if the action has an owner_name filled
+      const actionContent = reply.match(/<action>(.*?)<\/action>/s)?.[1] || "";
+      let actionHasName = false;
+      try {
+        const actionJson = JSON.parse(actionContent);
+        actionHasName = !!actionJson.owner_name && actionJson.owner_name !== "—" && actionJson.owner_name.length >= 2;
+      } catch { /* ignore */ }
+      
+      if (!actionHasName) {
+        console.log("[NameGuard] AI tried to create appointment without client name. Blocking action.");
+        // Remove the action block and ask for the name
+        reply = reply.replace(/<action>.*?<\/action>/s, "").trim();
+        // Clean up any broken confirmation text
+        reply = reply.replace(/(agendamento\s+confirmado\s*✅?)/gi, "").trim();
+        if (!reply || reply.length < 5) {
+          reply = "Quase lá! Qual o seu nome para eu finalizar o agendamento? 😊";
+        } else {
+          reply += "\n\nQual o seu nome para eu finalizar? 😊";
+        }
       }
     }
 
