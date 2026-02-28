@@ -322,19 +322,25 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     }
   }
 
-  if (!matchedService) {
-    console.log("[ServiceGuard] No service matched in message or history");
-    return reply;
-  }
-
-  console.log(`[ServiceGuard] Matched service: "${matchedService}" | Checking reply for redundant question...`);
-
   // BROAD detection: normalize the reply and check for ANY mention of asking for service
-  // This catches all unicode variants (ç, ê, etc.) reliably
-  const serviceQuestionPattern = /(qual\s+servico|que\s+servico|servico\s+voce\s+(quer|prefere|deseja)|qual\s+servico\s+e\s+que\s+horario|qual\s+seria\s+o\s+servico|qual\s+desses.*servico|servico\s+deseja\s+agendar|qual.*servico.*agendar|e\s+qual\s+servico)/i;
+  // This catches unicode variants (ç, ê, etc.) reliably.
+  const serviceQuestionPattern = /(qual\s+servico|que\s+servico|servico\s+voce\s+(quer|prefere|deseja)|qual\s+servico\s+e\s+que\s+horario|qual\s+seria\s+o\s+servico|qual\s+desses.*servico|servico\s+deseja\s+agendar|qual.*servico.*agendar|e\s+qual\s+servico|algum\s+servico\s+para|qual\s+servico\s+deseja\s+fazer)/i;
 
   const asksForServiceAgain = serviceQuestionPattern.test(normalizedReply);
-  
+
+  const dateCorrectionOnly = /(ops|opa|corrigindo|na\s+verdade|muda|troca|amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}h|\d{1,2}:\d{2})/i.test(normalizedUserMessage);
+
+  if (!matchedService) {
+    if (asksForServiceAgain && dateCorrectionOnly) {
+      console.log("[ServiceGuard] No service matched, but date-correction context detected. Stripping redundant service question.");
+    } else {
+      console.log("[ServiceGuard] No service matched in message or history");
+      return reply;
+    }
+  } else {
+    console.log(`[ServiceGuard] Matched service: "${matchedService}" | Checking reply for redundant question...`);
+  }
+
   if (!asksForServiceAgain) {
     console.log("[ServiceGuard] Reply does NOT ask for service again, no changes needed");
     return reply;
@@ -369,7 +375,11 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     if (serviceQuestionPattern.test(normalizedLine)) {
       // If it also mentions horário, replace with a clean version
       if (/horario/i.test(normalizedLine)) {
-        cleaned.push(`Perfeito, ${matchedService}! Qual horário você prefere?`);
+        if (matchedService) {
+          cleaned.push(`Perfeito, ${matchedService}! Qual horário você prefere?`);
+        } else {
+          cleaned.push("Perfeito! Qual horário você prefere?");
+        }
       }
       // Otherwise just drop the line
       continue;
@@ -384,7 +394,11 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  const result = sanitized || `Perfeito, ${matchedService}! Qual horário você prefere?`;
+  const fallback = matchedService
+    ? `Perfeito, ${matchedService}! Qual horário você prefere?`
+    : "Perfeito! Qual horário você prefere?";
+
+  const result = sanitized || fallback;
   console.log(`[ServiceGuard] Final result: "${result.substring(0, 200)}"`);
   return result;
 }
