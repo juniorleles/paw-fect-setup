@@ -1482,6 +1482,28 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       reply = removeRepeatedQuestion(reply);
     }
 
+    // Guardrail 3: If AI is about to confirm/summarize an appointment but we don't know the client's name, ask for it first
+    const ownerNameFromHistory = pastCustomerAppts?.[0]?.owner_name || customerAppointments?.[0]?.owner_name || null;
+    const nameAlreadyInConversation = conversationHistory.some((m: any) => {
+      if (m.role !== "user") return false;
+      // Check if user provided a name-like response (short text, not a command/question)
+      const content = (m.content || "").trim();
+      return content.length >= 2 && content.length <= 60 && !/^(sim|não|ok|pode|quero|agendar|marcar|cancelar|remarcar|confirmo|obrigad)/i.test(content);
+    });
+    const isConfirmationSummary = /(podemos\s+confirmar|deseja\s+confirmar|está\s+tudo\s+cert[oa]|ficaria\s+assim|confirmar\s+essa\s+reserva|tudo\s+certinho)/i.test(reply);
+    const replyHasAction = /<action>.*?<\/action>/s.test(reply);
+    
+    if (isConfirmationSummary && !replyHasAction && !ownerNameFromHistory) {
+      // Check if the reply already asks for the name
+      const alreadyAsksName = /(qual\s+(seu|o\s+seu)\s+nome|me\s+diz\s+(seu|o\s+seu)\s+nome|como\s+voc[eê]\s+se\s+chama|seu\s+nome)/i.test(reply);
+      if (!alreadyAsksName) {
+        console.log("[NameGuard] AI tried to confirm without client name. Intercepting.");
+        // Remove the confirmation question and ask for name instead
+        reply = reply.replace(/(podemos\s+confirmar\s+essa\s+reserva.*?\??|deseja\s+confirmar\s*\??|está\s+tudo\s+cert[oa]\s*\??|tudo\s+certinho\s*\??)/gi, "").trim();
+        reply += "\n\nAntes de confirmar, qual o seu nome? 😊";
+      }
+    }
+
     // Process actions (create/cancel/reschedule/confirm)
     reply = await processAction(serviceClient, shopConfig, cleanPhone, reply);
 
