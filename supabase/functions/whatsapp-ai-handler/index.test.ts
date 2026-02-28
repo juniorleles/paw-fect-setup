@@ -236,8 +236,27 @@ Deno.test("Redundant service guard: 'manicure' from history removes service ques
   const result = enforceKnownServiceNoRedundantQuestion("Ops amanhã", rawReply, services, conversationHistory);
   
   assertEquals(result.includes("qual seria o serviço"), false, "Should NOT ask for service again");
-  assertEquals(result.includes("horários disponíveis") || result.includes("08:00"), true, "Should preserve time slots");
+  assertEquals(result.includes("qual serviço"), false, "Should NOT ask for service (variation)");
+  assertEquals(result.includes("08:00") || result.includes("horários disponíveis"), true, "Should preserve time slots");
   console.log("Redundant service guard result:", result);
+});
+
+Deno.test("Redundant service guard: exact screenshot scenario with 'deseja agendar'", () => {
+  const services = [
+    { name: "Manicure", price: 50, duration: 60 },
+    { name: "Pedicure", price: 60, duration: 60 },
+  ];
+  const conversationHistory = [
+    { role: "user", content: "Quero marcar manicure hj\nOps amanhã" },
+  ];
+  const rawReply = "Sem problemas! Para amanhã, sábado (28/02), temos estes horários disponíveis:\n\n· 08:00, 08:30, 09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 12:00 e 12:30.\n\nQual desses você prefere e qual serviço deseja agendar? 😊";
+  
+  const result = enforceKnownServiceNoRedundantQuestion("Quero marcar manicure hj\nOps amanhã", rawReply, services, conversationHistory);
+  
+  assertEquals(result.includes("qual serviço deseja agendar"), false, "Should NOT ask for service");
+  assertEquals(result.includes("08:00"), true, "Should preserve time slots");
+  assertEquals(result.includes("horário") || result.includes("Qual horário"), true, "Should have a time question instead");
+  console.log("Screenshot scenario result:", result);
 });
 
 function removeConsecutiveDuplicateUserMessages(messages: { role: string; content: string }[]) {
