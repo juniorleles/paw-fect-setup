@@ -294,18 +294,33 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
     .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && normalizedUserMessage.includes(s.normalized))?.original;
 
-  // If not found in current message, search recent conversation history (last 5 user messages)
+  // If not found in current message, search recent conversation history (prioritize user messages)
   if (!matchedService && conversationHistory) {
     const recentUserMessages = conversationHistory
-      .filter(m => m.role === "user")
-      .slice(-5)
-      .map(m => normalize(m.content || ""));
-    
+      .filter((m) => m.role === "user")
+      .slice(-8)
+      .map((m) => normalize(m.content || ""));
+
     for (const histMsg of recentUserMessages.reverse()) {
       matchedService = (services || [])
         .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
         .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && histMsg.includes(s.normalized))?.original;
       if (matchedService) break;
+    }
+
+    // Fallback: if user messages are too curtas/ambíguas (ex: "ops amanhã"),
+    // recover service from any recent message in context (assistant + user).
+    if (!matchedService) {
+      const recentMessages = conversationHistory
+        .slice(-10)
+        .map((m) => normalize(m.content || ""));
+
+      for (const histMsg of recentMessages.reverse()) {
+        matchedService = (services || [])
+          .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
+          .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && histMsg.includes(s.normalized))?.original;
+        if (matchedService) break;
+      }
     }
   }
 
@@ -430,15 +445,27 @@ async function getConversationHistory(
       return true;
     });
 
-  // Remove consecutive duplicate user messages (keep only the last one in each sequence)
+  // Remove only truly duplicated consecutive user messages.
+  // Keep distinct sequenced messages (ex: "Quero marcar manicure" + "Ops amanhã")
+  // so we don't lose booking context.
+  const normalizeForDedup = (text: string) => (text || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
   const cleaned: { role: string; content: string }[] = [];
   for (let i = 0; i < filtered.length; i++) {
     const msg = filtered[i];
     const next = filtered[i + 1];
-    // Skip user message if next one is also user (keep the last in a sequence)
+
     if (msg.role === "user" && next && next.role === "user") {
-      continue;
+      const currentNorm = normalizeForDedup(msg.content || "");
+      const nextNorm = normalizeForDedup(next.content || "");
+      if (currentNorm === nextNorm) continue;
     }
+
     cleaned.push(msg);
   }
 
