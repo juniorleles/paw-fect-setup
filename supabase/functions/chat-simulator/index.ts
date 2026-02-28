@@ -25,11 +25,16 @@ interface SimulatorMessage {
 function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
 
-  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar)|gostaria\s+de\s+agendar)/i.test(userMessage);
+  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage);
   if (!bookingIntent) return reply;
 
-  const asksDateOrTime = /(qual\s+dia|que\s+dia|pra\s+qual\s+dia|data|qual\s+hor[aá]rio|que\s+hor[aá]rio|pra\s+qual\s+hor[aá]rio|dia\s+e\s+hor[aá]rio|quando\s+quer)/i.test(reply);
-  if (asksDateOrTime) return reply;
+  const hasQuestion = /\?/.test(reply);
+  if (hasQuestion) return reply;
+
+  const listsAvailableTimes = /(hor[aá]rios?\s+dispon[ií]ve|dispon[ií]ve)/i.test(reply);
+  if (listsAvailableTimes) {
+    return `${reply.trim()}\nQual horário você prefere?`;
+  }
 
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
