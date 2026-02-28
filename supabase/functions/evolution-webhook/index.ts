@@ -143,33 +143,26 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Atomically claim all unprocessed messages by marking them processed
-        // This prevents race conditions where two invocations process the same batch
-        const batchId = crypto.randomUUID();
-        const { count: claimedCount } = await serviceClient
+        // Atomically claim all unprocessed messages by marking them processed and returning them
+        const { data: allClaimed, error: claimErr } = await serviceClient
           .from("message_buffer")
           .update({ processed: true })
           .eq("instance_name", instanceName)
           .eq("sender_phone", senderPhone)
-          .eq("processed", false);
+          .eq("processed", false)
+          .gte("created_at", bufferedAt)
+          .select("id, content, created_at")
+          .order("created_at", { ascending: true });
 
-        if (!claimedCount || claimedCount === 0) {
-          console.log(`No messages to claim for ${senderPhone} — another invocation already processed them`);
+        if (claimErr) {
+          console.error("Claim error:", claimErr.message);
           continue;
         }
 
-        // Now fetch the messages we just claimed (they're the ones most recently marked processed)
-        // We use a tight time window to get only the batch we just processed
-        const { data: allClaimed } = await serviceClient
-          .from("message_buffer")
-          .select("id, content")
-          .eq("instance_name", instanceName)
-          .eq("sender_phone", senderPhone)
-          .eq("processed", true)
-          .gte("created_at", bufferedAt)
-          .order("created_at", { ascending: true });
-
-        if (!allClaimed || allClaimed.length === 0) continue;
+        if (!allClaimed || allClaimed.length === 0) {
+          console.log(`No messages to claim for ${senderPhone} — another invocation already processed them`);
+          continue;
+        }
 
         // Combine messages
         const combinedMessage = allClaimed.map((m: any) => m.content).join("\n");
