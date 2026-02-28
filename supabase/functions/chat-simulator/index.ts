@@ -77,6 +77,15 @@ function buildSimulatorPrompt(config: SimulatorConfig, simulatedAppointments: st
   const brTime = nowDate.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
   const brWeekday = nowDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" });
 
+  const tomorrowDate = new Date(nowDate.getTime() + 24 * 60 * 60 * 1000);
+  const dayAfterDate = new Date(nowDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const tomorrowStr = tomorrowDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const tomorrowWeekday = tomorrowDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" });
+  const tomorrowISO = `${tomorrowDate.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })}`;
+  const dayAfterStr = dayAfterDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const dayAfterWeekday = dayAfterDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" });
+  const dayAfterISO = `${dayAfterDate.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })}`;
+
   const existingApptsText = simulatedAppointments.length > 0
     ? simulatedAppointments.join("\n")
     : "Nenhum agendamento.";
@@ -99,6 +108,9 @@ HORÁRIOS DE FUNCIONAMENTO:
 ${hoursText}
 
 DATA/HORA ATUAL: ${brWeekday}, ${brDate} às ${brTime}
+AMANHÃ: ${tomorrowWeekday}, ${tomorrowStr} (${tomorrowISO})
+DEPOIS DE AMANHÃ: ${dayAfterWeekday}, ${dayAfterStr} (${dayAfterISO})
+REGRA CRÍTICA DE DATAS: Quando o cliente disser "amanhã", use EXATAMENTE a data acima (${tomorrowWeekday}, ${tomorrowStr}). NUNCA calcule "amanhã" por conta própria.
 
 SAUDAÇÃO POR HORÁRIO (use APENAS na PRIMEIRA mensagem da conversa):
 - Das 06:00 às 11:59 → "Bom dia"
