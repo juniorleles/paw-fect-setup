@@ -1087,7 +1087,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: "google/gemini-3-flash-preview",
         messages: aiMessages,
         max_completion_tokens: 4096,
       }),
@@ -1154,11 +1154,11 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     // IMPORTANT: emoji-only responses with action blocks are also retried because
     // the AI is likely confused (e.g., sending "confirm" when user asked for a new booking)
     if (!reply || reply.trim() === "" || isEmojiOnly(reply)) {
-      console.warn("Empty or emoji-only AI reply (stripping any action blocks), retrying with openai/gpt-5-mini...", JSON.stringify({ content_preview: reply?.substring(0, 200) }));
+      console.warn("Empty or emoji-only AI reply (stripping any action blocks), retrying with gemini-2.5-flash-lite...", JSON.stringify({ content_preview: reply?.substring(0, 200) }));
       
       // Strip any action blocks from the confused response to prevent wrong actions
       const strippedReply = reply?.replace(/<action>.*?<\/action>/gs, "").trim();
-      console.warn("Empty or emoji-only AI reply, retrying with openai/gpt-5-mini...", JSON.stringify({ content_preview: reply?.substring(0, 100) }));
+      console.warn("Empty or emoji-only AI reply, retrying with gemini-2.5-flash-lite...", JSON.stringify({ content_preview: reply?.substring(0, 100) }));
       
       // Build retry messages with an extra reinforcement instruction
       const retryMessages = [
@@ -1173,7 +1173,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-5-nano",
+          model: "google/gemini-2.5-flash-lite",
           messages: retryMessages,
           max_completion_tokens: 4096,
         }),
@@ -1186,7 +1186,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         if (retryReply && retryReply.trim() !== "" && !isEmojiOnly(retryReply)) {
           reply = retryReply;
           aiData = retryData;
-          console.log("Retry succeeded with openai/gpt-5-mini");
+          console.log("Retry succeeded with gemini-2.5-flash-lite");
         }
       }
     }
@@ -1221,7 +1221,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       user_id: shopConfig.user_id,
       tokens_used: tokensUsed,
       request_type: "whatsapp_chat",
-      model: "gpt-5-mini",
+      model: "gemini-3-flash-preview",
       response_time_ms: aiResponseTimeMs,
     });
 
