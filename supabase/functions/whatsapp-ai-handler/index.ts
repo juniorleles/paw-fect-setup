@@ -390,10 +390,19 @@ function enforceKnownServiceNoRedundantQuestion(
     return "o dia combinado";
   };
 
-  // --- PRIORITY CHECK: If service is known AND user is providing a time, intercept immediately ---
+  // --- PRIORITY CHECK: If service is known AND user is providing a time, intercept ONLY if the AI reply is wrong ---
   if (matchedService) {
     const userTimeIntent = extractUserTimeIntent(userMessage || "");
     if (userTimeIntent.exact || userTimeIntent.hour) {
+      // First: check if the AI reply already correctly mentions the service and does NOT ask for it again
+      const replyAlreadyCorrect = !asksForServiceAgain && !listsServiceOptions &&
+        normalizedReply.includes(normalize(matchedService));
+
+      if (replyAlreadyCorrect) {
+        console.log(`[ServiceGuard] AI reply already correct (mentions "${matchedService}", no redundant question). Passing through.`);
+        return reply;
+      }
+
       const lastAssistantMessage = getLastAssistantMessageFromHistory();
       const availableSlots = extractAvailableSlotsFromText(lastAssistantMessage);
 
