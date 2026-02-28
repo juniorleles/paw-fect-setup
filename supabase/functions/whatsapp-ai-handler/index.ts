@@ -274,6 +274,69 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
 
+function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: string, services: any[]): string {
+  if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
+
+  const normalize = (text: string) => text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const normalizedUserMessage = normalize(userMessage || "");
+  const matchedService = (services || [])
+    .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
+    .find((s: { original: string; normalized: string }) => s.normalized.length > 1 && normalizedUserMessage.includes(s.normalized))?.original;
+
+  if (!matchedService) return reply;
+
+  const asksForServiceAgain = /(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere)|qual\s+servi[cç]o\s+e\s+que\s+hor[aá]rio)/i.test(reply);
+  if (!asksForServiceAgain) return reply;
+
+  const lines = reply.split("\n");
+  const cleaned: string[] = [];
+  let skippingServiceOptions = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (/^op[cç][oõ]es?\s+de\s+servi[cç]o:?$/i.test(line)) {
+      skippingServiceOptions = true;
+      continue;
+    }
+
+    if (skippingServiceOptions) {
+      if (/^hor[aá]rios?\s+dispon[ií]veis?/i.test(line)) {
+        skippingServiceOptions = false;
+        cleaned.push(rawLine);
+        continue;
+      }
+
+      if (line === "" || /^[•\-·]/.test(line)) continue;
+      skippingServiceOptions = false;
+    }
+
+    if (/(qual\s+servi[cç]o|que\s+servi[cç]o|servi[cç]o\s+voc[eê]\s+(quer|prefere))/i.test(line)) {
+      if (/hor[aá]rio/i.test(line)) {
+        cleaned.push(`Perfeito, ${matchedService}. Qual horário você prefere?`);
+      }
+      continue;
+    }
+
+    cleaned.push(rawLine);
+  }
+
+  const sanitized = cleaned
+    .map((l) => l.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return sanitized || `Perfeito, ${matchedService}. Qual horário você prefere?`;
+}
+
 async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
   const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
   const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
@@ -1147,7 +1210,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       });
     }
 
-    // Deterministic safeguard: booking intent must always ask date/time when missing
+    // Deterministic safeguards for booking flow
+    reply = enforceBookingDateTimeQuestion(message, reply);
+    reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || []);
     reply = enforceBookingDateTimeQuestion(message, reply);
 
     // Track AI usage with latency
