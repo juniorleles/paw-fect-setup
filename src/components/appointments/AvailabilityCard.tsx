@@ -90,6 +90,9 @@ const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1, serv
     const nowTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
     const futureSlots = allSlots.filter((s) => s >= nowTime);
 
+    // Check if business day has ended (no future slots available)
+    const dayEnded = futureSlots.length === 0;
+
     // A slot is free if bookings < maxConcurrent
     const totalCapacity = allSlots.length * maxConcurrent;
     const totalBooked = todayApts.length;
@@ -104,7 +107,7 @@ const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1, serv
 
     const lastFree = [...futureSlots].reverse().find((s) => (bookingsPerSlot.get(s) || 0) < maxConcurrent) || null;
 
-    return { closed: false, totalSlots: totalCapacity, freeSlots, occupancy: Math.min(occupancy, 100), lastFree };
+    return { closed: false, dayEnded, totalSlots: totalCapacity, freeSlots, occupancy: Math.min(occupancy, 100), lastFree };
   }, [appointments, businessHours, todayStr, todayDayName]);
 
   if (availability.closed) {
@@ -124,7 +127,31 @@ const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1, serv
     );
   }
 
-  const isFull = availability.freeSlots === 0;
+  const isFull = !availability.dayEnded && availability.freeSlots === 0;
+  const dayEnded = availability.dayEnded;
+
+  if (dayEnded) {
+    return (
+      <Card className="border-none shadow-md bg-muted/50">
+        <CardContent className="pt-4 pb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+              <Clock className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground font-medium">Disponibilidade Hoje</p>
+              <p className="text-sm font-medium text-muted-foreground">Expediente encerrado</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <span className="text-lg font-bold text-muted-foreground">{availability.occupancy}%</span>
+              <p className="text-[10px] text-muted-foreground">ocupação</p>
+            </div>
+          </div>
+          <Progress value={availability.occupancy} className="h-2 mt-2" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={`border-none shadow-md ${isFull ? "bg-destructive/5 border border-destructive/20" : "bg-card"}`}>
