@@ -22,6 +22,18 @@ interface SimulatorMessage {
   content: string;
 }
 
+function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
+  if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
+
+  const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar)|gostaria\s+de\s+agendar)/i.test(userMessage);
+  if (!bookingIntent) return reply;
+
+  const asksDateOrTime = /(qual\s+dia|que\s+dia|pra\s+qual\s+dia|data|qual\s+hor[aá]rio|que\s+hor[aá]rio|pra\s+qual\s+hor[aá]rio|dia\s+e\s+hor[aá]rio|quando\s+quer)/i.test(reply);
+  if (asksDateOrTime) return reply;
+
+  return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
+}
+
 function buildSimulatorPrompt(config: SimulatorConfig, simulatedAppointments: string[]): string {
   const servicesText = config.services
     .map((s) => {
@@ -219,7 +231,9 @@ Deno.serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")?.content || "";
     let reply = aiData.choices?.[0]?.message?.content || "Desculpe, não consegui processar sua mensagem.";
+    reply = enforceBookingDateTimeQuestion(lastUserMessage, reply);
 
     // Extract action if present (don't persist, just return it)
     let action = null;
