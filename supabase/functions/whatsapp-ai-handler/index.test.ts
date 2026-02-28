@@ -66,7 +66,7 @@ function removeRepeatedQuestion(reply: string): string {
 
 function isBookingFlowContext(userMessage: string, reply: string): boolean {
   const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage || "");
-  const dateTimeReference = /\b(amanh[aã]|hoje|segunda|terça|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}[h:]|\d{1,2}:\d{2})\b/i.test(userMessage || "");
+  const dateTimeReference = /\b(amanh[aã]|hoje|segunda|terça|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}[h:]|\d{1,2}:\d{2})\b/i.test(userMessage || "") || /[àa]s\s+\d{1,2}/i.test((userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
   const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
   return bookingIntent || dateTimeReference || schedulingReply;
 }
@@ -159,10 +159,18 @@ function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: stri
     return "o dia combinado";
   };
 
-  // PRIORITY: service known + user provides time → intercept immediately
+  // PRIORITY: service known + user provides time → intercept ONLY if AI reply is wrong
   if (matchedService) {
     const userTimeIntent = extractUserTimeIntent(userMessage || "");
     if (userTimeIntent.exact || userTimeIntent.hour) {
+      // First: check if the AI reply already correctly mentions the service and does NOT ask for it again
+      const replyAlreadyCorrect = !asksForServiceAgain && !listsServiceOptions &&
+        normalizedReply.includes(normalize(matchedService));
+
+      if (replyAlreadyCorrect) {
+        return reply;
+      }
+
       const lastAssistantMessage = getLastAssistantMessageFromHistory();
       const availableSlots = extractAvailableSlotsFromText(lastAssistantMessage);
       const compatibleSlots = availableSlots.filter((slot) => {
@@ -502,4 +510,12 @@ Deno.test("SCENARIO: AI already correct — mentions service+day correctly → g
   assertEquals(result.includes("Manicure"), true, "Must preserve 'Manicure'");
   assertEquals(result.includes("08:00"), true, "Must preserve '08:00'");
   assertEquals(result.includes("amanhã às 08:00. Deseja confirmar"), false, "Must NOT replace with wrong 'amanhã' guardrail");
+});
+
+Deno.test("SCENARIO: 'Pode ser às 8' must be detected as booking flow context", () => {
+  const result = isBookingFlowContext("Pode ser às 8", "Perfeito 😊 Manicure para segunda-feira às 08:00. Deseja confirmar?");
+  console.log("\n=== SCENARIO 5 (às 8 booking detection) ===");
+  console.log("isBookingFlowContext result:", result);
+  console.log("=== END ===\n");
+  assertEquals(result, true, "'Pode ser às 8' must be recognized as booking flow");
 });
