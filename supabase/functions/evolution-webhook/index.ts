@@ -143,14 +143,15 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Atomically claim all unprocessed messages by marking them processed and returning them
+        // Atomically claim ALL pending messages from this sender.
+        // Important: do NOT filter by bufferedAt, otherwise older fragments
+        // (e.g. "Quero marcar manicure" + "Ops amanhã") get dropped.
         const { data: allClaimed, error: claimErr } = await serviceClient
           .from("message_buffer")
           .update({ processed: true })
           .eq("instance_name", instanceName)
           .eq("sender_phone", senderPhone)
           .eq("processed", false)
-          .gte("created_at", bufferedAt)
           .select("id, content, created_at")
           .order("created_at", { ascending: true });
 
