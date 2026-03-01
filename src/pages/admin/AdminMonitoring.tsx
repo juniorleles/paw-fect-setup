@@ -74,6 +74,13 @@ const AdminMonitoring = () => {
   const [errorLogs, setErrorLogs] = useState<any[]>([]);
   const [bufferStats, setBufferStats] = useState({ totalBuffered: 0, duplicatesBlocked: 0, avgBatchSize: 0 });
   const [timeoutRequests, setTimeoutRequests] = useState<any[]>([]);
+  const [queueMetrics, setQueueMetrics] = useState({
+    pendingMessages: 0,
+    avgWaitTimeSec: 0,
+    processedLast1h: 0,
+    throughputPerMin: 0,
+    oldestPendingAge: null as number | null,
+  });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -81,7 +88,9 @@ const AdminMonitoring = () => {
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
     const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [aiUsageRes, messagesRes, alertsRes, instancesRes, errorsRes, errorLogsRes, bufferRes, timeoutsRes] = await Promise.all([
+    const last1h = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+
+    const [aiUsageRes, messagesRes, alertsRes, instancesRes, errorsRes, errorLogsRes, bufferRes, timeoutsRes, pendingBufferRes, processedLastHourRes] = await Promise.all([
       supabase
         .from("ai_usage")
         .select("created_at, response_time_ms, tokens_used")
@@ -130,6 +139,20 @@ const AdminMonitoring = () => {
         .gt("response_time_ms", 15000)
         .order("created_at", { ascending: false })
         .limit(20),
+      // Pending (unprocessed) messages in buffer
+      supabase
+        .from("message_buffer")
+        .select("id, created_at")
+        .eq("processed", false)
+        .order("created_at", { ascending: true })
+        .limit(100),
+      // Processed messages in last hour (for throughput)
+      supabase
+        .from("message_buffer")
+        .select("id, created_at")
+        .eq("processed", true)
+        .gte("created_at", last1h)
+        .limit(500),
     ]);
 
     // Process latency by hour
@@ -220,6 +243,23 @@ const AdminMonitoring = () => {
 
     // Timeout requests
     setTimeoutRequests(timeoutsRes.data ?? []);
+
+    // Queue metrics
+    const pendingData = pendingBufferRes.data ?? [];
+    const processedLastHour = processedLastHourRes.data ?? [];
+    const pendingMessages = pendingData.length;
+    let oldestPendingAge: number | null = null;
+    if (pendingData.length > 0) {
+      oldestPendingAge = Math.round((now.getTime() - new Date(pendingData[0].created_at).getTime()) / 1000);
+    }
+    const processedLast1h = processedLastHour.length;
+    const throughputPerMin = processedLast1h > 0 ? Math.round((processedLast1h / 60) * 10) / 10 : 0;
+    // Avg wait time: use AI usage response times as proxy for end-to-end latency
+    const recentAiData = aiData.filter((r: any) => r.response_time_ms && r.response_time_ms > 0);
+    const avgWaitTimeSec = recentAiData.length > 0
+      ? Math.round(recentAiData.reduce((sum: number, r: any) => sum + (r.response_time_ms || 0), 0) / recentAiData.length / 100) / 10
+      : 0;
+    setQueueMetrics({ pendingMessages, avgWaitTimeSec, processedLast1h, throughputPerMin, oldestPendingAge });
 
     setLoading(false);
   }, []);
@@ -386,6 +426,81 @@ const AdminMonitoring = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Queue Processing Metrics */}
+      <div className="bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="w-4 h-4 text-orange-400" />
+          <h2 className="text-sm font-semibold text-white">Fila de Processamento</h2>
+          <span className="text-xs text-[hsl(220,10%,45%)]">Métricas do worker (cron 15s)</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="p-3 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+            <div className="flex items-center gap-2 mb-1">
+              <Loader2 className={`w-3.5 h-3.5 ${queueMetrics.pendingMessages > 0 ? "text-amber-400 animate-spin" : "text-emerald-400"}`} />
+              <span className="text-xs text-[hsl(220,10%,50%)]">Pendentes</span>
+            </div>
+            <p className={`text-xl font-bold ${queueMetrics.pendingMessages > 5 ? "text-amber-400" : "text-white"}`}>
+              {queueMetrics.pendingMessages}
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+            <div className="flex items-center gap-2 mb-1">
+              <Timer className="w-3.5 h-3.5 text-violet-400" />
+              <span className="text-xs text-[hsl(220,10%,50%)]">Latência IA</span>
+            </div>
+            <p className="text-xl font-bold text-white">
+              {queueMetrics.avgWaitTimeSec > 0 ? `${queueMetrics.avgWaitTimeSec}s` : "—"}
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-xs text-[hsl(220,10%,50%)]">Processadas 1h</span>
+            </div>
+            <p className="text-xl font-bold text-white">{queueMetrics.processedLast1h}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+            <div className="flex items-center gap-2 mb-1">
+              <Zap className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-xs text-[hsl(220,10%,50%)]">Vazão/min</span>
+            </div>
+            <p className="text-xl font-bold text-white">{queueMetrics.throughputPerMin}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-[hsl(220,15%,13%)] border border-[hsl(220,15%,17%)]">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-xs text-[hsl(220,10%,50%)]">Msg mais antiga</span>
+            </div>
+            <p className={`text-xl font-bold ${queueMetrics.oldestPendingAge && queueMetrics.oldestPendingAge > 60 ? "text-red-400" : "text-white"}`}>
+              {queueMetrics.oldestPendingAge !== null ? `${queueMetrics.oldestPendingAge}s` : "—"}
+            </p>
+          </div>
+        </div>
+        {/* Queue health indicator */}
+        <div className="mt-3 flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${
+            queueMetrics.pendingMessages === 0
+              ? "bg-emerald-400"
+              : queueMetrics.pendingMessages <= 3
+              ? "bg-amber-400"
+              : "bg-red-400 animate-pulse"
+          }`} />
+          <span className={`text-xs ${
+            queueMetrics.pendingMessages === 0
+              ? "text-emerald-400"
+              : queueMetrics.pendingMessages <= 3
+              ? "text-amber-400"
+              : "text-red-400"
+          }`}>
+            {queueMetrics.pendingMessages === 0
+              ? "Fila vazia — sistema saudável"
+              : queueMetrics.pendingMessages <= 3
+              ? "Mensagens aguardando processamento"
+              : "Fila acumulando — verificar worker"}
+          </span>
         </div>
       </div>
 
