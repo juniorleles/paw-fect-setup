@@ -118,6 +118,17 @@ Deno.serve(async (req) => {
 
         if (bufferErr) {
           console.error("Buffer insert error:", bufferErr.message);
+        } else {
+          // Fire-and-forget: trigger event-driven processing for this sender
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          fetch(`${supabaseUrl}/functions/v1/process-sender`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              instanceName,
+              senderPhone,
+            }),
+          }).catch((e) => console.error("Fire-and-forget trigger error:", e));
         }
       }
     }
