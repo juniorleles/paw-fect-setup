@@ -1042,6 +1042,23 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
 
   try {
     const action = JSON.parse(actionMatch[1]);
+
+    // Guard: if the AI is ASKING for confirmation (question mark in text) and the action
+    // is destructive (cancel/reschedule), do NOT execute it yet — strip the action and
+    // let it happen only after the user confirms.
+    const replyTextOnly = reply.replace(/<action>.*?<\/action>/s, "").trim();
+    if ((action.type === "cancel" || action.type === "reschedule") && /\?/.test(replyTextOnly)) {
+      console.log(`[ActionGuard] Stripping premature ${action.type} action — reply contains confirmation question`);
+      return replyTextOnly;
+    }
+  } catch { /* will be re-parsed below */ }
+
+  // Re-parse for actual execution
+  const actionMatch2 = reply.match(/<action>(.*?)<\/action>/s);
+  if (!actionMatch2) return reply;
+
+  try {
+    const action = JSON.parse(actionMatch2[1]);
     console.log("Processing action:", JSON.stringify(action));
 
     if (action.type === "create") {
