@@ -17,6 +17,14 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const fetchedForUser = useRef<string | null>(null);
 
+  // Reset loading when userId changes so we don't flash stale completed=false
+  useEffect(() => {
+    if (userId && fetchedForUser.current !== userId) {
+      setLoading(true);
+      setCompleted(false);
+    }
+  }, [userId]);
+
   const fetchStatus = useCallback(async () => {
     if (!userId) {
       setLoading(false);
