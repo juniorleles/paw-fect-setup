@@ -97,26 +97,34 @@ const Settings = () => {
     toast({ title: "Configurações salvas!", description: "Todas as alterações foram aplicadas." });
   }, [user, configId, subscriptionPlan, toast]);
 
-  // Auto-save with debounce
+  // Auto-save with debounce — only after user actually changes something
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initialLoadRef = useRef(true);
+  const loadedDataRef = useRef<string | null>(null);
+
+  // Snapshot the data as loaded from DB so we can detect real changes
+  useEffect(() => {
+    if (!loading && configId) {
+      loadedDataRef.current = JSON.stringify(data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, configId]);
 
   useEffect(() => {
-    if (initialLoadRef.current) {
-      initialLoadRef.current = false;
-      return;
-    }
-    if (!configId) return;
+    if (loading || !configId) return;
+    // Skip if data hasn't changed from what was loaded
+    if (loadedDataRef.current && JSON.stringify(data) === loadedDataRef.current) return;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       saveToDb(data);
+      // Update snapshot after save so subsequent no-ops don't re-trigger
+      loadedDataRef.current = JSON.stringify(data);
     }, 1500);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [data, configId, saveToDb]);
+  }, [data, configId, loading, saveToDb]);
 
   const handleSave = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
