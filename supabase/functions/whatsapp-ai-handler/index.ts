@@ -142,6 +142,24 @@ function computeAvailableSlots(
 
     if (freeSlots.length > 0) {
       lines.push(`${weekday} ${dateStr}: ${freeSlots.join(", ")}`);
+    } else if (d === 0) {
+      // Today with no available slots — check if it's because day is ending or truly booked
+      const totalSlots = [];
+      let sh = openH, sm = openM;
+      while (sh < closeH || (sh === closeH && sm < closeM)) {
+        totalSlots.push(`${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}`);
+        sm += slotInterval;
+        if (sm >= 60) { sh += Math.floor(sm / 60); sm = sm % 60; }
+      }
+      const futureSlots = totalSlots.filter(t => {
+        const [th, tm] = t.split(":").map(Number);
+        return th > currentHour || (th === currentHour && tm > currentMin);
+      });
+      if (futureSlots.length === 0) {
+        lines.push(`${weekday} ${dateStr}: EXPEDIENTE ENCERRADO (horário de funcionamento já passou)`);
+      } else {
+        lines.push(`${weekday} ${dateStr}: LOTADO (todos os horários restantes estão ocupados)`);
+      }
     } else {
       lines.push(`${weekday} ${dateStr}: LOTADO`);
     }
@@ -937,6 +955,7 @@ Se o cliente pedir um horário que conflita com a duração de outro serviço, i
 HORÁRIOS DISPONÍVEIS NOS PRÓXIMOS 7 DIAS (já consideram a duração dos serviços):
 ${availableSlots || "Nenhum horário disponível."}
 IMPORTANTE: Use SEMPRE esta lista para sugerir horários livres. NÃO invente horários. Se o cliente pedir um horário que não está nesta lista, informe que está lotado e sugira alternativas da lista.
+REGRA DE EXPEDIENTE: Se um dia mostrar "EXPEDIENTE ENCERRADO", significa que o horário de funcionamento já passou para aquele dia. NÃO diga que está "lotado" ou "preenchido" — informe que o expediente já encerrou e sugira o próximo dia disponível.
 REGRA CRÍTICA: Quando listar horários disponíveis, SEMPRE termine com uma pergunta pedindo que o cliente escolha (ex: "Qual horário você prefere?"). NUNCA liste horários sem perguntar qual o cliente quer. A lista de horários sem pergunta NÃO é uma resposta válida.
 
 FUNÇÃO PRINCIPAL:
