@@ -923,7 +923,7 @@ ${existingAppointments || "Nenhum agendamento."}
 
 AGENDAMENTOS DESTE CLIENTE (telefone: ${cleanPhone}):
 ${customerApptsText}
-REGRA: Se o cliente perguntar sobre "agendamentos pendentes", "pendente de confirmação", "meus agendamentos", "algum agendamento", ou variações similares → liste os agendamentos DESTE CLIENTE acima, indicando o status de cada um (pendente, confirmado, etc). Responda de forma clara e objetiva.
+REGRA: Se o cliente perguntar sobre "meus agendamentos", "algum agendamento", "quando vai ser", ou variações similares → liste os agendamentos DESTE CLIENTE acima com serviço, data e horário. NÃO mencione status internos como "pendente", "pendente de confirmação", "confirmado", etc. Esses status são informações INTERNAS do sistema e NÃO devem ser expostos ao cliente. Apenas informe os dados do agendamento de forma natural (ex: "Sua escova está agendada para amanhã, segunda-feira (02/03), às 08:00 😊").
 
 CAPACIDADE DE ATENDIMENTO SIMULTÂNEO: ${maxConcurrent} atendente${maxConcurrent > 1 ? "s" : ""} por horário.
 
