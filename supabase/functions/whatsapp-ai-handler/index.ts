@@ -95,11 +95,15 @@ function computeAvailableSlots(
   services: any[],
   daysAhead = 7
 ): string {
+  // Use fixed UTC-3 offset for BRT (Brazil abolished DST in 2019)
   const now = new Date();
-  const brNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const brTimestamp = now.getTime() - 3 * 60 * 60 * 1000;
+  const brNow = new Date(brTimestamp);
   const todayStr = brNow.toISOString().split("T")[0];
-  const currentHour = brNow.getHours();
-  const currentMin = brNow.getMinutes();
+  const currentHour = brNow.getUTCHours();
+  const currentMin = brNow.getUTCMinutes();
+
+  console.log(`[AVAILABILITY] UTC now: ${now.toISOString()}, BR now: ${brNow.toISOString()}, currentHour: ${currentHour}, currentMin: ${currentMin}, todayStr: ${todayStr}`);
 
   const dayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
@@ -109,12 +113,13 @@ function computeAvailableSlots(
 
   for (let d = 0; d < daysAhead; d++) {
     const date = new Date(brNow);
-    date.setDate(date.getDate() + d);
+    date.setUTCDate(date.getUTCDate() + d);
     const dateStr = date.toISOString().split("T")[0];
-    const weekday = dayNames[date.getDay()];
+    const weekday = dayNames[date.getUTCDay()];
 
     const daySchedule = businessHours.find((h: any) => h.day === weekday);
     if (!daySchedule || !daySchedule.isOpen) continue;
+    console.log(`[AVAILABILITY] ${weekday} ${dateStr}: openTime=${daySchedule.openTime}, closeTime=${daySchedule.closeTime}, d=${d}`);
 
     const [openH, openM] = daySchedule.openTime.split(":").map(Number);
     const [closeH, closeM] = daySchedule.closeTime.split(":").map(Number);
@@ -140,6 +145,7 @@ function computeAvailableSlots(
       if (m >= 60) { h += Math.floor(m / 60); m = m % 60; }
     }
 
+    console.log(`[AVAILABILITY] ${weekday} ${dateStr}: freeSlots=${freeSlots.length}, first=${freeSlots[0] || 'none'}, last=${freeSlots[freeSlots.length-1] || 'none'}`);
     if (freeSlots.length > 0) {
       lines.push(`${weekday} ${dateStr}: ${freeSlots.join(", ")}`);
     } else if (d === 0) {
