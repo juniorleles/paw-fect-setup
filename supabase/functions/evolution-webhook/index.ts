@@ -6,12 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BUFFER_DELAY_MS = 8000; // Wait 8 seconds for more messages (users often send 2-4 rapid fragments)
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -63,7 +57,6 @@ Deno.serve(async (req) => {
         console.log(`Updated whatsapp_status to '${whatsappStatus}' for instance '${instanceName}'`);
       }
 
-      // Generate alert for disconnections
       if (whatsappStatus === "disconnected") {
         await serviceClient.from("system_alerts").insert({
           alert_type: "disconnection",
@@ -79,140 +72,54 @@ Deno.serve(async (req) => {
       console.log(`QR code updated for ${instanceName}`);
     }
 
-    // Handle incoming messages
+    // Handle incoming messages — just buffer, no processing
     if (event === "MESSAGES_UPSERT" || event === "messages.upsert") {
       const messages = body.data || [];
       const msgArray = Array.isArray(messages) ? messages : [messages];
 
       for (const msg of msgArray) {
-        // Block all messages from the connected number itself to prevent loops
         if (msg.key?.fromMe) continue;
-        
-        const textContent = msg.message?.conversation 
+
+        const textContent = msg.message?.conversation
           || msg.message?.extendedTextMessage?.text
           || msg.message?.ephemeralMessage?.message?.conversation
           || msg.message?.ephemeralMessage?.message?.extendedTextMessage?.text;
-        
+
         if (!textContent) continue;
 
         const senderPhone = msg.key?.remoteJid;
-        if (!senderPhone || senderPhone.endsWith("@g.us")) continue; // Skip group messages
+        if (!senderPhone || senderPhone.endsWith("@g.us")) continue;
 
-        // --- Deduplication: skip if same message ID was already buffered recently ---
-        const msgId = msg.key?.id;
-        if (msgId) {
-          const twoMinAgo = new Date(Date.now() - 120_000).toISOString();
-          const { data: existing } = await serviceClient
-            .from("message_buffer")
-            .select("id")
-            .eq("instance_name", instanceName)
-            .eq("sender_phone", senderPhone)
-            .eq("content", textContent)
-            .gte("created_at", twoMinAgo)
-            .limit(1);
+        // Deduplication: skip if same content was already buffered recently
+        const twoMinAgo = new Date(Date.now() - 120_000).toISOString();
+        const { data: existing } = await serviceClient
+          .from("message_buffer")
+          .select("id")
+          .eq("instance_name", instanceName)
+          .eq("sender_phone", senderPhone)
+          .eq("content", textContent)
+          .gte("created_at", twoMinAgo)
+          .limit(1);
 
-          if (existing && existing.length > 0) {
-            console.log(`Duplicate message detected (msgId=${msgId}), skipping`);
-            continue;
-          }
+        if (existing && existing.length > 0) {
+          console.log(`Duplicate message detected, skipping`);
+          continue;
         }
 
-        console.log(`Message from ${senderPhone}: ${textContent.substring(0, 100)}`);
+        console.log(`Buffered message from ${senderPhone}: ${textContent.substring(0, 100)}`);
 
-        // Insert into message buffer instead of immediately processing
-        const { data: buffered, error: bufferErr } = await serviceClient
+        const { error: bufferErr } = await serviceClient
           .from("message_buffer")
           .insert({
             instance_name: instanceName,
             sender_phone: senderPhone,
             content: textContent,
-          })
-          .select("id, created_at")
-          .single();
+          });
 
         if (bufferErr) {
           console.error("Buffer insert error:", bufferErr.message);
-          continue;
-        }
-
-        const bufferedId = buffered.id;
-        const bufferedAt = buffered.created_at;
-
-        console.log(`Buffered message ${bufferedId}, waiting ${BUFFER_DELAY_MS}ms...`);
-
-        // Wait for more messages
-        await sleep(BUFFER_DELAY_MS);
-
-        // Check if newer unprocessed messages arrived from same sender
-        // Use the latest unprocessed message ID to break ties when created_at matches.
-        const { data: latestPending } = await serviceClient
-          .from("message_buffer")
-          .select("id")
-          .eq("instance_name", instanceName)
-          .eq("sender_phone", senderPhone)
-          .eq("processed", false)
-          .order("created_at", { ascending: false })
-          .order("id", { ascending: false })
-          .limit(1);
-
-        const latestId = latestPending?.[0]?.id;
-        if (latestId && latestId !== bufferedId) {
-          // A newer (or higher-ID) message exists — that invocation will handle the batch
-          console.log(`Skipping message ${bufferedId}: deferring to ${latestId}`);
-          continue;
-        }
-
-        // Atomically claim ALL pending messages from this sender.
-        // Important: do NOT filter by bufferedAt, otherwise older fragments
-        // (e.g. "Quero marcar manicure" + "Ops amanhã") get dropped.
-        const { data: allClaimed, error: claimErr } = await serviceClient
-          .from("message_buffer")
-          .update({ processed: true })
-          .eq("instance_name", instanceName)
-          .eq("sender_phone", senderPhone)
-          .eq("processed", false)
-          .select("id, content, created_at")
-          .order("created_at", { ascending: true });
-
-        if (claimErr) {
-          console.error("Claim error:", claimErr.message);
-          continue;
-        }
-
-        if (!allClaimed || allClaimed.length === 0) {
-          console.log(`No messages to claim for ${senderPhone} — another invocation already processed them`);
-          continue;
-        }
-
-        // Combine messages
-        const combinedMessage = allClaimed.map((m: any) => m.content).join("\n");
-        console.log(`Processing ${allClaimed.length} combined messages from ${senderPhone}: ${combinedMessage.substring(0, 200)}`);
-
-        // Forward combined message to AI handler
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        try {
-          const aiRes = await fetch(`${supabaseUrl}/functions/v1/whatsapp-ai-handler`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              instanceName,
-              message: combinedMessage,
-              senderPhone,
-            }),
-          });
-          console.log("AI handler response:", aiRes.status);
-        } catch (aiErr) {
-          console.error("AI handler call error:", aiErr);
         }
       }
-
-      // Cleanup old processed buffer entries (older than 1 hour)
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      await serviceClient
-        .from("message_buffer")
-        .delete()
-        .eq("processed", true)
-        .lt("created_at", oneHourAgo);
     }
 
     return new Response(JSON.stringify({ ok: true }), {
@@ -222,7 +129,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("Webhook error:", err);
     return new Response(JSON.stringify({ error: "Webhook processing error" }), {
-      status: 200, // Return 200 to prevent retries
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
