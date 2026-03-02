@@ -1188,7 +1188,7 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         });
       if (insertErr) {
         console.error("Insert error:", insertErr);
-        // Log error silently — never expose errors to the customer
+        // Log error silently
         try {
           const svcClient = getServiceClient();
           await svcClient.from("admin_error_logs").insert({
@@ -1198,8 +1198,13 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
             user_id: shopConfig.user_id,
           });
         } catch { /* ignore logging errors */ }
-        // Return only the natural reply without any error indication
-        return reply.replace(/<action>.*?<\/action>/s, "").trim();
+        
+        // CRITICAL: Return a friendly error message instead of the false confirmation
+        const isSlotConflict = /lot(ado|ação)|conflita/i.test(insertErr.message || "");
+        if (isSlotConflict) {
+          return `Poxa, infelizmente o horário ${action.time} não está mais disponível para ${action.date} 😕\nVamos tentar outro horário? Me diz qual fica melhor pra você!`;
+        }
+        return `Desculpe, não consegui finalizar o agendamento agora. Pode tentar novamente? 😊`;
       }
     } else if (action.type === "confirm") {
       await serviceClient
