@@ -81,7 +81,7 @@ const Auth = () => {
     } else if (isSignUp) {
       toast({
         title: "Conta criada!",
-        description: "Verifique seu e-mail para confirmar o cadastro.",
+        description: "Sua conta foi criada com sucesso. Bem-vindo!",
       });
     }
   };
