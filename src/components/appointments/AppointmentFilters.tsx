@@ -60,7 +60,7 @@ const AppointmentFilters = ({
             { key: "tomorrow", label: "Amanhã" },
             { key: "week", label: "Semana" },
             { key: "month", label: "Mês" },
-          ].map((item) => (
+          ].filter((item) => !(viewMode === "list" && item.key === "month")).map((item) => (
             <Button
               key={item.key}
               variant={quickDateFilter === item.key ? "default" : "outline"}
