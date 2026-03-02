@@ -24,13 +24,17 @@ Deno.serve(async (req) => {
       || req.headers.get("x-api-key")
       || null;
 
-    if (!expectedKey || !incomingKey || incomingKey !== expectedKey) {
-      console.warn(`[WEBHOOK-AUTH] Rejected unauthorized webhook request. Key present: ${!!incomingKey}`);
+    if (!expectedKey || !incomingKey || incomingKey.trim() !== expectedKey.trim()) {
+      const inFirst4 = incomingKey ? incomingKey.substring(0, 4) : "null";
+      const exFirst4 = expectedKey ? expectedKey.substring(0, 4) : "null";
+      console.warn(`[WEBHOOK-AUTH] Rejected. Incoming starts: "${inFirst4}" (len=${incomingKey?.length}), Expected starts: "${exFirst4}" (len=${expectedKey?.length})`);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log("[WEBHOOK-AUTH] Authorized successfully");
 
     console.log("Evolution webhook received:", JSON.stringify(body).substring(0, 500));
 
