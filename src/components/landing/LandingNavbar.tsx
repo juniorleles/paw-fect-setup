@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const NAV_LINKS = [
   { href: "#beneficios", label: "Benefícios" },
@@ -15,6 +16,9 @@ const NAV_LINKS = [
 const LandingNavbar = () => {
   const [mobileMenu, setMobileMenu] = useState(false);
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  const isLoggedIn = !loading && !!user;
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -33,12 +37,20 @@ const LandingNavbar = () => {
           ))}
         </div>
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
-            Entrar
-          </Button>
-          <a href="/auth?signup=true">
-            <Button size="sm">Testar Grátis</Button>
-          </a>
+          {isLoggedIn ? (
+            <Button size="sm" onClick={() => navigate("/dashboard")}>
+              Ir para o Painel
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
+                Entrar
+              </Button>
+              <a href="/auth?signup=true">
+                <Button size="sm">Testar Grátis</Button>
+              </a>
+            </>
+          )}
         </div>
         <button className="md:hidden" onClick={() => setMobileMenu(!mobileMenu)}>
           {mobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -52,12 +64,20 @@ const LandingNavbar = () => {
             </a>
           ))}
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" size="sm" className="flex-1" onClick={() => { setMobileMenu(false); navigate("/auth"); }}>
-              Entrar
-            </Button>
-            <a href="/auth?signup=true" className="flex-1" onClick={() => setMobileMenu(false)}>
-              <Button size="sm" className="w-full">Testar Grátis</Button>
-            </a>
+            {isLoggedIn ? (
+              <Button size="sm" className="flex-1" onClick={() => { setMobileMenu(false); navigate("/dashboard"); }}>
+                Ir para o Painel
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => { setMobileMenu(false); navigate("/auth"); }}>
+                  Entrar
+                </Button>
+                <a href="/auth?signup=true" className="flex-1" onClick={() => setMobileMenu(false)}>
+                  <Button size="sm" className="w-full">Testar Grátis</Button>
+                </a>
+              </>
+            )}
           </div>
         </div>
       )}
