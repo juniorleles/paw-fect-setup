@@ -96,17 +96,61 @@ Deno.serve(async (req) => {
       });
     }
 
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // --- SUBSCRIPTION VERIFICATION (before any Evolution API calls) ---
+    // Disconnect is always allowed (user should be able to disconnect even without subscription)
+    if (!isDisconnect) {
+      const { data: subscription } = await serviceClient
+        .from("subscriptions")
+        .select("status, trial_end_at, current_period_end, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      let blockReason: string | null = null;
+
+      if (!subscription) {
+        blockReason = "Você precisa de uma assinatura ativa para conectar o WhatsApp. Assine um plano para começar.";
+      } else if (subscription.status === "cancelled") {
+        blockReason = "Sua assinatura foi cancelada. Reative seu plano para reconectar o WhatsApp.";
+      } else if (subscription.status === "active") {
+        const trialEnd = subscription.trial_end_at ? new Date(subscription.trial_end_at) : null;
+        const hasPaidPeriod = subscription.current_period_end && trialEnd && new Date(subscription.current_period_end) > trialEnd;
+
+        if (!hasPaidPeriod) {
+          // Trial user — check quotas
+          const aptsUsed = subscription.trial_appointments_used ?? 0;
+          const msgsUsed = subscription.trial_messages_used ?? 0;
+          const aptsLimit = subscription.trial_appointments_limit ?? 50;
+          const msgsLimit = subscription.trial_messages_limit ?? 250;
+
+          if (aptsUsed >= aptsLimit || msgsUsed >= msgsLimit) {
+            blockReason = "Suas cotas de teste foram esgotadas. Atualize para um plano pago para continuar usando o WhatsApp.";
+            console.log(`[RECONNECT-BLOCK] Trial quota exhausted for ${user.id}: apts=${aptsUsed}/${aptsLimit}, msgs=${msgsUsed}/${msgsLimit}`);
+          }
+        }
+      } else if (subscription.status !== "active") {
+        blockReason = "Sua assinatura não está ativa. Verifique seu plano para reconectar o WhatsApp.";
+      }
+
+      if (blockReason) {
+        console.log(`[RECONNECT-BLOCK] Blocked instance creation for ${user.id}: ${blockReason}`);
+        return new Response(JSON.stringify({ error: blockReason, blocked: true }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const instanceName = `user_${user.id.replace(/-/g, "").substring(0, 16)}`;
     const baseUrl = evolutionUrl.replace(/\/+$/, "");
     const evoHeaders: Record<string, string> = {
       apikey: evolutionKey.trim(),
       "Content-Type": "application/json",
     };
-
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     // Handle disconnect
     if (isDisconnect) {
