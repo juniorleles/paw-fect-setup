@@ -32,85 +32,129 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Wait for the buffer delay — let the sender finish typing
-    await new Promise((resolve) => setTimeout(resolve, BUFFER_DELAY_MS));
+    // Try to acquire lock for this sender
+    const { data: lockResult, error: lockErr } = await serviceClient
+      .rpc("acquire_sender_lock", {
+        p_sender_id: senderPhone,
+        p_instance_name: instanceName,
+      });
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      // Check if there are still recent unprocessed messages (sender still typing)
-      const cutoff = new Date(Date.now() - BUFFER_DELAY_MS).toISOString();
+    if (lockErr) {
+      console.error(`[process-sender] Lock error: ${lockErr.message}`);
+      return new Response(JSON.stringify({ error: lockErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-      const { data: recentMessages } = await serviceClient
-        .from("message_buffer")
-        .select("id")
-        .eq("instance_name", instanceName)
-        .eq("sender_phone", senderPhone)
-        .eq("processed", false)
-        .gt("created_at", cutoff)
-        .limit(1);
-
-      if (recentMessages && recentMessages.length > 0) {
-        console.log(`[process-sender] ${senderPhone} still typing, waiting... (attempt ${attempt + 1})`);
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-        continue;
-      }
-
-      // Sender stopped typing — atomically claim all pending messages
-      const { data: claimed, error: claimErr } = await serviceClient
-        .from("message_buffer")
-        .update({ processed: true })
-        .eq("instance_name", instanceName)
-        .eq("sender_phone", senderPhone)
-        .eq("processed", false)
-        .select("id, content, created_at")
-        .order("created_at", { ascending: true });
-
-      if (claimErr) {
-        console.error(`[process-sender] Claim error: ${claimErr.message}`);
-        return new Response(JSON.stringify({ error: claimErr.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      if (!claimed || claimed.length === 0) {
-        console.log(`[process-sender] No messages to claim for ${senderPhone} — already processed by another worker`);
-        return new Response(JSON.stringify({ ok: true, processed: 0 }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Combine messages
-      const combinedMessage = claimed.map((m: any) => m.content).join("\n");
-      console.log(`[process-sender] Processing ${claimed.length} messages from ${senderPhone}: ${combinedMessage.substring(0, 200)}`);
-
-      // Forward to AI handler
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      try {
-        const aiRes = await fetch(`${supabaseUrl}/functions/v1/whatsapp-ai-handler`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            instanceName,
-            message: combinedMessage,
-            senderPhone,
-          }),
-        });
-        console.log(`[process-sender] AI handler response for ${senderPhone}: ${aiRes.status}`);
-      } catch (aiErr) {
-        console.error(`[process-sender] AI handler error for ${senderPhone}:`, aiErr);
-      }
-
-      return new Response(JSON.stringify({ ok: true, processed: claimed.length }), {
+    if (!lockResult) {
+      // Another process is already handling this sender
+      console.log(`[process-sender] Lock NOT acquired for ${senderPhone} — another process is handling it`);
+      return new Response(JSON.stringify({ ok: true, skipped: true, reason: "locked" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Exhausted retries — sender is still typing after max wait
-    console.log(`[process-sender] Max retries reached for ${senderPhone}, will be picked up by safety-net cron`);
+    console.log(`[process-sender] Lock acquired for ${senderPhone}`);
 
-    return new Response(JSON.stringify({ ok: true, deferred: true }), {
+    try {
+      // Wait for the buffer delay — let the sender finish typing
+      await new Promise((resolve) => setTimeout(resolve, BUFFER_DELAY_MS));
+
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        // Check if there are still recent unprocessed messages (sender still typing)
+        const cutoff = new Date(Date.now() - BUFFER_DELAY_MS).toISOString();
+
+        const { data: recentMessages } = await serviceClient
+          .from("message_buffer")
+          .select("id")
+          .eq("instance_name", instanceName)
+          .eq("sender_phone", senderPhone)
+          .eq("processed", false)
+          .gt("created_at", cutoff)
+          .limit(1);
+
+        if (recentMessages && recentMessages.length > 0) {
+          console.log(`[process-sender] ${senderPhone} still typing, waiting... (attempt ${attempt + 1})`);
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+          continue;
+        }
+
+        // Sender stopped typing — atomically claim all pending messages
+        const { data: claimed, error: claimErr } = await serviceClient
+          .from("message_buffer")
+          .update({ processed: true })
+          .eq("instance_name", instanceName)
+          .eq("sender_phone", senderPhone)
+          .eq("processed", false)
+          .select("id, content, created_at")
+          .order("created_at", { ascending: true });
+
+        if (claimErr) {
+          console.error(`[process-sender] Claim error: ${claimErr.message}`);
+          break;
+        }
+
+        if (!claimed || claimed.length === 0) {
+          console.log(`[process-sender] No messages to claim for ${senderPhone} — already processed`);
+          break;
+        }
+
+        // Combine messages
+        const combinedMessage = claimed.map((m: any) => m.content).join("\n");
+        console.log(`[process-sender] Processing ${claimed.length} messages from ${senderPhone}: ${combinedMessage.substring(0, 200)}`);
+
+        // Forward to AI handler
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        try {
+          const aiRes = await fetch(`${supabaseUrl}/functions/v1/whatsapp-ai-handler`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              instanceName,
+              message: combinedMessage,
+              senderPhone,
+            }),
+          });
+          console.log(`[process-sender] AI handler response for ${senderPhone}: ${aiRes.status}`);
+          await aiRes.text(); // consume body
+        } catch (aiErr) {
+          console.error(`[process-sender] AI handler error for ${senderPhone}:`, aiErr);
+        }
+
+        // After processing, check if new messages arrived while we were processing
+        const { data: newMessages } = await serviceClient
+          .from("message_buffer")
+          .select("id")
+          .eq("instance_name", instanceName)
+          .eq("sender_phone", senderPhone)
+          .eq("processed", false)
+          .limit(1);
+
+        if (newMessages && newMessages.length > 0) {
+          console.log(`[process-sender] New messages arrived during processing for ${senderPhone}, looping...`);
+          // Wait buffer delay again for new messages
+          await new Promise((resolve) => setTimeout(resolve, BUFFER_DELAY_MS));
+          continue;
+        }
+
+        // All done
+        break;
+      }
+    } finally {
+      // ALWAYS release the lock, even on errors
+      const { error: releaseErr } = await serviceClient
+        .rpc("release_sender_lock", { p_sender_id: senderPhone });
+
+      if (releaseErr) {
+        console.error(`[process-sender] Lock release error: ${releaseErr.message}`);
+      } else {
+        console.log(`[process-sender] Lock released for ${senderPhone}`);
+      }
+    }
+
+    return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
