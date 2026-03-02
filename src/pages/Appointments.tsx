@@ -8,7 +8,7 @@ import { useNiche } from "@/hooks/useNiche";
 import AppointmentDialog from "@/components/dashboard/AppointmentDialog";
 import type { Appointment } from "@/types/appointment";
 import type { Service } from "@/types/onboarding";
-import { isSameDay, parseISO, addDays, startOfWeek, endOfWeek, endOfMonth, isWithinInterval } from "date-fns";
+import { isSameDay, parseISO, addDays, endOfMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import AppointmentStatsBar from "@/components/appointments/AppointmentStatsBar";
@@ -79,9 +79,10 @@ const Appointments = () => {
 
   const filteredAppointments = useMemo(() => {
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
-    const tomorrowStr = addDays(today, 1).toISOString().split("T")[0];
-    const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+    const todayStart = startOfDay(today);
+    const todayStr = todayStart.toISOString().split("T")[0];
+    const tomorrowStr = addDays(todayStart, 1).toISOString().split("T")[0];
+    const weekEnd = endOfDay(addDays(todayStart, 6));
 
     return appointments.filter((apt) => {
       // Quick date filter
@@ -89,12 +90,12 @@ const Appointments = () => {
       if (quickDateFilter === "tomorrow" && apt.date !== tomorrowStr) return false;
       if (quickDateFilter === "week") {
         const aptDate = parseISO(apt.date);
-        if (!isWithinInterval(aptDate, { start: today, end: weekEnd })) return false;
+        if (!isWithinInterval(aptDate, { start: todayStart, end: weekEnd })) return false;
       }
       if (quickDateFilter === "month") {
         const aptDate = parseISO(apt.date);
-        const monthEnd = endOfMonth(today);
-        if (!isWithinInterval(aptDate, { start: today, end: monthEnd })) return false;
+        const monthEnd = endOfMonth(todayStart);
+        if (!isWithinInterval(aptDate, { start: todayStart, end: monthEnd })) return false;
       }
 
       // Selected date
