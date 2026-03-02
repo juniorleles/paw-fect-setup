@@ -219,7 +219,7 @@ const Auth = () => {
                     </div>
                     {isSignUp && (
                       <p className="text-xs text-muted-foreground">
-                        Mínimo 8 caracteres, com pelo menos 1 letra e 1 número. Evite senhas comuns.
+                        Mínimo 8 caracteres. Use uma senha única que não tenha sido vazada em outros sites.
                       </p>
                     )}
                   </div>
