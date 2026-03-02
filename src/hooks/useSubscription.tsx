@@ -11,6 +11,10 @@ interface SubscriptionContextValue {
   reactivating: boolean;
   trialEndAt: string | null;
   plan: string;
+  trialAppointmentsUsed: number;
+  trialMessagesUsed: number;
+  trialAppointmentsLimit: number;
+  trialMessagesLimit: number;
   cancel: () => Promise<{ error?: string }>;
   reactivate: () => Promise<{ error?: string; qr_code?: string }>;
   refetch: () => Promise<void>;
@@ -27,6 +31,10 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [cancelling, setCancelling] = useState(false);
   const [reactivating, setReactivating] = useState(false);
   const [plan, setPlan] = useState<string>("starter");
+  const [trialAppointmentsUsed, setTrialAppointmentsUsed] = useState(0);
+  const [trialMessagesUsed, setTrialMessagesUsed] = useState(0);
+  const [trialAppointmentsLimit, setTrialAppointmentsLimit] = useState(50);
+  const [trialMessagesLimit, setTrialMessagesLimit] = useState(250);
   const fetchedForUser = useRef<string | null>(null);
 
   const fetchSubscription = useCallback(async () => {
@@ -34,20 +42,23 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       return;
     }
-    // Prevent duplicate fetches for the same user
     if (fetchedForUser.current === userId) return;
     fetchedForUser.current = userId;
 
     setLoading(true);
     const { data } = await supabase
       .from("subscriptions")
-      .select("status, trial_end_at, plan")
+      .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit")
       .eq("user_id", userId)
       .maybeSingle();
 
     setStatus((data?.status as SubscriptionStatus) ?? "none");
     setTrialEndAt(data?.trial_end_at ?? null);
     setPlan(data?.plan ?? "starter");
+    setTrialAppointmentsUsed((data as any)?.trial_appointments_used ?? 0);
+    setTrialMessagesUsed((data as any)?.trial_messages_used ?? 0);
+    setTrialAppointmentsLimit((data as any)?.trial_appointments_limit ?? 50);
+    setTrialMessagesLimit((data as any)?.trial_messages_limit ?? 250);
     setLoading(false);
   }, [userId]);
 
@@ -96,7 +107,11 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <SubscriptionContext.Provider
-      value={{ status, loading, cancelling, reactivating, trialEndAt, plan, cancel, reactivate, refetch }}
+      value={{
+        status, loading, cancelling, reactivating, trialEndAt, plan,
+        trialAppointmentsUsed, trialMessagesUsed, trialAppointmentsLimit, trialMessagesLimit,
+        cancel, reactivate, refetch,
+      }}
     >
       {children}
     </SubscriptionContext.Provider>

@@ -202,12 +202,11 @@ const Dashboard = () => {
   const planName = subStatus === "active" ? STRIPE_PLANS[planKey].name : subStatus === "cancelled" ? "Cancelado" : "Sem plano";
   const messagesPercent = planLimit > 0 ? (totalMessagesMonth / planLimit) * 100 : 0;
 
-  // Trial alert
-  const trialDaysLeft = useMemo(() => {
-    if (!trialEndAt) return null;
-    const days = differenceInDays(new Date(trialEndAt), now);
-    return days;
-  }, [trialEndAt, now]);
+  // Trial quota info from subscription context
+  const {
+    trialAppointmentsUsed, trialAppointmentsLimit,
+    trialMessagesUsed, trialMessagesLimit,
+  } = useSubscription();
 
   if (loadingConfig || loadingApts) {
     return (

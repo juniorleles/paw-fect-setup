@@ -389,7 +389,11 @@ export type Database = {
           payment_method: string | null
           plan: string
           status: string
+          trial_appointments_limit: number
+          trial_appointments_used: number
           trial_end_at: string | null
+          trial_messages_limit: number
+          trial_messages_used: number
           trial_start_at: string | null
           updated_at: string
           user_id: string
@@ -405,7 +409,11 @@ export type Database = {
           payment_method?: string | null
           plan?: string
           status?: string
+          trial_appointments_limit?: number
+          trial_appointments_used?: number
           trial_end_at?: string | null
+          trial_messages_limit?: number
+          trial_messages_used?: number
           trial_start_at?: string | null
           updated_at?: string
           user_id: string
@@ -421,7 +429,11 @@ export type Database = {
           payment_method?: string | null
           plan?: string
           status?: string
+          trial_appointments_limit?: number
+          trial_appointments_used?: number
           trial_end_at?: string | null
+          trial_messages_limit?: number
+          trial_messages_used?: number
           trial_start_at?: string | null
           updated_at?: string
           user_id?: string

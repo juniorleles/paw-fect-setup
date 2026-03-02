@@ -201,16 +201,21 @@ const MyAccount = () => {
 
   const now = new Date();
   const isTrialing = sub?.status === "trialing" || (sub?.status === "active" && sub?.trial_end_at && new Date(sub.trial_end_at) > now);
-  const isActive = sub?.status === "active" && !isTrialing;
+  // Check if paid: has current_period_end AFTER trial_end_at
+  const hasPaidPeriod = sub?.current_period_end && sub?.trial_end_at && new Date(sub.current_period_end) > new Date(sub.trial_end_at);
+  const isTrialQuotaUser = sub?.status === "active" && !hasPaidPeriod;
+  const isActive = sub?.status === "active" && hasPaidPeriod;
   const isCancelled = sub?.status === "cancelled";
   const isExpired = sub?.status === "expired";
 
-  const trialEndDate = sub?.trial_end_at ? new Date(sub.trial_end_at) : null;
-  const trialStartDate = sub?.trial_start_at ? new Date(sub.trial_start_at) : null;
-  const trialDaysLeft = trialEndDate ? Math.max(0, differenceInDays(trialEndDate, now)) : 0;
-  const trialTotalDays = 7;
-  const trialDaysUsed = trialTotalDays - trialDaysLeft;
-  const trialProgress = (trialDaysUsed / trialTotalDays) * 100;
+  // Quota-based trial data
+  const trialAptsUsed = (sub as any)?.trial_appointments_used ?? 0;
+  const trialAptsLimit = (sub as any)?.trial_appointments_limit ?? 50;
+  const trialMsgsUsed = (sub as any)?.trial_messages_used ?? 0;
+  const trialMsgsLimit = (sub as any)?.trial_messages_limit ?? 250;
+  const trialAptsPercent = trialAptsLimit > 0 ? (trialAptsUsed / trialAptsLimit) * 100 : 0;
+  const trialMsgsPercent = trialMsgsLimit > 0 ? (trialMsgsUsed / trialMsgsLimit) * 100 : 0;
+  const trialQuotaExhausted = trialAptsUsed >= trialAptsLimit || trialMsgsUsed >= trialMsgsLimit;
 
   const currentPlan = (sub?.plan as keyof typeof PLANS) ?? "starter";
   const planInfo = PLANS[currentPlan] ?? PLANS.starter;
@@ -219,8 +224,6 @@ const MyAccount = () => {
 
   const nextBillingDate = sub?.current_period_end
     ? format(new Date(sub.current_period_end), "dd/MM/yyyy")
-    : trialEndDate
-    ? format(trialEndDate, "dd/MM/yyyy")
     : "—";
 
   const handleCancel = async () => {
@@ -243,8 +246,8 @@ const MyAccount = () => {
     window.location.reload();
   };
 
-  const statusLabel = isTrialing
-    ? "Trial ativo"
+  const statusLabel = isTrialQuotaUser
+    ? trialQuotaExhausted ? "Trial esgotado" : "Trial ativo"
     : isActive
     ? "Ativo"
     : isCancelled
@@ -255,7 +258,7 @@ const MyAccount = () => {
     ? "Expirado"
     : "Sem assinatura";
 
-  const statusColor = isTrialing
+  const statusColor = isTrialQuotaUser && !trialQuotaExhausted
     ? "bg-accent/10 text-accent border-accent/20"
     : isActive
     ? "bg-success/10 text-success border-success/20"
@@ -266,27 +269,19 @@ const MyAccount = () => {
       <h1 className="text-2xl font-display font-bold text-foreground">Minha Conta</h1>
 
       {/* Alert banners */}
-      {isTrialing && trialDaysLeft <= 2 && (
-        <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-accent flex-shrink-0" />
-          <p className="text-sm font-medium">
-            Seu trial acaba em {trialDaysLeft} dia{trialDaysLeft !== 1 ? "s" : ""}! Contrate agora para não perder acesso.
-          </p>
-        </div>
-      )}
-      {usagePercent >= 80 && usagePercent < 100 && (
-        <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 flex items-center gap-3">
-          <MessageSquare className="w-5 h-5 text-accent flex-shrink-0" />
-          <p className="text-sm font-medium">
-            Você já usou {Math.round(usagePercent)}% das mensagens do mês.
-          </p>
-        </div>
-      )}
-      {usagePercent >= 100 && (
+      {isTrialQuotaUser && trialQuotaExhausted && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex items-center gap-3">
           <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
           <p className="text-sm font-medium">
-            Você atingiu o limite de mensagens. {isTrialing ? "Assine para continuar." : "Faça upgrade do plano."}
+            Seu trial gratuito acabou! Assine para continuar usando.
+          </p>
+        </div>
+      )}
+      {isTrialQuotaUser && !trialQuotaExhausted && (trialAptsPercent >= 80 || trialMsgsPercent >= 80) && (
+        <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-accent flex-shrink-0" />
+          <p className="text-sm font-medium">
+            Seu trial está acabando! Agendamentos: {trialAptsUsed}/{trialAptsLimit} • Mensagens: {trialMsgsUsed}/{trialMsgsLimit}
           </p>
         </div>
       )}
@@ -303,19 +298,20 @@ const MyAccount = () => {
               </div>
               <p className="text-sm text-muted-foreground">
                 {isActive && `Próxima cobrança: ${nextBillingDate} • R$ ${planInfo.price}/mês`}
-                {isTrialing && `Trial termina em ${nextBillingDate}`}
+                {isTrialQuotaUser && !trialQuotaExhausted && `Trial gratuito: ${trialAptsUsed}/${trialAptsLimit} agendamentos • ${trialMsgsUsed}/${trialMsgsLimit} mensagens`}
+                {isTrialQuotaUser && trialQuotaExhausted && "Cotas do trial esgotadas. Contrate um plano para continuar."}
                 {isCancelled && "Assinatura cancelada"}
                 {isExpired && "Seu trial expirou. Contrate um plano para continuar."}
               </p>
             </div>
             <div className="flex gap-2">
-              {(isTrialing || isExpired) && (
+              {(isTrialQuotaUser || isExpired) && (
                 <Button className="font-bold" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
                   <Zap className="w-4 h-4 mr-2" />
-                  {isExpired ? "Assinar agora" : "Contratar plano agora"}
+                  {trialQuotaExhausted || isExpired ? "Assinar agora" : "Contratar plano agora"}
                 </Button>
               )}
-              {(isActive || isTrialing) && (
+              {(isActive || isTrialQuotaUser) && (
                 <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
                   {portalLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Settings className="w-4 h-4 mr-2" />}
                   Gerenciar assinatura
@@ -325,23 +321,26 @@ const MyAccount = () => {
             </div>
           </div>
 
-          {/* Trial progress */}
-          {isTrialing && (
-            <div className="mt-5 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-accent" />
-                  <span className="font-medium">🎁 Trial ativo</span>
-                </span>
-                <span className="text-muted-foreground">
-                  Faltam <span className="font-bold text-foreground">{trialDaysLeft} dias</span>
-                </span>
+          {/* Trial quota progress */}
+          {isTrialQuotaUser && !trialQuotaExhausted && (
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Gift className="w-4 h-4 text-accent" />
+                <span className="font-medium">🎁 Trial gratuito</span>
               </div>
-              <Progress value={trialProgress} className="h-3" />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Início: {trialStartDate ? format(trialStartDate, "dd/MM", { locale: ptBR }) : "—"}</span>
-                <span>{trialDaysUsed}/{trialTotalDays} dias</span>
-                <span>Término: {trialEndDate ? format(trialEndDate, "dd/MM", { locale: ptBR }) : "—"}</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Agendamentos</span>
+                  <span className="font-semibold">{trialAptsUsed}/{trialAptsLimit}</span>
+                </div>
+                <Progress value={Math.min(trialAptsPercent, 100)} className={`h-2 ${trialAptsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Mensagens (enviadas + recebidas)</span>
+                  <span className="font-semibold">{trialMsgsUsed}/{trialMsgsLimit}</span>
+                </div>
+                <Progress value={Math.min(trialMsgsPercent, 100)} className={`h-2 ${trialMsgsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
               </div>
             </div>
           )}
@@ -381,7 +380,7 @@ const MyAccount = () => {
                 <span className="text-3xl font-bold">R$ {STRIPE_PLANS.starter.price}</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-3">7 dias grátis</p>
+              <p className="text-xs text-primary font-medium mb-3">Trial gratuito por cotas</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
                 {["1 número WhatsApp", "1 atendente por horário", "Até 1.000 msgs/mês", "Respostas automáticas", "Horário de atendimento", "Suporte padrão"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
@@ -415,7 +414,7 @@ const MyAccount = () => {
                 <span className="text-3xl font-bold">R$ {STRIPE_PLANS.professional.price}</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-3">7 dias grátis</p>
+              <p className="text-xs text-primary font-medium mb-3">Trial gratuito por cotas</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
                 {["Tudo do Starter +", "Até 5 atendentes simultâneos", "Até 3.000 msgs/mês", "IA personalizada", "Fluxos customizados", "Suporte prioritário"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
@@ -477,7 +476,7 @@ const MyAccount = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isActive || isTrialing ? (
+          {isActive || isTrialQuotaUser ? (
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">Gerencie sua forma de pagamento pelo Stripe</p>
               <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
@@ -545,7 +544,7 @@ const MyAccount = () => {
           <CardTitle className="text-base">Gerenciar assinatura</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {(isActive || isTrialing) && (
+          {(isActive || isTrialQuotaUser) && (
             <div className="flex flex-wrap gap-3">
               <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
                 {portalLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Settings className="w-4 h-4 mr-2" />}
@@ -563,7 +562,7 @@ const MyAccount = () => {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {isTrialing
+                      {isTrialQuotaUser
                         ? "Ao cancelar durante o trial, seu acesso será encerrado imediatamente."
                         : "Ao cancelar, você perde acesso premium ao final do período pago."}
                     </AlertDialogDescription>
