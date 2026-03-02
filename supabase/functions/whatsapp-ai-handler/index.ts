@@ -1507,14 +1507,13 @@ Deno.serve(async (req) => {
     // Save user message to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "user", message);
 
-    // --- New Conversation Detection ---
-    // If the user sends a simple greeting after 30+ minutes of inactivity,
-    // clear conversation history to prevent context pollution from old conversations.
-    const greetingNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-    const isGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai)$/i.test(greetingNorm);
+    // --- New Conversation Detection & Farewell Cleanup ---
+    const msgNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    const isGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai)$/i.test(msgNorm);
+    const isFarewell = /^(tchau|ate\s+(mais|logo|breve)|flw|falou|valeu|obrigad[oa]|brigad[oa]|bye|adeus|bjs|beijos|xau)$/i.test(msgNorm);
 
     if (isGreeting) {
-      // Check the timestamp of the second-to-last message (before the greeting we just saved)
+      // Clear history if greeting arrives after 30+ min of inactivity
       const { data: recentMsgs } = await serviceClient
         .from("conversation_messages")
         .select("created_at")
@@ -1529,8 +1528,7 @@ Deno.serve(async (req) => {
         const gapMinutes = (currentMsgTime - lastMsgTime) / (1000 * 60);
 
         if (gapMinutes >= 30) {
-          console.log(`[NewConversation] Greeting "${message}" after ${Math.round(gapMinutes)}min gap — clearing old history to prevent context pollution`);
-          // Delete all messages except the greeting we just saved
+          console.log(`[NewConversation] Greeting "${message}" after ${Math.round(gapMinutes)}min gap — clearing old history`);
           await serviceClient
             .from("conversation_messages")
             .delete()
@@ -1539,6 +1537,12 @@ Deno.serve(async (req) => {
             .lt("created_at", recentMsgs[0].created_at);
         }
       }
+    }
+
+    if (isFarewell) {
+      // Farewells immediately mark end of conversation — clear history after AI responds
+      // We'll clear AFTER sending the farewell response (see below)
+      console.log(`[FarewellDetected] "${message}" — will clear history after responding`);
     }
 
     // Get conversation history and robust service memory for guardrails
@@ -1787,9 +1791,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       });
     }
 
-    // Guardrail 0: GreetingGuard — simple greetings must NEVER trigger booking actions
+    // Guardrail 0: GreetingGuard — simple greetings/farewells must NEVER trigger booking actions
     const greetingGuardNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-    const isSimpleGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai|obrigad[oa]|valeu|brigad[oa])$/i.test(greetingGuardNorm);
+    const isSimpleGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai|obrigad[oa]|valeu|brigad[oa]|tchau|ate\s+(mais|logo|breve)|flw|falou|bye|adeus|bjs|beijos|xau)$/i.test(greetingGuardNorm);
     if (isSimpleGreeting && /<action>.*?<\/action>/s.test(reply)) {
       console.log(`[GreetingGuard] Simple greeting "${message}" triggered an action block — stripping action to prevent false booking`);
       reply = reply.replace(/<action>.*?<\/action>/gs, "").trim();
@@ -1912,6 +1916,16 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
 
     // Send reply via WhatsApp
     await sendWhatsAppMessage(instanceName, senderPhone, reply);
+
+    // --- Farewell Cleanup: clear conversation history after responding to farewell ---
+    if (isFarewell) {
+      console.log(`[FarewellCleanup] Clearing conversation history for ${cleanPhone} after farewell`);
+      await serviceClient
+        .from("conversation_messages")
+        .delete()
+        .eq("user_id", shopConfig.user_id)
+        .eq("phone", cleanPhone);
+    }
 
     return new Response(JSON.stringify({ success: true, reply }), {
       status: 200,
