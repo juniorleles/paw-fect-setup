@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
@@ -14,7 +14,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp, signOut } = useAuth();
   const { completed: onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
@@ -23,10 +23,18 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [signingOutForSignup, setSigningOutForSignup] = useState(false);
   
   const { toast } = useToast();
 
-  if (loading || (user && onboardingLoading)) {
+  useEffect(() => {
+    if (!loading && isSignUp && user) {
+      setSigningOutForSignup(true);
+      signOut().finally(() => setSigningOutForSignup(false));
+    }
+  }, [isSignUp, loading, signOut, user]);
+
+  if (loading || signingOutForSignup || (user && onboardingLoading && !isSignUp)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -34,7 +42,7 @@ const Auth = () => {
     );
   }
 
-  if (user) {
+  if (user && !isSignUp) {
     return <Navigate to={onboardingCompleted ? "/dashboard" : "/onboarding"} replace />;
   }
 
