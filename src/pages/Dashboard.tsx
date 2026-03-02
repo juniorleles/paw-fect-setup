@@ -330,7 +330,9 @@ const Dashboard = () => {
 
       {/* ─── 3. Bloco Automação WhatsApp ─── */}
       <section>
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Automação WhatsApp</h2>
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">
+          🤖 Sua Secretária Digital{data.assistantName ? ` · ${data.assistantName}` : ""}
+        </h2>
         <Card className="border-none shadow-md bg-card">
           <CardContent className="py-5 px-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
