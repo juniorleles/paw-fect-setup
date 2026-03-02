@@ -72,6 +72,56 @@ function isBookingFlowContext(userMessage: string, reply: string): boolean {
   return bookingIntent || dateTimeReference || schedulingReply || askingName;
 }
 
+function normalizeGuardText(text: string): string {
+  return (text || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function detectAdditionalBookingIntent(userMessage: string): boolean {
+  const userNorm = normalizeGuardText(userMessage);
+  return /((agendar|marcar).*(mais\s+(um|uma|dois|duas|tres)|outro|de novo)|\bmais\s+(um|uma|dois|duas|tres)\s+(corte|banho|tosa|servico|horario|agendamento|pet))/i.test(userNorm);
+}
+
+function detectDateOrTimeSignal(userMessage: string): boolean {
+  const userNorm = normalizeGuardText(userMessage);
+  return /\b(amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}\/\d{1,2}|\d{4}-\d{2}-\d{2}|([01]?\d|2[0-3])[:h]([0-5]\d)?)\b/i.test(userNorm)
+    || /[àa]s\s+\d{1,2}/i.test(userNorm);
+}
+
+function enforceAdditionalBookingIntentGuard(userMessage: string, reply: string, lastAssistantMessage: string): string {
+  if (!reply) return reply;
+
+  const isAdditionalIntent = detectAdditionalBookingIntent(userMessage);
+  if (!isAdditionalIntent) return reply;
+
+  const hasDateOrTimeInUserMessage = detectDateOrTimeSignal(userMessage);
+  if (!hasDateOrTimeInUserMessage) {
+    return "Perfeito! Vamos agendar mais um ✅\nPra qual dia e horário você quer esse próximo agendamento?";
+  }
+
+  const actionMatch = reply.match(/<action>(.*?)<\/action>/s);
+  if (!actionMatch) return reply;
+
+  let action: any = null;
+  try {
+    action = JSON.parse(actionMatch[1]);
+  } catch {
+    return reply;
+  }
+
+  if (action?.type !== "create") return reply;
+
+  const lastTime = (lastAssistantMessage || "").match(/\b([01]\d|2[0-3]):[0-5]\d\b/)?.[0] || null;
+  const actionTime = typeof action.time === "string" ? action.time.slice(0, 5) : null;
+  if (lastTime && actionTime && lastTime === actionTime) {
+    return "Esse horário acabou de ser usado no agendamento anterior e ficou indisponível para este novo pedido.\nMe diga outro dia e horário que eu te confirmo agora ✅";
+  }
+
+  return reply;
+}
+
 function enforceKnownServiceNoRedundantQuestion(userMessage: string, reply: string, services: any[], conversationHistory?: { role: string; content: string }[]): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
 
@@ -517,4 +567,20 @@ Deno.test("SCENARIO: 'Pode ser às 8' must be detected as booking flow context",
   console.log("isBookingFlowContext result:", result);
   console.log("=== END ===\n");
   assertEquals(result, true, "'Pode ser às 8' must be recognized as booking flow");
+});
+
+Deno.test("Additional booking guard: without date/time must replace confirmation text", () => {
+  const userMessage = "Quero agendar mais um corte";
+  const rawReply = "Agendamento confirmado ✅\n· Serviço: Corte Masculino\n· Data: segunda-feira, 02/03/2026\n· Horário: 17:30\nPra qual dia e horário você quer agendar?";
+  const result = enforceAdditionalBookingIntentGuard(userMessage, rawReply, "Agendamento confirmado ✅ às 17:30");
+
+  assertEquals(result, "Perfeito! Vamos agendar mais um ✅\nPra qual dia e horário você quer esse próximo agendamento?");
+});
+
+Deno.test("Additional booking guard: with explicit date/time should not override normal flow", () => {
+  const userMessage = "Quero agendar mais um corte amanhã às 16h";
+  const rawReply = "Perfeito! Já vi um horário para amanhã às 16:00.\n<action>{\"type\":\"create\",\"time\":\"16:00\"}</action>";
+  const result = enforceAdditionalBookingIntentGuard(userMessage, rawReply, "Último agendamento às 14:00");
+
+  assertEquals(result, rawReply);
 });
