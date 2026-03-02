@@ -317,27 +317,40 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
 
-function enforceAdditionalBookingIntentGuard(userMessage: string, reply: string, lastAssistantMessage: string): string {
-  if (!reply) return reply;
-
-  const normalize = (text: string) => (text || "")
+function normalizeGuardText(text: string): string {
+  return (text || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+}
 
-  const userNorm = normalize(userMessage);
-  const isAdditionalIntent = /((agendar|marcar).*(mais\s+(um|uma|dois|duas|tres|tres)|outro|de novo)|\bmais\s+(um|uma|dois|duas|tres|três)\s+(corte|banho|tosa|servico|serviço|horario|horário|agendamento|pet))/i.test(userNorm);
+function detectAdditionalBookingIntent(userMessage: string): boolean {
+  const userNorm = normalizeGuardText(userMessage);
+  return /((agendar|marcar).*(mais\s+(um|uma|dois|duas|tres)|outro|de novo)|\bmais\s+(um|uma|dois|duas|tres)\s+(corte|banho|tosa|servico|horario|agendamento|pet))/i.test(userNorm);
+}
+
+function detectDateOrTimeSignal(userMessage: string): boolean {
+  const userNorm = normalizeGuardText(userMessage);
+  return /\b(amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}\/\d{1,2}|\d{4}-\d{2}-\d{2}|([01]?\d|2[0-3])[:h]([0-5]\d)?)\b/i.test(userNorm)
+    || /[àa]s\s+\d{1,2}/i.test(userNorm);
+}
+
+function enforceAdditionalBookingIntentGuard(userMessage: string, reply: string, lastAssistantMessage: string): string {
+  if (!reply) return reply;
+
+  const isAdditionalIntent = detectAdditionalBookingIntent(userMessage);
   if (!isAdditionalIntent) return reply;
 
-  const hasDateOrTimeInUserMessage = /\b(amanha|amanhã|hoje|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado|domingo|\d{1,2}\/\d{1,2}|\d{4}-\d{2}-\d{2}|([01]?\d|2[0-3])[:h]([0-5]\d)?)\b/i.test(userNorm) || /[àa]s\s+\d{1,2}/i.test(userNorm);
+  const hasDateOrTimeInUserMessage = detectDateOrTimeSignal(userMessage);
+
+  // Definitive deterministic guard: for "mais um" without explicit new slot,
+  // NEVER keep confirmation text from model/fallback, always ask for new date/time.
+  if (!hasDateOrTimeInUserMessage) {
+    return "Perfeito! Vamos agendar mais um ✅\nPra qual dia e horário você quer esse próximo agendamento?";
+  }
 
   const actionMatch = reply.match(/<action>(.*?)<\/action>/s);
-  if (!actionMatch) {
-    if (!hasDateOrTimeInUserMessage && !/\?/.test(reply)) {
-      return `${reply.trim()}\nPra qual dia e horário você quer esse próximo agendamento?`;
-    }
-    return reply;
-  }
+  if (!actionMatch) return reply;
 
   let action: any = null;
   try {
@@ -347,14 +360,6 @@ function enforceAdditionalBookingIntentGuard(userMessage: string, reply: string,
   }
 
   if (action?.type !== "create") return reply;
-
-  if (!hasDateOrTimeInUserMessage) {
-    const cleanService = typeof action.service === "string" && action.service.trim().length > 0
-      ? action.service.trim().toLowerCase()
-      : "agendamento";
-
-    return `Perfeito! Vamos agendar mais um ✅\nPra qual dia e horário você quer o próximo ${cleanService}?`;
-  }
 
   const lastTime = (lastAssistantMessage || "").match(/\b([01]\d|2[0-3]):[0-5]\d\b/)?.[0] || null;
   const actionTime = typeof action.time === "string" ? action.time.slice(0, 5) : null;
@@ -1216,15 +1221,9 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
 
     if (action.type === "create") {
       // Deterministic guard: for "mais um/novo agendamento" without explicit new date/time,
-      // NEVER allow immediate confirmation with auto-reused slot.
-      const normalize = (text: string) => (text || "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-
-      const userNorm = normalize(userMessage || "");
-      const isAdditionalIntent = /((agendar|marcar).*(mais\s+(um|uma|dois|duas|tres|três)|outro|de novo)|\bmais\s+(um|uma|dois|duas|tres|três)\s+(corte|banho|tosa|servico|serviço|horario|horário|agendamento|pet))/i.test(userNorm);
-      const hasDateOrTimeInUserMessage = /\b(amanha|amanhã|hoje|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado|domingo|\d{1,2}\/\d{1,2}|\d{4}-\d{2}-\d{2}|([01]?\d|2[0-3])[:h]([0-5]\d)?)\b/i.test(userNorm) || /[àa]s\s+\d{1,2}/i.test(userNorm);
+      // NEVER allow immediate confirmation or DB insertion.
+      const isAdditionalIntent = detectAdditionalBookingIntent(userMessage || "");
+      const hasDateOrTimeInUserMessage = detectDateOrTimeSignal(userMessage || "");
 
       if (isAdditionalIntent && !hasDateOrTimeInUserMessage) {
         console.log("[AdditionalBookingGuard] Blocked auto-create for 'mais um' without date/time");
