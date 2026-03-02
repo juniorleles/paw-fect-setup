@@ -1189,7 +1189,7 @@ Para confirmar presença:
 
 // --- Process AI Actions ---
 
-async function processAction(serviceClient: any, shopConfig: PetShopConfig, cleanPhone: string, reply: string): Promise<string> {
+async function processAction(serviceClient: any, shopConfig: PetShopConfig, cleanPhone: string, reply: string, userMessage?: string, lastAssistantMessage?: string): Promise<string> {
   const actionMatch = reply.match(/<action>(.*?)<\/action>/s);
   if (!actionMatch) return reply;
 
@@ -1215,6 +1215,29 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
     console.log("Processing action:", JSON.stringify(action));
 
     if (action.type === "create") {
+      // Deterministic guard: for "mais um/novo agendamento" without explicit new date/time,
+      // NEVER allow immediate confirmation with auto-reused slot.
+      const normalize = (text: string) => (text || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+      const userNorm = normalize(userMessage || "");
+      const isAdditionalIntent = /((agendar|marcar).*(mais\s+(um|uma|dois|duas|tres|três)|outro|de novo)|\bmais\s+(um|uma|dois|duas|tres|três)\s+(corte|banho|tosa|servico|serviço|horario|horário|agendamento|pet))/i.test(userNorm);
+      const hasDateOrTimeInUserMessage = /\b(amanha|amanhã|hoje|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado|domingo|\d{1,2}\/\d{1,2}|\d{4}-\d{2}-\d{2}|([01]?\d|2[0-3])[:h]([0-5]\d)?)\b/i.test(userNorm) || /[àa]s\s+\d{1,2}/i.test(userNorm);
+
+      if (isAdditionalIntent && !hasDateOrTimeInUserMessage) {
+        console.log("[AdditionalBookingGuard] Blocked auto-create for 'mais um' without date/time");
+        return "Perfeito! Vamos agendar mais um ✅\nPra qual dia e horário você quer esse próximo agendamento?";
+      }
+
+      const actionTime = typeof action.time === "string" ? action.time.slice(0, 5) : null;
+      const previousTime = (lastAssistantMessage || "").match(/\b([01]\d|2[0-3]):[0-5]\d\b/)?.[0] || null;
+      if (isAdditionalIntent && actionTime && previousTime && actionTime === previousTime && !hasDateOrTimeInUserMessage) {
+        console.log("[AdditionalBookingGuard] Blocked same-slot reuse for additional booking");
+        return "Esse horário acabou de ser usado no agendamento anterior.\nMe diga outro dia e horário que eu te confirmo agora ✅";
+      }
+
       const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
       
       // For non-pet niches, auto-fill pet_name with owner_name or placeholder
@@ -1731,7 +1754,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     reply = enforceAdditionalBookingIntentGuard(message, reply, lastAssistantMessage);
 
     // Process actions (create/cancel/reschedule/confirm)
-    reply = await processAction(serviceClient, shopConfig, cleanPhone, reply);
+    reply = await processAction(serviceClient, shopConfig, cleanPhone, reply, message, lastAssistantMessage);
 
     // Re-check against latest persisted assistant message to avoid race conditions
     const latestAssistantBeforeSend = await getLatestAssistantMessage(
