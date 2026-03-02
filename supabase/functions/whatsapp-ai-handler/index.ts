@@ -335,6 +335,51 @@ function detectDateOrTimeSignal(userMessage: string): boolean {
     || /[àa]s\s+\d{1,2}/i.test(userNorm);
 }
 
+// Deterministic date correction: if user says "amanhã" but AI used today's date, fix it
+function enforceDateCorrectionGuard(userMessage: string, reply: string): string {
+  if (!reply) return reply;
+  const userNorm = normalizeGuardText(userMessage);
+  const saysAmanha = /\bamanha\b/i.test(userNorm);
+  if (!saysAmanha) return reply;
+
+  // Calculate BRT dates
+  const now = new Date();
+  const brTimestamp = now.getTime() - 3 * 60 * 60 * 1000;
+  const brNow = new Date(brTimestamp);
+  const todayISO = brNow.toISOString().split("T")[0]; // e.g. 2026-03-02
+
+  const tomorrowDate = new Date(brTimestamp + 24 * 60 * 60 * 1000);
+  const tomorrowISO = tomorrowDate.toISOString().split("T")[0]; // e.g. 2026-03-03
+
+  // Today in DD/MM format
+  const [tY, tM, tD] = todayISO.split("-");
+  const todayDDMM = `${tD}/${tM}`;
+  const todayDDMMYYYY = `${tD}/${tM}/${tY}`;
+  const [tmY, tmM, tmD] = tomorrowISO.split("-");
+  const tomorrowDDMM = `${tmD}/${tmM}`;
+  const tomorrowDDMMYYYY = `${tmD}/${tmM}/${tmY}`;
+
+  // Check if reply or action block contains today's date when it should be tomorrow
+  if (reply.includes(todayISO) || reply.includes(todayDDMMYYYY) || reply.includes(todayDDMM)) {
+    console.log(`[DateGuard] User said "amanhã" but AI used today (${todayISO}). Correcting to ${tomorrowISO}`);
+    // Replace all occurrences of today's date with tomorrow's
+    let corrected = reply
+      .replaceAll(todayISO, tomorrowISO)
+      .replaceAll(todayDDMMYYYY, tomorrowDDMMYYYY)
+      .replaceAll(todayDDMM, tomorrowDDMM);
+
+    // Also fix "hoje" → "amanhã" in the text (but not inside action blocks)
+    const actionBlock = corrected.match(/<action>.*?<\/action>/s)?.[0] || "";
+    const textOnly = corrected.replace(/<action>.*?<\/action>/s, "___ACTION___");
+    const fixedText = textOnly
+      .replace(/\bhoje\b/gi, "amanhã")
+      .replace(/___ACTION___/, actionBlock);
+    return fixedText;
+  }
+
+  return reply;
+}
+
 function enforceAdditionalBookingIntentGuard(userMessage: string, reply: string, lastAssistantMessage: string): string {
   if (!reply) return reply;
 
@@ -1751,6 +1796,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
 
     // Guardrail 4: for "agendar mais um", never auto-reuse previous slot without explicit new date/time
     reply = enforceAdditionalBookingIntentGuard(message, reply, lastAssistantMessage);
+
+    // Guardrail 5: if user says "amanhã" but AI used today's date, correct deterministically
+    reply = enforceDateCorrectionGuard(message, reply);
 
     // Process actions (create/cancel/reschedule/confirm)
     reply = await processAction(serviceClient, shopConfig, cleanPhone, reply, message, lastAssistantMessage);
