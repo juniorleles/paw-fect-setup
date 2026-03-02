@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useSearchParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,8 @@ const translateAuthError = (msg: string): string => {
 };
 
 const Auth = () => {
-  const { loading, signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp, signOut } = useAuth();
+  const { completed: onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -39,10 +41,19 @@ const Auth = () => {
   const [submitting, setSubmitting] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   
   const { toast } = useToast();
 
-  if (loading) {
+  // If user arrives at /auth while logged in, sign them out so they see the form
+  useEffect(() => {
+    if (!loading && user) {
+      setSigningOut(true);
+      signOut().finally(() => setSigningOut(false));
+    }
+  }, []);
+
+  if (loading || signingOut) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
