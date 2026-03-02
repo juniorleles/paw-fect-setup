@@ -28,11 +28,11 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && isSignUp && user) {
+    if (!loading && user) {
       setSigningOutForSignup(true);
       signOut().finally(() => setSigningOutForSignup(false));
     }
-  }, [isSignUp, loading, signOut, user]);
+  }, [loading, signOut, user]);
 
   if (loading || signingOutForSignup || (user && onboardingLoading && !isSignUp)) {
     return (
