@@ -890,7 +890,8 @@ async function handleConfirmationResponse(
 
   if (!isConfirm && !isReschedule && !isCancel) return null;
 
-  const today = new Date().toISOString().split("T")[0];
+  const brNowMs = new Date().getTime() - 3 * 60 * 60 * 1000;
+  const today = new Date(brNowMs).toISOString().split("T")[0];
   const { data: appointments } = await serviceClient
     .from("appointments")
     .select("*")
@@ -908,7 +909,12 @@ async function handleConfirmationResponse(
     return "Não encontrei nenhum agendamento próximo no seu nome. Deseja fazer um novo agendamento?";
   }
 
-  const nextAppt = customerAppts[0];
+  // Prioritize the appointment that had a reminder sent (confirmation_message_sent_at not null)
+  // and is still pending — this is the one the user is most likely responding to
+  const reminderAppt = customerAppts.find((a: any) =>
+    a.confirmation_message_sent_at && a.status === "pending"
+  );
+  const nextAppt = reminderAppt || customerAppts[0];
 
   if (isConfirm) {
     await serviceClient
