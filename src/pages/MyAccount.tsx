@@ -39,7 +39,9 @@ import {
   Flame,
   Target,
   Sparkles,
+  Unlock,
 } from "lucide-react";
+import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -87,6 +89,7 @@ const MyAccount = () => {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   // Check subscription status from Stripe on load
   const syncSubscription = useCallback(async () => {
@@ -253,14 +256,9 @@ const MyAccount = () => {
   // Estimated value generated
   const estimatedValue = trialAptsUsed * ESTIMATED_TICKET;
 
-  // Dynamic CTA for trial users
-  const getTrialCTA = () => {
-    if (trialQuotaExhausted) return { label: "⚡ Assinar agora e não parar", icon: Zap };
-    if (maxTrialPercent >= 60) return { label: "🔥 Ativar plano e continuar crescendo", icon: Flame };
-    return { label: "🚀 Continuar teste grátis", icon: Rocket };
-  };
-
-  const trialCTA = getTrialCTA();
+  // Dynamic CTA — only visible at 50%+
+  const showTrialCTA = maxTrialPercent >= 50 || trialQuotaExhausted;
+  const isHighlightCTA = maxTrialPercent >= 80 || trialQuotaExhausted;
 
   // Status display
   const statusLabel = isTrialQuotaUser
@@ -295,9 +293,9 @@ const MyAccount = () => {
           <p className="text-sm font-semibold text-foreground">
             ⚡ Sua IA já está agendando clientes — não interrompa seu crescimento.
           </p>
-          <Button size="sm" className="ml-auto whitespace-nowrap" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
+          <Button size="sm" className="ml-auto whitespace-nowrap" onClick={() => setUpgradeModalOpen(true)}>
             <Flame className="w-4 h-4 mr-1" />
-            Ativar plano
+            Desbloquear
           </Button>
         </div>
       )}
@@ -307,11 +305,12 @@ const MyAccount = () => {
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 flex items-center gap-3">
           <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
           <div>
-            <p className="text-sm font-bold text-destructive">Suas cotas do trial acabaram!</p>
-            <p className="text-xs text-muted-foreground">Ative um plano para sua secretária voltar a trabalhar para você.</p>
+            <p className="text-sm font-bold text-destructive">Seu limite foi atingido.</p>
+            <p className="text-xs text-muted-foreground">Desbloqueie mais atendimentos para continuar.</p>
           </div>
-          <Button size="sm" variant="destructive" className="ml-auto whitespace-nowrap" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
-            Assinar agora
+          <Button size="sm" variant="destructive" className="ml-auto whitespace-nowrap" onClick={() => setUpgradeModalOpen(true)}>
+            <Unlock className="w-4 h-4 mr-1" />
+            Desbloquear
           </Button>
         </div>
       )}
@@ -335,17 +334,19 @@ const MyAccount = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              {(isTrialQuotaUser || isExpired) && (
+              {isTrialQuotaUser && showTrialCTA && (
                 <Button
-                  className="font-bold"
-                  onClick={() => {
-                    if (maxTrialPercent >= 60 || trialQuotaExhausted || isExpired) {
-                      document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" });
-                    }
-                  }}
+                  className={`font-bold ${isHighlightCTA ? "bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg" : ""}`}
+                  onClick={() => setUpgradeModalOpen(true)}
                 >
-                  {trialCTA.icon && <trialCTA.icon className="w-4 h-4 mr-2" />}
-                  {trialCTA.label}
+                  <Unlock className="w-4 h-4 mr-2" />
+                  Desbloquear mais atendimentos
+                </Button>
+              )}
+              {isExpired && (
+                <Button onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Ativar plano
                 </Button>
               )}
               {(isActive || isTrialQuotaUser) && (
@@ -677,6 +678,19 @@ const MyAccount = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onOpenChange={setUpgradeModalOpen}
+        appointmentsUsed={trialAptsUsed}
+        appointmentsLimit={trialAptsLimit}
+        messagesUsed={trialMsgsUsed}
+        messagesLimit={trialMsgsLimit}
+        estimatedValue={estimatedValue}
+        onSelectPlan={(plan) => handleCheckout(plan)}
+        checkoutLoading={checkoutLoading}
+      />
     </div>
   );
 };
