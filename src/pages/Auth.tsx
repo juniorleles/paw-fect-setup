@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
-import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,8 +12,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
-  const { user, loading, signIn, signUp, signOut } = useAuth();
-  const { completed: onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
+  const { loading, signIn, signUp } = useAuth();
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -23,27 +20,15 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [signingOutForSignup, setSigningOutForSignup] = useState(false);
   
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!loading && user) {
-      setSigningOutForSignup(true);
-      signOut().finally(() => setSigningOutForSignup(false));
-    }
-  }, [loading, signOut, user]);
-
-  if (loading || signingOutForSignup || (user && onboardingLoading && !isSignUp)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (user && !isSignUp) {
-    return <Navigate to={onboardingCompleted ? "/dashboard" : "/onboarding"} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
