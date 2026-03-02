@@ -58,7 +58,7 @@ const PricingSection = () => (
               <p className="text-xs text-primary font-medium mb-4">Trial gratuito por cotas</p>
               <p className="text-sm text-muted-foreground mb-5">Ideal para pequenos negócios que querem automatizar o WhatsApp sem complicação.</p>
               <ul className="space-y-2.5 mb-5 flex-1">
-                {["1 número WhatsApp", "1 atendente por horário", "Até 1.000 mensagens por mês", "Respostas automáticas básicas", "Mensagem de boas-vindas automática", "Configuração de horário de atendimento", "Suporte padrão"].map((f) => (
+                {["1 número WhatsApp", "1 atendente por horário", "Até 250 mensagens por mês", "Até 50 agendamentos por mês", "Respostas automáticas básicas", "Mensagem de boas-vindas automática", "Configuração de horário de atendimento", "Suporte padrão"].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
