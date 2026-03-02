@@ -1702,14 +1702,11 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     if (!reply || reply.trim() === "" || isEmojiOnly(reply)) {
       console.warn("Empty or emoji-only AI reply (stripping any action blocks), retrying with gemini-2.5-flash-lite...", JSON.stringify({ content_preview: reply?.substring(0, 200) }));
       
-      // Strip any action blocks from the confused response to prevent wrong actions
-      const strippedReply = reply?.replace(/<action>.*?<\/action>/gs, "").trim();
-      console.warn("Empty or emoji-only AI reply, retrying with gemini-2.5-flash-lite...", JSON.stringify({ content_preview: reply?.substring(0, 100) }));
-      
       // Build retry messages with an extra reinforcement instruction
+      // CRITICAL: Tell the retry model NOT to generate action blocks — the original response was confused
       const retryMessages = [
         ...aiMessages,
-        { role: "user", content: "INSTRUÇÃO DO SISTEMA: Sua última resposta continha apenas emojis. Responda OBRIGATORIAMENTE com TEXTO ESCRITO em português. Repita a resposta ao cliente usando palavras, não apenas emojis." },
+        { role: "user", content: "INSTRUÇÃO DO SISTEMA: Sua última resposta continha apenas emojis ou estava vazia. Responda OBRIGATORIAMENTE com TEXTO ESCRITO em português. NÃO inclua blocos <action>. Apenas responda ao cliente de forma natural e textual." },
       ];
       
       const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -1754,6 +1751,19 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Guardrail 0: GreetingGuard — simple greetings must NEVER trigger booking actions
+    const greetingGuardNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    const isSimpleGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai|obrigad[oa]|valeu|brigad[oa])$/i.test(greetingGuardNorm);
+    if (isSimpleGreeting && /<action>.*?<\/action>/s.test(reply)) {
+      console.log(`[GreetingGuard] Simple greeting "${message}" triggered an action block — stripping action to prevent false booking`);
+      reply = reply.replace(/<action>.*?<\/action>/gs, "").trim();
+      // If stripping the action leaves a "confirmation" text, clean it up
+      if (!reply || reply.length < 5 || /agendamento\s+confirmado/i.test(reply)) {
+        // Let the AI text through only if it's a proper greeting response
+        reply = "";
+      }
     }
 
     // Deterministic safeguards for booking flow
