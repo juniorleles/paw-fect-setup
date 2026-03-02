@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, Navigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,7 @@ const translateAuthError = (msg: string): string => {
 const Auth = () => {
   const { user, loading, signIn, signUp, signOut } = useAuth();
   const { completed: onboardingCompleted, loading: onboardingLoading } = useOnboardingStatus();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -42,16 +43,32 @@ const Auth = () => {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [justAuthenticated, setJustAuthenticated] = useState(false);
+  const initialSignOutDone = useRef(false);
   
   const { toast } = useToast();
 
-  // If user arrives at /auth while logged in, sign them out so they see the form
+  // On mount: sign out any existing session so the form is always shown clean
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !initialSignOutDone.current) {
+      initialSignOutDone.current = true;
       setSigningOut(true);
       signOut().finally(() => setSigningOut(false));
+    } else if (!loading && !user) {
+      initialSignOutDone.current = true;
     }
-  }, []);
+  }, [loading]);
+
+  // After successful login/signup, redirect to the appropriate page
+  useEffect(() => {
+    if (justAuthenticated && user && !onboardingLoading) {
+      if (onboardingCompleted) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/onboarding", { replace: true });
+      }
+    }
+  }, [justAuthenticated, user, onboardingCompleted, onboardingLoading, navigate]);
 
   if (loading || signingOut) {
     return (
@@ -78,11 +95,14 @@ const Auth = () => {
         description: translatedMessage,
         variant: "destructive",
       });
-    } else if (isSignUp) {
-      toast({
-        title: "Conta criada!",
-        description: "Sua conta foi criada com sucesso. Bem-vindo!",
-      });
+    } else {
+      setJustAuthenticated(true);
+      if (isSignUp) {
+        toast({
+          title: "Conta criada!",
+          description: "Sua conta foi criada com sucesso. Bem-vindo!",
+        });
+      }
     }
   };
 
