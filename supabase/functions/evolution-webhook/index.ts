@@ -6,6 +6,35 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// --- Rate Limiting ---
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 30; // max 30 messages per sender per minute
+
+function isRateLimited(senderPhone: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(senderPhone);
+
+  if (!entry || now >= entry.resetAt) {
+    rateLimitMap.set(senderPhone, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+
+  entry.count++;
+  if (entry.count > RATE_LIMIT_MAX) {
+    return true;
+  }
+  return false;
+}
+
+// Cleanup stale entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of rateLimitMap) {
+    if (now >= val.resetAt) rateLimitMap.delete(key);
+  }
+}, 300_000);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -107,6 +136,12 @@ Deno.serve(async (req) => {
 
         const senderPhone = msg.key?.remoteJid;
         if (!senderPhone || senderPhone.endsWith("@g.us")) continue;
+
+        // Rate limiting per sender
+        if (isRateLimited(senderPhone)) {
+          console.warn(`[RATE-LIMIT] Sender ${senderPhone} exceeded ${RATE_LIMIT_MAX} msgs/min, dropping`);
+          continue;
+        }
 
         // Deduplication: skip if same content was already buffered recently
         const twoMinAgo = new Date(Date.now() - 120_000).toISOString();
