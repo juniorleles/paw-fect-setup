@@ -193,9 +193,14 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      minLength={6}
+                      minLength={8}
                       className="h-11"
                     />
+                    {isSignUp && (
+                      <p className="text-xs text-muted-foreground">
+                        Mínimo 8 caracteres, com pelo menos 1 letra e 1 número. Evite senhas comuns.
+                      </p>
+                    )}
                   </div>
                   {!isSignUp && (
                     <div className="flex justify-end">
