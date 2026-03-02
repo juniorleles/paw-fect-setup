@@ -21,11 +21,9 @@ import {
 import {
   Check,
   Crown,
-  Gift,
   Loader2,
   CreditCard,
   Receipt,
-  AlertTriangle,
   Zap,
   Lock,
   Star,
@@ -34,11 +32,17 @@ import {
   MessageSquare,
   ExternalLink,
   Settings,
+  TrendingUp,
+  CalendarCheck,
+  DollarSign,
+  Rocket,
+  Flame,
+  Target,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { format, differenceInDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
 
 interface SubscriptionData {
   id: string;
@@ -66,6 +70,9 @@ const PLANS = {
   starter: { name: "Starter", price: STRIPE_PLANS.starter.price, limit: STRIPE_PLANS.starter.limit },
   professional: { name: "Profissional", price: STRIPE_PLANS.professional.price, limit: STRIPE_PLANS.professional.limit },
 };
+
+// Ticket médio estimado (usado para calcular valor gerado)
+const ESTIMATED_TICKET = 80;
 
 const MyAccount = () => {
   const { user } = useAuth();
@@ -102,7 +109,6 @@ const MyAccount = () => {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
-      // Load local data and sync Stripe in parallel
       const [subRes, messagesRes, payRes] = await Promise.all([
         supabase
           .from("subscriptions")
@@ -128,7 +134,6 @@ const MyAccount = () => {
       setPayments((payRes.data as unknown as PaymentRecord[]) ?? []);
       setLoading(false);
 
-      // Sync from Stripe in background, then refresh subscription data
       syncSubscription().then(async () => {
         const { data } = await supabase
           .from("subscriptions")
@@ -146,7 +151,6 @@ const MyAccount = () => {
     const checkoutStatus = searchParams.get("checkout");
     if (checkoutStatus === "success") {
       toast({ title: "Pagamento realizado! 🎉", description: "Sua assinatura foi ativada com sucesso." });
-      // Clean URL
       window.history.replaceState({}, "", "/my-account");
     }
   }, [searchParams, toast]);
@@ -201,7 +205,6 @@ const MyAccount = () => {
 
   const now = new Date();
   const isTrialing = sub?.status === "trialing" || (sub?.status === "active" && sub?.trial_end_at && new Date(sub.trial_end_at) > now);
-  // Check if paid: has current_period_end AFTER trial_end_at
   const hasPaidPeriod = sub?.current_period_end && sub?.trial_end_at && new Date(sub.current_period_end) > new Date(sub.trial_end_at);
   const isTrialQuotaUser = sub?.status === "active" && !hasPaidPeriod;
   const isActive = sub?.status === "active" && hasPaidPeriod;
@@ -216,6 +219,7 @@ const MyAccount = () => {
   const trialAptsPercent = trialAptsLimit > 0 ? (trialAptsUsed / trialAptsLimit) * 100 : 0;
   const trialMsgsPercent = trialMsgsLimit > 0 ? (trialMsgsUsed / trialMsgsLimit) * 100 : 0;
   const trialQuotaExhausted = trialAptsUsed >= trialAptsLimit || trialMsgsUsed >= trialMsgsLimit;
+  const maxTrialPercent = Math.max(trialAptsPercent, trialMsgsPercent);
 
   const currentPlan = (sub?.plan as keyof typeof PLANS) ?? "starter";
   const planInfo = PLANS[currentPlan] ?? PLANS.starter;
@@ -246,8 +250,21 @@ const MyAccount = () => {
     window.location.reload();
   };
 
+  // Estimated value generated
+  const estimatedValue = trialAptsUsed * ESTIMATED_TICKET;
+
+  // Dynamic CTA for trial users
+  const getTrialCTA = () => {
+    if (trialQuotaExhausted) return { label: "⚡ Assinar agora e não parar", icon: Zap };
+    if (maxTrialPercent >= 60) return { label: "🔥 Ativar plano e continuar crescendo", icon: Flame };
+    return { label: "🚀 Continuar teste grátis", icon: Rocket };
+  };
+
+  const trialCTA = getTrialCTA();
+
+  // Status display
   const statusLabel = isTrialQuotaUser
-    ? trialQuotaExhausted ? "Trial esgotado" : "Trial ativo"
+    ? trialQuotaExhausted ? "Trial esgotado" : "🔥 Trial ativo — sua IA já está trabalhando"
     : isActive
     ? "Ativo"
     : isCancelled
@@ -264,51 +281,71 @@ const MyAccount = () => {
     ? "bg-success/10 text-success border-success/20"
     : "bg-destructive/10 text-destructive border-destructive/20";
 
+  const aptsAvailable = Math.max(0, trialAptsLimit - trialAptsUsed);
+  const msgsAvailable = Math.max(0, trialMsgsLimit - trialMsgsUsed);
+
   return (
     <div className="flex-1 p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-display font-bold text-foreground">Minha Conta</h1>
 
-      {/* Alert banners */}
-      {isTrialQuotaUser && trialQuotaExhausted && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex items-center gap-3">
-          <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-          <p className="text-sm font-medium">
-            Seu trial gratuito acabou! Assine para continuar usando.
+      {/* Urgency message when near quota end */}
+      {isTrialQuotaUser && !trialQuotaExhausted && maxTrialPercent >= 70 && (
+        <div className="rounded-xl border border-accent/30 bg-gradient-to-r from-accent/5 to-primary/5 p-4 flex items-center gap-3">
+          <Zap className="w-5 h-5 text-accent flex-shrink-0" />
+          <p className="text-sm font-semibold text-foreground">
+            ⚡ Sua IA já está agendando clientes — não interrompa seu crescimento.
           </p>
-        </div>
-      )}
-      {isTrialQuotaUser && !trialQuotaExhausted && (trialAptsPercent >= 80 || trialMsgsPercent >= 80) && (
-        <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-accent flex-shrink-0" />
-          <p className="text-sm font-medium">
-            Seu trial está acabando! Agendamentos: {trialAptsUsed}/{trialAptsLimit} • Mensagens: {trialMsgsUsed}/{trialMsgsLimit}
-          </p>
+          <Button size="sm" className="ml-auto whitespace-nowrap" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
+            <Flame className="w-4 h-4 mr-1" />
+            Ativar plano
+          </Button>
         </div>
       )}
 
-      {/* 1. Status da assinatura */}
-      <Card className="border-2 border-primary/20 shadow-lg">
+      {/* Blocked banner */}
+      {isTrialQuotaUser && trialQuotaExhausted && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 flex items-center gap-3">
+          <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-destructive">Suas cotas do trial acabaram!</p>
+            <p className="text-xs text-muted-foreground">Ative um plano para sua secretária voltar a trabalhar para você.</p>
+          </div>
+          <Button size="sm" variant="destructive" className="ml-auto whitespace-nowrap" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
+            Assinar agora
+          </Button>
+        </div>
+      )}
+
+      {/* 1. Status + Progress Hero Card */}
+      <Card className="border-2 border-primary/20 shadow-lg overflow-hidden">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-3 flex-wrap">
                 <Crown className="w-6 h-6 text-primary" />
                 <h2 className="text-xl font-display font-bold">Plano {planInfo.name}</h2>
-                <Badge className={statusColor}>{statusLabel}</Badge>
+                <Badge className={`${statusColor} text-xs px-3 py-1`}>{statusLabel}</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {isActive && `Próxima cobrança: ${nextBillingDate} • R$ ${planInfo.price}/mês`}
-                {isTrialQuotaUser && !trialQuotaExhausted && `Trial gratuito: ${trialAptsUsed}/${trialAptsLimit} agendamentos • ${trialMsgsUsed}/${trialMsgsLimit} mensagens`}
-                {isTrialQuotaUser && trialQuotaExhausted && "Cotas do trial esgotadas. Contrate um plano para continuar."}
+                {isTrialQuotaUser && !trialQuotaExhausted && "Sua secretária digital está trabalhando para você"}
+                {isTrialQuotaUser && trialQuotaExhausted && "Ative um plano para continuar crescendo"}
                 {isCancelled && "Assinatura cancelada"}
-                {isExpired && "Seu trial expirou. Contrate um plano para continuar."}
+                {isExpired && "Ative um plano para continuar crescendo"}
               </p>
             </div>
             <div className="flex gap-2">
               {(isTrialQuotaUser || isExpired) && (
-                <Button className="font-bold" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
-                  <Zap className="w-4 h-4 mr-2" />
-                  {trialQuotaExhausted || isExpired ? "Assinar agora" : "Contratar plano agora"}
+                <Button
+                  className="font-bold"
+                  onClick={() => {
+                    if (maxTrialPercent >= 60 || trialQuotaExhausted || isExpired) {
+                      document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }}
+                >
+                  {trialCTA.icon && <trialCTA.icon className="w-4 h-4 mr-2" />}
+                  {trialCTA.label}
                 </Button>
               )}
               {(isActive || isTrialQuotaUser) && (
@@ -321,43 +358,93 @@ const MyAccount = () => {
             </div>
           </div>
 
-          {/* Trial quota progress */}
+          {/* Trial progress — results-oriented */}
           {isTrialQuotaUser && !trialQuotaExhausted && (
-            <div className="mt-5 space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Gift className="w-4 h-4 text-accent" />
-                <span className="font-medium">🎁 Trial gratuito</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Agendamentos</span>
-                  <span className="font-semibold">{trialAptsUsed}/{trialAptsLimit}</span>
+            <div className="mt-6 space-y-4">
+              {/* Motivational message when usage is low */}
+              {maxTrialPercent < 30 && (
+                <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-primary flex-shrink-0" />
+                  <p className="text-sm text-foreground">
+                    🎯 Complete seus primeiros agendamentos para liberar todo o potencial da IA
+                  </p>
                 </div>
-                <Progress value={Math.min(trialAptsPercent, 100)} className={`h-2 ${trialAptsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Mensagens (enviadas + recebidas)</span>
-                  <span className="font-semibold">{trialMsgsUsed}/{trialMsgsLimit}</span>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Appointments progress */}
+                <div className="space-y-2 rounded-lg bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CalendarCheck className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">Clientes agendados pela IA</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{aptsAvailable} agendamentos disponíveis</span>
+                    <span className="font-bold text-foreground">{trialAptsUsed}/{trialAptsLimit}</span>
+                  </div>
+                  <Progress value={Math.min(trialAptsPercent, 100)} className={`h-2.5 ${trialAptsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
                 </div>
-                <Progress value={Math.min(trialMsgsPercent, 100)} className={`h-2 ${trialMsgsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
+
+                {/* Messages progress */}
+                <div className="space-y-2 rounded-lg bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">Mensagens atendidas pela IA</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{msgsAvailable} mensagens disponíveis</span>
+                    <span className="font-bold text-foreground">{trialMsgsUsed}/{trialMsgsLimit}</span>
+                  </div>
+                  <Progress value={Math.min(trialMsgsPercent, 100)} className={`h-2.5 ${trialMsgsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
+                </div>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* 2. Uso / Limites */}
+      {/* 2. Valor estimado gerado */}
+      {isTrialQuotaUser && trialAptsUsed > 0 && (
+        <Card className="border border-success/20 bg-gradient-to-r from-success/5 to-transparent">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="rounded-full bg-success/10 p-3">
+              <DollarSign className="w-6 h-6 text-success" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                💰 Valor estimado gerado pela IA
+                <TrendingUp className="w-4 h-4 text-success" />
+              </p>
+              <p className="text-2xl font-display font-bold text-success">
+                R$ {estimatedValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Baseado em {trialAptsUsed} agendamento{trialAptsUsed !== 1 ? "s" : ""} × ticket médio de R$ {ESTIMATED_TICKET}
+              </p>
+            </div>
+            {!trialQuotaExhausted && maxTrialPercent >= 40 && (
+              <div className="hidden sm:block">
+                <Button size="sm" variant="outline" className="border-success/30 text-success hover:bg-success/5" onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}>
+                  <Sparkles className="w-4 h-4 mr-1" />
+                  Não pare aqui
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 3. Consumo mensal de mensagens */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-primary" />
-            Consumo de mensagens
+            Mensagens atendidas este mês
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span>Mensagens usadas este mês</span>
+            <span>Conversas respondidas pela IA</span>
             <span className="font-bold">{messagesUsed} / {messagesLimit}</span>
           </div>
           <Progress value={Math.min(usagePercent, 100)} className={`h-3 ${usagePercent >= 100 ? "[&>div]:bg-destructive" : usagePercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
@@ -367,7 +454,7 @@ const MyAccount = () => {
         </CardContent>
       </Card>
 
-      {/* 3. Planos disponíveis */}
+      {/* 4. Planos disponíveis */}
       <div id="plans" className="space-y-4">
         <h2 className="text-lg font-display font-bold">Planos disponíveis</h2>
         <div className="grid sm:grid-cols-3 gap-4">
@@ -467,7 +554,7 @@ const MyAccount = () => {
         </p>
       </div>
 
-      {/* 4. Forma de pagamento - agora via Stripe Portal */}
+      {/* 5. Forma de pagamento */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -496,7 +583,7 @@ const MyAccount = () => {
         </CardContent>
       </Card>
 
-      {/* 5. Histórico de pagamentos */}
+      {/* 6. Histórico de pagamentos */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -538,7 +625,7 @@ const MyAccount = () => {
         </CardContent>
       </Card>
 
-      {/* 6. Gerenciar assinatura */}
+      {/* 7. Gerenciar assinatura */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Gerenciar assinatura</CardTitle>
