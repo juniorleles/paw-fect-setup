@@ -12,7 +12,26 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- API Key Validation ---
+    // Evolution API sends the apikey in the payload and optionally in headers.
+    // Validate against our stored EVOLUTION_API_KEY to reject unauthorized requests.
+    const expectedKey = Deno.env.get("EVOLUTION_API_KEY");
+    
     const body = await req.json();
+    
+    const incomingKey = body?.apikey 
+      || req.headers.get("apikey") 
+      || req.headers.get("x-api-key")
+      || null;
+
+    if (!expectedKey || !incomingKey || incomingKey !== expectedKey) {
+      console.warn(`[WEBHOOK-AUTH] Rejected unauthorized webhook request. Key present: ${!!incomingKey}`);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     console.log("Evolution webhook received:", JSON.stringify(body).substring(0, 500));
 
     const event = body.event;
