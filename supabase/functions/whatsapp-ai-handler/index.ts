@@ -317,6 +317,54 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
 
+function enforceAdditionalBookingIntentGuard(userMessage: string, reply: string, lastAssistantMessage: string): string {
+  if (!reply) return reply;
+
+  const normalize = (text: string) => (text || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const userNorm = normalize(userMessage);
+  const isAdditionalIntent = /((agendar|marcar).*(mais\s+(um|uma|dois|duas|tres|tres)|outro|de novo)|\bmais\s+(um|uma|dois|duas|tres|três)\s+(corte|banho|tosa|servico|serviço|horario|horário|agendamento|pet))/i.test(userNorm);
+  if (!isAdditionalIntent) return reply;
+
+  const hasDateOrTimeInUserMessage = /\b(amanha|amanhã|hoje|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado|domingo|\d{1,2}\/\d{1,2}|\d{4}-\d{2}-\d{2}|([01]?\d|2[0-3])[:h]([0-5]\d)?)\b/i.test(userNorm) || /[àa]s\s+\d{1,2}/i.test(userNorm);
+
+  const actionMatch = reply.match(/<action>(.*?)<\/action>/s);
+  if (!actionMatch) {
+    if (!hasDateOrTimeInUserMessage && !/\?/.test(reply)) {
+      return `${reply.trim()}\nPra qual dia e horário você quer esse próximo agendamento?`;
+    }
+    return reply;
+  }
+
+  let action: any = null;
+  try {
+    action = JSON.parse(actionMatch[1]);
+  } catch {
+    return reply;
+  }
+
+  if (action?.type !== "create") return reply;
+
+  if (!hasDateOrTimeInUserMessage) {
+    const cleanService = typeof action.service === "string" && action.service.trim().length > 0
+      ? action.service.trim().toLowerCase()
+      : "agendamento";
+
+    return `Perfeito! Vamos agendar mais um ✅\nPra qual dia e horário você quer o próximo ${cleanService}?`;
+  }
+
+  const lastTime = (lastAssistantMessage || "").match(/\b([01]\d|2[0-3]):[0-5]\d\b/)?.[0] || null;
+  const actionTime = typeof action.time === "string" ? action.time.slice(0, 5) : null;
+  if (lastTime && actionTime && lastTime === actionTime) {
+    return "Esse horário acabou de ser usado no agendamento anterior e ficou indisponível para este novo pedido.\nMe diga outro dia e horário que eu te confirmo agora ✅";
+  }
+
+  return reply;
+}
+
 function enforceKnownServiceNoRedundantQuestion(
   userMessage: string,
   reply: string,
@@ -1678,6 +1726,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
         }
       }
     }
+
+    // Guardrail 4: for "agendar mais um", never auto-reuse previous slot without explicit new date/time
+    reply = enforceAdditionalBookingIntentGuard(message, reply, lastAssistantMessage);
 
     // Process actions (create/cancel/reschedule/confirm)
     reply = await processAction(serviceClient, shopConfig, cleanPhone, reply);
