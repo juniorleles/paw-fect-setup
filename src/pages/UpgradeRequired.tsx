@@ -75,7 +75,6 @@ const UpgradeRequired = () => {
   };
 
   const isBlocked = phase === "blocked";
-  const isGrace = phase === "grace_period";
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -86,12 +85,10 @@ const UpgradeRequired = () => {
             <Lock className="w-10 h-10 text-destructive" />
           </div>
           <h1 className="text-3xl font-display font-bold text-foreground">
-            {isBlocked ? "Acesso bloqueado" : "Seu período de teste expirou"}
+            Seu trial gratuito acabou
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            {isBlocked
-              ? "Seu período de tolerância de 3 dias acabou. Ative um plano para continuar usando o sistema."
-              : `Você tem ${3 - daysOverdue} dia${3 - daysOverdue !== 1 ? "s" : ""} restante${3 - daysOverdue !== 1 ? "s" : ""} no período de tolerância. Ative agora!`}
+            Você utilizou todas as cotas do seu período gratuito. Ative um plano para continuar usando o sistema.
           </p>
         </div>
 

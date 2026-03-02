@@ -1337,6 +1337,25 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         }
         return `Desculpe, não consegui finalizar o agendamento agora. Pode tentar novamente? 😊`;
       }
+
+      // Increment trial appointment counter
+      try {
+        const { data: subData } = await serviceClient
+          .from("subscriptions")
+          .select("trial_appointments_used, current_period_end, trial_end_at")
+          .eq("user_id", shopConfig.user_id)
+          .maybeSingle();
+        if (subData) {
+          const hasPaid = subData.current_period_end && subData.trial_end_at && 
+            new Date(subData.current_period_end) > new Date(subData.trial_end_at);
+          if (!hasPaid) {
+            await serviceClient
+              .from("subscriptions")
+              .update({ trial_appointments_used: (subData.trial_appointments_used ?? 0) + 1 })
+              .eq("user_id", shopConfig.user_id);
+          }
+        }
+      } catch { /* ignore */ }
     } else if (action.type === "confirm") {
       await serviceClient
         .from("appointments")
@@ -1404,14 +1423,13 @@ Deno.serve(async (req) => {
 
     const shopConfig = config as PetShopConfig;
 
-    // --- TRIAL / SUBSCRIPTION ENFORCEMENT ---
+    // --- TRIAL / SUBSCRIPTION ENFORCEMENT (quota-based) ---
     const { data: subscription } = await serviceClient
       .from("subscriptions")
-      .select("status, trial_end_at, current_period_end")
+      .select("status, trial_end_at, current_period_end, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit")
       .eq("user_id", shopConfig.user_id)
       .maybeSingle();
 
-    const GRACE_PERIOD_DAYS = 3;
     const now = new Date();
     let blocked = false;
 
@@ -1419,42 +1437,52 @@ Deno.serve(async (req) => {
       blocked = true;
     } else if (subscription.status === "cancelled") {
       blocked = true;
-    } else if (subscription.status === "active" && subscription.trial_end_at) {
-      const trialEnd = new Date(subscription.trial_end_at);
-      if (now > trialEnd) {
-        // Check if there's a paid period (current_period_end after trial_end)
-        const hasPaidPeriod = subscription.current_period_end && new Date(subscription.current_period_end) > trialEnd;
-        if (!hasPaidPeriod) {
-          // Trial expired — check grace period
-          const msOverdue = now.getTime() - trialEnd.getTime();
-          const daysOverdue = Math.floor(msOverdue / (1000 * 60 * 60 * 24));
-          if (daysOverdue > GRACE_PERIOD_DAYS) {
-            blocked = true;
-          } else {
-            // Grace period — block messages but don't fully block
-            blocked = true; // messages are blocked during grace too
-          }
+    } else if (subscription.status === "active") {
+      const trialEnd = subscription.trial_end_at ? new Date(subscription.trial_end_at) : null;
+      const hasPaidPeriod = subscription.current_period_end && trialEnd && new Date(subscription.current_period_end) > trialEnd;
+
+      if (!hasPaidPeriod) {
+        // Trial user — check quotas
+        const aptsUsed = subscription.trial_appointments_used ?? 0;
+        const msgsUsed = subscription.trial_messages_used ?? 0;
+        const aptsLimit = subscription.trial_appointments_limit ?? 50;
+        const msgsLimit = subscription.trial_messages_limit ?? 250;
+
+        if (aptsUsed >= aptsLimit || msgsUsed >= msgsLimit) {
+          blocked = true;
+          console.log(`[TRIAL-BLOCK] Quota exhausted for user ${shopConfig.user_id}: apts=${aptsUsed}/${aptsLimit}, msgs=${msgsUsed}/${msgsLimit}`);
         }
       }
     }
 
     if (blocked) {
-      console.log(`[TRIAL-BLOCK] Messages blocked for user ${shopConfig.user_id} — no active subscription`);
-      // Log to admin_error_logs for admin visibility
+      console.log(`[TRIAL-BLOCK] Messages blocked for user ${shopConfig.user_id} — no active subscription or quota exhausted`);
       try {
         await serviceClient.from("admin_error_logs").insert({
-          error_message: `[TRIAL-BLOCK] Mensagem bloqueada — assinatura inativa`,
+          error_message: `[TRIAL-BLOCK] Mensagem bloqueada — assinatura inativa ou cota esgotada`,
           endpoint: "whatsapp-ai-handler",
           severity: "warning",
           user_id: shopConfig.user_id,
           stack_trace: JSON.stringify({ sender: cleanPhone, message: message.substring(0, 100), instanceName }),
         });
       } catch { /* ignore logging errors */ }
-      // Don't respond to the customer at all — silent block
       return new Response(JSON.stringify({ success: false, reason: "subscription_inactive" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Increment trial message counter (count received message)
+    // We'll also increment after sending the reply (for sent message)
+    const isTrialUser = subscription && !subscription.current_period_end || 
+      (subscription?.current_period_end && subscription?.trial_end_at && 
+       new Date(subscription.current_period_end) <= new Date(subscription.trial_end_at));
+    
+    if (isTrialUser && subscription) {
+      await serviceClient
+        .from("subscriptions")
+        .update({ trial_messages_used: (subscription.trial_messages_used ?? 0) + 1 })
+        .eq("user_id", shopConfig.user_id);
     }
 
     // Check for quick confirmation responses (CONFIRMO, REMARCAR, CANCELAR)
@@ -1816,6 +1844,21 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
 
     // Save assistant reply to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
+
+    // Increment trial message counter for the sent reply
+    if (isTrialUser && subscription) {
+      const { data: freshSub } = await serviceClient
+        .from("subscriptions")
+        .select("trial_messages_used")
+        .eq("user_id", shopConfig.user_id)
+        .maybeSingle();
+      if (freshSub) {
+        await serviceClient
+          .from("subscriptions")
+          .update({ trial_messages_used: (freshSub.trial_messages_used ?? 0) + 1 })
+          .eq("user_id", shopConfig.user_id);
+      }
+    }
 
     // Send reply via WhatsApp
     await sendWhatsAppMessage(instanceName, senderPhone, reply);

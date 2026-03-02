@@ -99,7 +99,6 @@ serve(async (req) => {
       success_url: `${origin}/my-account?checkout=success`,
       cancel_url: `${origin}/my-account?checkout=cancelled`,
       subscription_data: {
-        ...(alreadyUsedTrial ? {} : { trial_period_days: 7 }),
         metadata: { user_id: user.id },
       },
       metadata: { user_id: user.id },

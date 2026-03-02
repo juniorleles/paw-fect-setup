@@ -33,7 +33,7 @@ const PricingSection = () => (
       >
         <div className="mx-auto max-w-xl rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-center shadow-sm">
           <p className="text-base sm:text-lg font-semibold text-foreground">
-            🎁 Teste grátis por 7 dias. Sem compromisso. Cancele quando quiser.
+            🎁 Teste grátis: 50 agendamentos + 250 mensagens. Sem compromisso. Cancele quando quiser.
           </p>
         </div>
       </motion.div>
@@ -55,7 +55,7 @@ const PricingSection = () => (
                 <span className="text-4xl font-bold">R$ 67</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-4">7 dias grátis para testar</p>
+              <p className="text-xs text-primary font-medium mb-4">Trial gratuito por cotas</p>
               <p className="text-sm text-muted-foreground mb-5">Ideal para pequenos negócios que querem automatizar o WhatsApp sem complicação.</p>
               <ul className="space-y-2.5 mb-5 flex-1">
                 {["1 número WhatsApp", "1 atendente por horário", "Até 1.000 mensagens por mês", "Respostas automáticas básicas", "Mensagem de boas-vindas automática", "Configuração de horário de atendimento", "Suporte padrão"].map((f) => (
@@ -67,7 +67,7 @@ const PricingSection = () => (
               </ul>
               <p className="text-[11px] text-muted-foreground mb-4 leading-snug">Após o período promocional, o valor será R$ 97/mês. Clientes fundadores mantêm o valor.</p>
               <a href="/auth?signup=true">
-                <Button className="w-full" variant="outline">Começar 7 dias grátis</Button>
+                <Button className="w-full" variant="outline">Começar grátis</Button>
               </a>
             </CardContent>
           </Card>
@@ -97,7 +97,7 @@ const PricingSection = () => (
                 <span className="text-4xl font-bold">R$ 167</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-4">7 dias grátis para testar</p>
+              <p className="text-xs text-primary font-medium mb-4">Trial gratuito por cotas</p>
               <p className="text-sm text-muted-foreground mb-5">Para negócios que querem atendimento inteligente e mais volume.</p>
               <p className="text-xs font-semibold text-foreground mb-2">Inclui tudo do Starter +</p>
               <ul className="space-y-2.5 mb-6 flex-1">
@@ -109,7 +109,7 @@ const PricingSection = () => (
                 ))}
               </ul>
               <a href="/auth?signup=true">
-                <Button className="w-full shadow-lg shadow-primary/20">Começar 7 dias grátis</Button>
+                <Button className="w-full shadow-lg shadow-primary/20">Começar grátis</Button>
               </a>
             </CardContent>
           </Card>
