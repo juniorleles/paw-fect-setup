@@ -1507,6 +1507,40 @@ Deno.serve(async (req) => {
     // Save user message to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "user", message);
 
+    // --- New Conversation Detection ---
+    // If the user sends a simple greeting after 30+ minutes of inactivity,
+    // clear conversation history to prevent context pollution from old conversations.
+    const greetingNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    const isGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai)$/i.test(greetingNorm);
+
+    if (isGreeting) {
+      // Check the timestamp of the second-to-last message (before the greeting we just saved)
+      const { data: recentMsgs } = await serviceClient
+        .from("conversation_messages")
+        .select("created_at")
+        .eq("user_id", shopConfig.user_id)
+        .eq("phone", cleanPhone)
+        .order("created_at", { ascending: false })
+        .limit(2);
+
+      if (recentMsgs && recentMsgs.length >= 2) {
+        const lastMsgTime = new Date(recentMsgs[1].created_at).getTime();
+        const currentMsgTime = new Date(recentMsgs[0].created_at).getTime();
+        const gapMinutes = (currentMsgTime - lastMsgTime) / (1000 * 60);
+
+        if (gapMinutes >= 30) {
+          console.log(`[NewConversation] Greeting "${message}" after ${Math.round(gapMinutes)}min gap — clearing old history to prevent context pollution`);
+          // Delete all messages except the greeting we just saved
+          await serviceClient
+            .from("conversation_messages")
+            .delete()
+            .eq("user_id", shopConfig.user_id)
+            .eq("phone", cleanPhone)
+            .lt("created_at", recentMsgs[0].created_at);
+        }
+      }
+    }
+
     // Get conversation history and robust service memory for guardrails
     const conversationHistory = await getConversationHistory(serviceClient, shopConfig.user_id, cleanPhone);
     const lastMentionedService = await findLastMentionedService(serviceClient, shopConfig.user_id, cleanPhone, shopConfig.services || []);
