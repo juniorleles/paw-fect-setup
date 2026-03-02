@@ -559,10 +559,56 @@ function enforceKnownServiceNoRedundantQuestion(
   return result;
 }
 
+// --- Humanized Typing Delay ---
+
+function calculateHumanDelay(text: string): number {
+  const len = (text || "").length;
+  // Short messages (greetings): 1-2s
+  if (len <= 50) return 1000 + Math.random() * 1000;
+  // Simple choices: 2-3s
+  if (len <= 150) return 2000 + Math.random() * 1000;
+  // Full booking confirmations: 3-5s
+  if (len <= 400) return 3000 + Math.random() * 2000;
+  // Long detailed responses: 4-6s
+  return 4000 + Math.random() * 2000;
+}
+
+async function sendComposingPresence(instanceName: string, phone: string): Promise<void> {
+  const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
+  const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
+  if (!evolutionUrl || !evolutionKey) return;
+
+  const baseUrl = evolutionUrl.replace(/\/+$/, "");
+  const cleanPhone = phone.replace("@s.whatsapp.net", "");
+  try {
+    await fetch(`${baseUrl}/chat/presence/${instanceName}`, {
+      method: "POST",
+      headers: {
+        apikey: evolutionKey.trim(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ number: cleanPhone, presence: "composing" }),
+    });
+    console.log("[TypingDelay] Composing presence sent");
+  } catch (err) {
+    console.warn("[TypingDelay] Failed to send composing presence:", err);
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
   const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
   const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
   if (!evolutionUrl || !evolutionKey) return;
+
+  // Send "composing" presence and wait humanized delay
+  const delay = calculateHumanDelay(text);
+  console.log(`[TypingDelay] Text length: ${text.length}, delay: ${delay}ms`);
+  await sendComposingPresence(instanceName, phone);
+  await sleep(delay);
 
   const baseUrl = evolutionUrl.replace(/\/+$/, "");
   const cleanPhone = phone.replace("@s.whatsapp.net", "");
