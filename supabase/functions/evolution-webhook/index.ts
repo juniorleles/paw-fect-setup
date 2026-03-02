@@ -7,24 +7,27 @@ const corsHeaders = {
 };
 
 // --- Rate Limiting ---
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const rateLimitMap = new Map<string, { count: number; resetAt: number; alerted: boolean }>();
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 30; // max 30 messages per sender per minute
+const RATE_LIMIT_ALERT_THRESHOLD = 50; // alert when sender exceeds this count
 
-function isRateLimited(senderPhone: string): boolean {
+function isRateLimited(senderPhone: string): { limited: boolean; shouldAlert: boolean; count: number } {
   const now = Date.now();
   const entry = rateLimitMap.get(senderPhone);
 
   if (!entry || now >= entry.resetAt) {
-    rateLimitMap.set(senderPhone, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return false;
+    rateLimitMap.set(senderPhone, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS, alerted: false });
+    return { limited: false, shouldAlert: false, count: 1 };
   }
 
   entry.count++;
   if (entry.count > RATE_LIMIT_MAX) {
-    return true;
+    const shouldAlert = entry.count >= RATE_LIMIT_ALERT_THRESHOLD && !entry.alerted;
+    if (shouldAlert) entry.alerted = true;
+    return { limited: true, shouldAlert, count: entry.count };
   }
-  return false;
+  return { limited: false, shouldAlert: false, count: entry.count };
 }
 
 // Cleanup stale entries every 5 minutes
@@ -138,8 +141,19 @@ Deno.serve(async (req) => {
         if (!senderPhone || senderPhone.endsWith("@g.us")) continue;
 
         // Rate limiting per sender
-        if (isRateLimited(senderPhone)) {
-          console.warn(`[RATE-LIMIT] Sender ${senderPhone} exceeded ${RATE_LIMIT_MAX} msgs/min, dropping`);
+        const rateCheck = isRateLimited(senderPhone);
+        if (rateCheck.limited) {
+          console.warn(`[RATE-LIMIT] Sender ${senderPhone} exceeded ${RATE_LIMIT_MAX} msgs/min (count: ${rateCheck.count}), dropping`);
+          
+          if (rateCheck.shouldAlert) {
+            await serviceClient.from("system_alerts").insert({
+              alert_type: "rate_limit",
+              severity: "warning",
+              message: `Rate limit acionado: ${senderPhone} enviou ${rateCheck.count}+ msgs/min na instância ${instanceName}`,
+              details: { sender: senderPhone, instance: instanceName, count: rateCheck.count },
+            });
+            console.warn(`[RATE-LIMIT] Alert created for ${senderPhone}`);
+          }
           continue;
         }
 
