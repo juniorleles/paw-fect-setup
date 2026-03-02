@@ -454,96 +454,43 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* ─── 5. Plano e Limites ─── */}
+      {/* ─── 5. Cotas disponíveis ─── */}
       <section>
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Plano e limites</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Plan card */}
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Seus recursos</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Appointments quota */}
           <Card className="border-none shadow-md bg-card">
-            <CardContent className="py-5 px-5">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Crown className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">{planName}</p>
-                    <p className="text-xs text-muted-foreground">Plano atual</p>
-                  </div>
-                </div>
-                <Button size="sm" className="gap-2" onClick={() => navigate("/my-account")}>
-                  <Crown className="w-4 h-4" />
-                  Gerenciar
-                </Button>
+            <CardContent className="py-5 px-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">Clientes agendados pela IA</span>
               </div>
-              <div className="mt-4 space-y-1.5">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    Conversas únicas
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="text-muted-foreground/60 hover:text-primary transition-colors">
-                          <Info className="w-3.5 h-3.5" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
-                        Quantidade de números de telefone diferentes que conversaram com sua secretária neste mês. Cada cliente conta como 1.
-                      </PopoverContent>
-                    </Popover>
-                  </span>
-                  <span className="font-semibold">{conversationsMonth} / {planLimit.toLocaleString("pt-BR")}</span>
-                </div>
-                <Progress value={Math.min((conversationsMonth / planLimit) * 100, 100)} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{Math.max(0, trialAppointmentsLimit - trialAppointmentsUsed)} agendamentos disponíveis</span>
+                <span className="font-bold text-foreground">{trialAppointmentsUsed}/{trialAppointmentsLimit}</span>
               </div>
+              <Progress
+                value={Math.min(trialAppointmentsLimit > 0 ? (trialAppointmentsUsed / trialAppointmentsLimit) * 100 : 0, 100)}
+                className={`h-2.5 ${(trialAppointmentsUsed / trialAppointmentsLimit) * 100 >= 80 ? "[&>div]:bg-accent" : ""}`}
+              />
             </CardContent>
           </Card>
 
-          {/* Messages consumption card */}
-          <Card className={`border-none shadow-md ${messagesPercent >= 80 ? "ring-1 ring-accent/30 bg-accent/5" : "bg-card"}`}>
-            <CardContent className="py-5 px-5">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${messagesPercent >= 100 ? "bg-destructive/10" : messagesPercent >= 80 ? "bg-accent/10" : "bg-primary/10"}`}>
-                    <MessageSquare className={`w-5 h-5 ${messagesPercent >= 100 ? "text-destructive" : messagesPercent >= 80 ? "text-accent" : "text-primary"}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">Mensagens do mês</p>
-                    <p className="text-xs text-muted-foreground">Enviadas + recebidas</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate("/my-account")}>
-                  Ver detalhes
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
+          {/* Messages quota */}
+          <Card className="border-none shadow-md bg-card">
+            <CardContent className="py-5 px-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">Mensagens atendidas pela IA</span>
               </div>
-              <div className="mt-4 space-y-1.5">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    Consumo
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="text-muted-foreground/60 hover:text-primary transition-colors">
-                          <Info className="w-3.5 h-3.5" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
-                        Total de mensagens individuais (enviadas + recebidas) trocadas no mês. Inclui todas as mensagens de todos os clientes.
-                      </PopoverContent>
-                    </Popover>
-                  </span>
-                  <span className="font-semibold">{totalMessagesMonth} / {planLimit.toLocaleString("pt-BR")}</span>
-                </div>
-                <Progress
-                  value={Math.min(messagesPercent, 100)}
-                  className={`h-2 ${messagesPercent >= 100 ? "[&>div]:bg-destructive" : messagesPercent >= 80 ? "[&>div]:bg-accent" : ""}`}
-                />
-                {messagesPercent >= 80 && messagesPercent < 100 && (
-                  <p className="text-xs text-accent font-medium">⚠️ Você já usou {Math.round(messagesPercent)}% do limite</p>
-                )}
-                {messagesPercent >= 100 && (
-                  <p className="text-xs text-destructive font-medium">🚫 Limite atingido — faça upgrade</p>
-                )}
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{Math.max(0, trialMessagesLimit - trialMessagesUsed)} mensagens disponíveis</span>
+                <span className="font-bold text-foreground">{trialMessagesUsed}/{trialMessagesLimit}</span>
               </div>
+              <Progress
+                value={Math.min(trialMessagesLimit > 0 ? (trialMessagesUsed / trialMessagesLimit) * 100 : 0, 100)}
+                className={`h-2.5 ${(trialMessagesUsed / trialMessagesLimit) * 100 >= 80 ? "[&>div]:bg-accent" : ""}`}
+              />
             </CardContent>
           </Card>
         </div>
