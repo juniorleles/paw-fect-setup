@@ -1,0 +1,1 @@
+UPDATE public.subscriptions SET trial_messages_used = 150 WHERE id = '7f4db94f-3cc6-44cb-b1e4-af7fb0269d8a'
