@@ -435,25 +435,27 @@ const MyAccount = () => {
         </Card>
       )}
 
-      {/* 3. Consumo mensal de mensagens */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-primary" />
-            Mensagens atendidas este mês
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span>Conversas respondidas pela IA</span>
-            <span className="font-bold">{messagesUsed} / {messagesLimit}</span>
-          </div>
-          <Progress value={Math.min(usagePercent, 100)} className={`h-3 ${usagePercent >= 100 ? "[&>div]:bg-destructive" : usagePercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
-          <p className="text-xs text-muted-foreground">
-            Renova em: {nextBillingDate}
-          </p>
-        </CardContent>
-      </Card>
+      {/* 3. Consumo mensal de mensagens — only for paid plans */}
+      {isActive && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Mensagens atendidas este mês
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span>Conversas respondidas pela IA</span>
+              <span className="font-bold">{messagesUsed} / {messagesLimit}</span>
+            </div>
+            <Progress value={Math.min(usagePercent, 100)} className={`h-3 ${usagePercent >= 100 ? "[&>div]:bg-destructive" : usagePercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
+            <p className="text-xs text-muted-foreground">
+              Renova em: {nextBillingDate}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 4. Planos disponíveis */}
       <div id="plans" className="space-y-4">
