@@ -152,6 +152,30 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_locks: {
+        Row: {
+          instance_name: string
+          locked_at: string | null
+          processing: boolean
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          instance_name: string
+          locked_at?: string | null
+          processing?: boolean
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          instance_name?: string
+          locked_at?: string | null
+          processing?: boolean
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       conversation_messages: {
         Row: {
           content: string
@@ -493,6 +517,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_sender_lock: {
+        Args: { p_instance_name: string; p_sender_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -500,6 +528,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      release_sender_lock: { Args: { p_sender_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
