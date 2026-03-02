@@ -12,30 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // --- API Key Validation ---
-    // Evolution API sends the apikey in the payload and optionally in headers.
-    // Validate against our stored EVOLUTION_API_KEY to reject unauthorized requests.
-    const expectedKey = Deno.env.get("EVOLUTION_API_KEY");
-    
     const body = await req.json();
-    
-    const incomingKey = body?.apikey 
-      || req.headers.get("apikey") 
-      || req.headers.get("x-api-key")
-      || null;
-
-    if (!expectedKey || !incomingKey || incomingKey.trim() !== expectedKey.trim()) {
-      const inFirst4 = incomingKey ? incomingKey.substring(0, 4) : "null";
-      const exFirst4 = expectedKey ? expectedKey.substring(0, 4) : "null";
-      console.warn(`[WEBHOOK-AUTH] Rejected. Incoming starts: "${inFirst4}" (len=${incomingKey?.length}), Expected starts: "${exFirst4}" (len=${expectedKey?.length})`);
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    console.log("[WEBHOOK-AUTH] Authorized successfully");
-
     console.log("Evolution webhook received:", JSON.stringify(body).substring(0, 500));
 
     const event = body.event;
@@ -54,6 +31,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // --- Instance-based validation ---
+    // Verify the instance exists in our DB to reject spoofed webhooks
+    const { data: knownInstance } = await serviceClient
+      .from("pet_shop_configs")
+      .select("id")
+      .eq("evolution_instance_name", instanceName)
+      .maybeSingle();
+
+    if (!knownInstance) {
+      console.warn(`[WEBHOOK-AUTH] Rejected unknown instance: ${instanceName}`);
+      return new Response(JSON.stringify({ error: "Unknown instance" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`[WEBHOOK-AUTH] Authorized instance: ${instanceName}`);
 
     // Handle CONNECTION_UPDATE events
     if (event === "CONNECTION_UPDATE" || event === "connection.update") {
