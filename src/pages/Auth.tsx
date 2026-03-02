@@ -11,6 +11,24 @@ import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 
+const translateAuthError = (msg: string): string => {
+  const map: Record<string, string> = {
+    "Password is known to be weak and easy to guess, please choose a different one.":
+      "Essa senha é muito fraca e fácil de adivinhar. Por favor, escolha outra.",
+    "Invalid login credentials":
+      "E-mail ou senha incorretos.",
+    "Email not confirmed":
+      "E-mail ainda não confirmado. Verifique sua caixa de entrada.",
+    "User already registered":
+      "Este e-mail já está cadastrado.",
+    "Signup requires a valid password":
+      "A senha informada é inválida.",
+    "Password should be at least 6 characters":
+      "A senha deve ter pelo menos 6 caracteres.",
+  };
+  return map[msg] || msg;
+};
+
 const Auth = () => {
   const { loading, signIn, signUp } = useAuth();
   const [searchParams] = useSearchParams();
@@ -42,9 +60,10 @@ const Auth = () => {
     setSubmitting(false);
 
     if (error) {
+      const translatedMessage = translateAuthError(error.message);
       toast({
         title: "Erro",
-        description: error.message,
+        description: translatedMessage,
         variant: "destructive",
       });
     } else if (isSignUp) {
