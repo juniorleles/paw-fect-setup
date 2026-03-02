@@ -98,7 +98,13 @@ const WhatsAppStatusBadge = () => {
       });
 
       if (error || data?.error) {
-        toast({ title: "Erro ao reconectar", description: data?.error || error?.message, variant: "destructive" });
+        const errorMsg = data?.error || error?.message || "Erro desconhecido";
+        const isBlocked = data?.blocked === true;
+        toast({ 
+          title: isBlocked ? "Acesso bloqueado" : "Erro ao conectar", 
+          description: errorMsg, 
+          variant: "destructive" 
+        });
         return;
       }
 
