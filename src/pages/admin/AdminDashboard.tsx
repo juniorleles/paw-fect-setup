@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Cpu,
   Loader2,
+  CalendarCheck,
 } from "lucide-react";
 import {
   BarChart,
@@ -23,6 +24,18 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// Pricing per 1M input tokens (USD)
+const MODEL_PRICING: Record<string, number> = {
+  "google/gemini-3-flash-preview": 0.01,
+  "google/gemini-2.5-flash": 0.15,
+  "google/gemini-2.5-flash-lite": 0.01,
+  "google/gemini-2.5-pro": 1.25,
+  "google/gemini-3-pro-preview": 1.25,
+  "openai/gpt-5": 10.0,
+  "openai/gpt-5-mini": 1.5,
+  "openai/gpt-5-nano": 0.1,
+};
+
 interface Stats {
   totalClients: number;
   activeSubscriptions: number;
@@ -32,6 +45,9 @@ interface Stats {
   declinedPayments: number;
   totalMessages: number;
   totalAiRequests: number;
+  costPerAppointment: number;
+  totalAppointments: number;
+  totalAiCost: number;
 }
 
 interface MonthlyRevenue {
@@ -63,12 +79,14 @@ const StatCard = ({
   value: number;
   icon: any;
   color: string;
-  format?: "currency" | "number";
+  format?: "currency" | "number" | "usd";
 }) => {
   const formatted =
     format === "currency"
       ? value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-      : value.toLocaleString("pt-BR");
+      : format === "usd"
+        ? `US$ ${value.toFixed(4)}`
+        : value.toLocaleString("pt-BR");
 
   return (
     <div className="bg-[hsl(220,20%,10%)] border border-[hsl(220,15%,15%)] rounded-xl p-5">
@@ -114,6 +132,8 @@ const AdminDashboard = () => {
           allPayments,
           allConfigs,
           allMessages,
+          appointmentsMonth,
+          aiUsageMonth,
         ] = await Promise.all([
           supabase.from("pet_shop_configs").select("id", { count: "exact", head: true }).eq("activated", true),
           supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
@@ -126,6 +146,9 @@ const AdminDashboard = () => {
           supabase.from("payment_history").select("amount, paid_at").eq("status", "paid").gte("paid_at", sixMonthsAgoStr).order("paid_at", { ascending: true }).limit(1000),
           supabase.from("pet_shop_configs").select("created_at").eq("activated", true).order("created_at", { ascending: true }).limit(500),
           supabase.from("conversation_messages").select("created_at").gte("created_at", sixMonthsAgoStr).order("created_at", { ascending: true }).limit(1000),
+          // Cost per appointment data
+          supabase.from("appointments").select("id", { count: "exact", head: true }).neq("status", "cancelled").gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
+          supabase.from("ai_usage").select("tokens_used, model").gte("created_at", `${monthStart}T00:00:00`).lte("created_at", `${monthEnd}T23:59:59`),
         ]);
 
         const payments = paymentsMonth.data ?? [];
@@ -194,6 +217,18 @@ const AdminDashboard = () => {
           }))
         );
 
+        // Calculate AI cost for the month
+        const aiUsageData = aiUsageMonth.data ?? [];
+        let totalAiCost = 0;
+        for (const row of aiUsageData) {
+          const model = row.model || "unknown";
+          const price = MODEL_PRICING[model] ?? 0.01;
+          totalAiCost += (row.tokens_used / 1_000_000) * price;
+        }
+
+        const totalAppointments = appointmentsMonth.count ?? 0;
+        const costPerAppointment = totalAppointments > 0 ? totalAiCost / totalAppointments : 0;
+
         setStats({
           totalClients: clientsRes.count ?? 0,
           activeSubscriptions: activeSubs.count ?? 0,
@@ -203,6 +238,9 @@ const AdminDashboard = () => {
           declinedPayments: declinedRes.count ?? 0,
           totalMessages: messagesRes.count ?? 0,
           totalAiRequests: aiRes.count ?? 0,
+          costPerAppointment,
+          totalAppointments,
+          totalAiCost,
         });
       } catch (err) {
         console.error("[AdminDashboard] fetchStats error:", err);
@@ -216,6 +254,9 @@ const AdminDashboard = () => {
           declinedPayments: 0,
           totalMessages: 0,
           totalAiRequests: 0,
+          costPerAppointment: 0,
+          totalAppointments: 0,
+          totalAiCost: 0,
         });
       } finally {
         setLoading(false);
@@ -251,6 +292,13 @@ const AdminDashboard = () => {
         <StatCard label="Pagamentos recusados" value={stats.declinedPayments} icon={XCircle} color="bg-red-500/15 text-red-400" />
         <StatCard label="Mensagens no mês" value={stats.totalMessages} icon={MessageSquare} color="bg-cyan-500/15 text-cyan-400" />
         <StatCard label="Requisições Gemini" value={stats.totalAiRequests} icon={Cpu} color="bg-pink-500/15 text-pink-400" />
+      </div>
+
+      {/* Cost per appointment row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard label="Agendamentos no mês" value={stats.totalAppointments} icon={CalendarCheck} color="bg-teal-500/15 text-teal-400" />
+        <StatCard label="Custo IA total (mês)" value={stats.totalAiCost} icon={DollarSign} color="bg-amber-500/15 text-amber-400" format="usd" />
+        <StatCard label="Custo IA por agendamento" value={stats.costPerAppointment} icon={CalendarCheck} color="bg-emerald-500/15 text-emerald-400" format="usd" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
