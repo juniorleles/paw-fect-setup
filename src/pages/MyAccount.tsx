@@ -149,7 +149,7 @@ const MyAccount = () => {
   }, [userId]);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setSub(null);
       setMessagesUsed(0);
       setPayments([]);
