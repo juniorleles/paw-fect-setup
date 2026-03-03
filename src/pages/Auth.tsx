@@ -7,10 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Briefcase, Loader2, Eye, EyeOff } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Briefcase, Loader2, Eye, EyeOff, Check, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PLANS, type StripePlanKey } from "@/config/stripe";
+
+const PLAN_DISPLAY: Record<string, { label: string; benefits: string[]; color: string }> = {
+  free: {
+    label: "Free",
+    benefits: ["30 agendamentos/mês", "150 mensagens/mês", "1 profissional"],
+    color: "bg-muted text-muted-foreground",
+  },
+  starter: {
+    label: "Essencial",
+    benefits: ["Agendamentos ilimitados", "800 mensagens/mês", "Até 3 profissionais"],
+    color: "bg-primary/10 text-primary",
+  },
+  professional: {
+    label: "Pro",
+    benefits: ["Agendamentos ilimitados", "1.500 mensagens/mês", "Profissionais ilimitados"],
+    color: "bg-primary text-primary-foreground",
+  },
+};
 
 const translateAuthError = (msg: string): string => {
   const map: Record<string, string> = {
