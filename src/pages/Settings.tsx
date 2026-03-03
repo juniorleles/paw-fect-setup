@@ -105,6 +105,31 @@ const Settings = () => {
 
   // Auto-save with debounce — only after user actually changes something
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Also track campaignMessages changes for auto-save
+  const campaignRef = useRef<string>("{}");
+  useEffect(() => {
+    if (!loading && configId) {
+      campaignRef.current = JSON.stringify(campaignMessages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, configId]);
+
+  useEffect(() => {
+    if (loading || !configId) return;
+    if (JSON.stringify(campaignMessages) === campaignRef.current) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      saveToDb(data);
+      loadedDataRef.current = JSON.stringify(data);
+      campaignRef.current = JSON.stringify(campaignMessages);
+    }, 1500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [campaignMessages, data, configId, loading, saveToDb]);
+
   const loadedDataRef = useRef<string | null>(null);
 
   // Snapshot the data as loaded from DB so we can detect real changes
