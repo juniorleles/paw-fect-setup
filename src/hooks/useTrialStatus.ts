@@ -96,8 +96,11 @@ export const useTrialStatus = (): TrialStatusInfo => {
       };
     }
 
-    // Trial quota-based logic
-    const quotaExhausted = trialAppointmentsUsed >= trialAppointmentsLimit || trialMessagesUsed >= trialMessagesLimit;
+    // Quota-based logic (works for both trial and paid plans)
+    // -1 means unlimited (e.g., appointments on Essencial)
+    const aptsExhausted = trialAppointmentsLimit !== -1 && trialAppointmentsUsed >= trialAppointmentsLimit;
+    const msgsExhausted = trialMessagesLimit > 0 && trialMessagesUsed >= trialMessagesLimit;
+    const quotaExhausted = aptsExhausted || msgsExhausted;
 
     if (quotaExhausted) {
       return {
@@ -106,8 +109,8 @@ export const useTrialStatus = (): TrialStatusInfo => {
         isBlocked: true,
         isTrialExpiring: false,
         showUpgradeRequired: true,
-        canSendMessages: false,
-        canCreateAppointments: false,
+        canSendMessages: !msgsExhausted,
+        canCreateAppointments: !aptsExhausted,
       };
     }
 
