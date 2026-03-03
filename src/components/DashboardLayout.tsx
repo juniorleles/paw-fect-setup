@@ -15,13 +15,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, CalendarDays, Settings, LogOut, Briefcase, UserCircle, Headphones } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Settings, LogOut, Briefcase, UserCircle, Headphones, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Agendamentos", url: "/appointments", icon: CalendarDays },
+  { title: "Profissionais", url: "/professionals", icon: Users },
   { title: "Configurações", url: "/settings", icon: Settings },
   { title: "Minha Conta", url: "/my-account", icon: UserCircle },
   { title: "Suporte", url: "/support", icon: Headphones },
