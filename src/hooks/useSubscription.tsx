@@ -42,24 +42,45 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       return;
     }
-    if (fetchedForUser.current === userId) return;
+
+    if (fetchedForUser.current === userId) {
+      setLoading(false);
+      return;
+    }
+
     fetchedForUser.current = userId;
-
     setLoading(true);
-    const { data } = await supabase
-      .from("subscriptions")
-      .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit")
-      .eq("user_id", userId)
-      .maybeSingle();
 
-    setStatus((data?.status as SubscriptionStatus) ?? "none");
-    setTrialEndAt(data?.trial_end_at ?? null);
-    setPlan(data?.plan ?? "starter");
-    setTrialAppointmentsUsed((data as any)?.trial_appointments_used ?? 0);
-    setTrialMessagesUsed((data as any)?.trial_messages_used ?? 0);
-    setTrialAppointmentsLimit((data as any)?.trial_appointments_limit ?? 30);
-    setTrialMessagesLimit((data as any)?.trial_messages_limit ?? 150);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      setStatus((data?.status as SubscriptionStatus) ?? "none");
+      setTrialEndAt(data?.trial_end_at ?? null);
+      setPlan(data?.plan ?? "starter");
+      setTrialAppointmentsUsed((data as any)?.trial_appointments_used ?? 0);
+      setTrialMessagesUsed((data as any)?.trial_messages_used ?? 0);
+      setTrialAppointmentsLimit((data as any)?.trial_appointments_limit ?? 30);
+      setTrialMessagesLimit((data as any)?.trial_messages_limit ?? 150);
+    } catch (error) {
+      console.error("fetchSubscription failed:", error);
+      setStatus("none");
+      setTrialEndAt(null);
+      setPlan("starter");
+      setTrialAppointmentsUsed(0);
+      setTrialMessagesUsed(0);
+      setTrialAppointmentsLimit(30);
+      setTrialMessagesLimit(150);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
   useEffect(() => {
