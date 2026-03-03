@@ -438,6 +438,7 @@ export type Database = {
           trial_messages_used: number
           trial_start_at: string | null
           updated_at: string
+          usage_reset_at: string
           user_id: string
         }
         Insert: {
@@ -458,6 +459,7 @@ export type Database = {
           trial_messages_used?: number
           trial_start_at?: string | null
           updated_at?: string
+          usage_reset_at?: string
           user_id: string
         }
         Update: {
@@ -478,6 +480,7 @@ export type Database = {
           trial_messages_used?: number
           trial_start_at?: string | null
           updated_at?: string
+          usage_reset_at?: string
           user_id?: string
         }
         Relationships: []
@@ -582,7 +585,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_trial_appointments: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
+      increment_trial_messages: { Args: { p_user_id: string }; Returns: number }
       release_sender_lock: { Args: { p_sender_id: string }; Returns: undefined }
+      reset_monthly_usage: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
