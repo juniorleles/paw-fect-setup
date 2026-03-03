@@ -326,6 +326,8 @@ Deno.serve(async (req) => {
 
         if (!message) continue;
 
+        log("Message preview", { phone, stage: stage.type, message: message.substring(0, 120) });
+
         try {
           const evoResp = await fetch(
             `${evolutionUrl}/message/sendText/${config.evolution_instance_name}`,
