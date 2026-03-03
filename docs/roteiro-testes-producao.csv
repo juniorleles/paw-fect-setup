@@ -1,0 +1,238 @@
+Módulo,ID,Caso de Teste,Pré-condição,Passos,Resultado Esperado,Prioridade,Status,Observações
+Landing Page,LP-01,Navegação e carregamento,Nenhuma,"1. Acessar /
+2. Verificar todas as seções (Hero, Como Funciona, Nichos, Dor/Solução, Preços, FAQ, Contato, Footer)",Todas as seções carregam corretamente sem erros visuais,Alta,,
+Landing Page,LP-02,Links de navegação,Nenhuma,"1. Clicar em cada item do menu
+2. Verificar scroll para a seção correta",Scroll suave para a seção correspondente,Média,,
+Landing Page,LP-03,CTA de cadastro,Nenhuma,"1. Clicar no botão 'Começar agora' / CTA principal
+2. Verificar redirecionamento para /auth",Redireciona para tela de autenticação,Alta,,
+Landing Page,LP-04,Responsividade mobile,Dispositivo mobile,"1. Acessar em tela 375px
+2. Verificar menu hamburger
+3. Verificar layout de todas as seções",Layout adaptado sem quebras nem overflow,Alta,,
+Landing Page,LP-05,SEO e meta tags,Nenhuma,"1. Verificar title tag
+2. Verificar meta description
+3. Verificar og:image",Tags presentes e corretas,Média,,
+Autenticação,AU-01,Cadastro com email válido,Nenhuma,"1. Acessar /auth
+2. Preencher nome, email e senha
+3. Clicar em Cadastrar",Conta criada + email de confirmação enviado,Crítica,,
+Autenticação,AU-02,Cadastro com email duplicado,Email já cadastrado,"1. Tentar cadastrar com email existente
+2. Verificar mensagem de erro",Mensagem clara de que email já está em uso,Alta,,
+Autenticação,AU-03,Cadastro com senha fraca,Nenhuma,"1. Tentar cadastrar com senha < 6 caracteres
+2. Verificar validação",Mensagem de erro sobre requisitos da senha,Alta,,
+Autenticação,AU-04,Login com credenciais válidas,Conta confirmada,"1. Inserir email e senha corretos
+2. Clicar em Entrar",Redirecionamento para /dashboard ou onboarding,Crítica,,
+Autenticação,AU-05,Login com credenciais inválidas,Nenhuma,"1. Inserir email/senha incorretos
+2. Clicar em Entrar",Mensagem de erro 'Credenciais inválidas',Alta,,
+Autenticação,AU-06,Confirmação de email,Cadastro realizado,"1. Verificar recebimento de email
+2. Clicar no link de confirmação
+3. Verificar conta ativada",Email confirmado e login habilitado,Crítica,,
+Autenticação,AU-07,Reset de senha,Conta existente,"1. Clicar em 'Esqueci minha senha'
+2. Inserir email
+3. Verificar email recebido
+4. Criar nova senha",Senha alterada com sucesso e login funcional,Alta,,
+Autenticação,AU-08,Logout,Usuário logado,"1. Clicar em 'Sair'
+2. Verificar redirecionamento",Sessão encerrada e redirecionamento para /auth ou /,Alta,,
+Onboarding,ON-01,Step 1 - Dados do Negócio,Primeiro login,"1. Preencher nome da loja, endereço, bairro, cidade, estado
+2. Selecionar nicho
+3. Avançar",Dados salvos corretamente,Crítica,,
+Onboarding,ON-02,Step 2 - Horários de Funcionamento,Step 1 completo,"1. Configurar horários para cada dia
+2. Marcar dias fechados
+3. Avançar",Horários persistidos no banco,Alta,,
+Onboarding,ON-03,Step 3 - Serviços,Step 2 completo,"1. Adicionar serviços com nome, duração e preço
+2. Remover um serviço
+3. Avançar",Lista de serviços salva corretamente,Alta,,
+Onboarding,ON-04,Step 4 - Personalização da IA,Step 3 completo,"1. Definir nome do assistente
+2. Selecionar tom de voz
+3. Avançar",Configurações de IA salvas,Alta,,
+Onboarding,ON-05,Step 5 - WhatsApp,Step 4 completo,"1. Inserir número de telefone
+2. Verificar formato do número
+3. Avançar",Número salvo e validado,Crítica,,
+Onboarding,ON-06,Step 6 - Simulador de Chat,Step 5 completo,"1. Testar conversa com o simulador
+2. Aceitar Termos de Uso
+3. Ativar assistente",Simulador funcional e termos aceitos para ativação,Crítica,,
+Onboarding,ON-07,Validação de campos obrigatórios,Qualquer step,"1. Tentar avançar sem preencher campos obrigatórios
+2. Verificar mensagens de erro",Mensagens de validação claras para cada campo,Alta,,
+Dashboard,DA-01,Carregamento do dashboard,Usuário logado + onboarding completo,"1. Acessar /dashboard
+2. Verificar cards de resumo do dia",Dados do dia carregados (agendamentos, confirmados, pendentes, faltas),Crítica,,
+Dashboard,DA-02,Card WhatsApp Status,Usuário com WhatsApp configurado,"1. Verificar badge de status
+2. Verificar dados da secretária digital",Status correto (conectado/desconectado),Alta,,
+Dashboard,DA-03,Métricas de campanhas automáticas,Usuário Pro,"1. Verificar card de campanhas
+2. Verificar contadores win-back e upsell",Métricas exibidas corretamente,Média,,
+Dashboard,DA-04,Banner de trial,Usuário em trial,"1. Verificar banner de trial
+2. Verificar contadores de uso",Banner exibido com limites restantes,Alta,,
+Dashboard,DA-05,Próximo atendimento,Agendamento futuro existente,"1. Verificar card de próximo atendimento
+2. Verificar dados do cliente",Próximo agendamento exibido corretamente,Média,,
+Agendamentos,AG-01,Criar agendamento manual,Serviços configurados,"1. Ir em Agendamentos
+2. Clicar em novo agendamento
+3. Preencher dados
+4. Salvar",Agendamento criado e visível na lista/calendário,Crítica,,
+Agendamentos,AG-02,Conflito de horário,Horário já ocupado,"1. Tentar agendar no mesmo horário
+2. Verificar mensagem de erro",Mensagem de conflito de horário,Alta,,
+Agendamentos,AG-03,Confirmar agendamento,Agendamento pendente,"1. Clicar em confirmar
+2. Verificar mudança de status",Status alterado para 'confirmed',Alta,,
+Agendamentos,AG-04,Cancelar agendamento,Agendamento existente,"1. Clicar em cancelar
+2. Confirmar cancelamento",Status alterado para 'cancelled',Alta,,
+Agendamentos,AG-05,Marcar como concluído,Agendamento confirmado,"1. Clicar em concluir
+2. Verificar status",Status alterado para 'completed',Alta,,
+Agendamentos,AG-06,Marcar como no-show,Agendamento passado,"1. Marcar como falta
+2. Verificar status",Status alterado para 'no_show',Alta,,
+Agendamentos,AG-07,Vista de calendário,Agendamentos existentes,"1. Alternar para vista calendário
+2. Navegar entre dias/semanas",Agendamentos visíveis no calendário,Média,,
+Agendamentos,AG-08,Filtros de agendamento,Múltiplos agendamentos,"1. Filtrar por status
+2. Filtrar por data
+3. Verificar resultados",Filtros funcionando corretamente,Média,,
+Agendamentos,AG-09,Capacidade simultânea,Configuração de slots,"1. Agendar até o limite de slots simultâneos
+2. Tentar exceder o limite",Bloqueio ao atingir capacidade máxima,Alta,,
+Clientes Inativos,CI-01,Listagem de clientes inativos,Clientes com > 15 dias sem agendamento,"1. Acessar /inactive-clients
+2. Verificar lista",Lista exibida com dias de inatividade,Alta,,
+Clientes Inativos,CI-02,Enviar mensagem manual,Cliente inativo selecionado,"1. Selecionar cliente
+2. Abrir modal de mensagem
+3. Enviar",Mensagem enviada via WhatsApp e log registrado,Alta,,
+Profissionais,PR-01,Adicionar profissional,Plano ativo,"1. Ir em /professionals
+2. Adicionar profissional com nome, email, telefone
+3. Salvar",Profissional criado com status ativo,Alta,,
+Profissionais,PR-02,Limite por plano,Plano Essencial (max 3),"1. Adicionar profissionais até o limite
+2. Tentar exceder",Mensagem de limite atingido,Alta,,
+Profissionais,PR-03,Editar profissional,Profissional existente,"1. Editar dados
+2. Salvar",Dados atualizados,Média,,
+Profissionais,PR-04,Desativar profissional,Profissional ativo,"1. Desativar profissional
+2. Verificar status",Status alterado para inativo,Média,,
+Configurações,CF-01,Editar dados do negócio,Onboarding completo,"1. Ir em Configurações > Dados
+2. Alterar nome/endereço
+3. Salvar",Dados atualizados no banco,Alta,,
+Configurações,CF-02,Editar horários,Onboarding completo,"1. Ir em Configurações > Horários
+2. Alterar horários
+3. Auto-save em 1.5s",Horários atualizados,Alta,,
+Configurações,CF-03,Editar serviços,Onboarding completo,"1. Ir em Configurações > Serviços
+2. Adicionar/remover serviço
+3. Auto-save",Serviços atualizados,Alta,,
+Configurações,CF-04,Editar IA,Onboarding completo,"1. Ir em Configurações > IA
+2. Alterar nome/tom de voz
+3. Auto-save",Configurações de IA atualizadas,Alta,,
+Configurações,CF-05,Campanhas - Win-back (Pro),Plano Pro,"1. Ir em Configurações > Campanhas
+2. Editar templates de 15/30/60 dias
+3. Verificar auto-save",Templates personalizados salvos no banco,Alta,,
+Configurações,CF-06,Campanhas - Upsell (Pro),Plano Pro,"1. Ir em aba Pós-atendimento
+2. Editar template de upsell
+3. Verificar auto-save",Template de upsell salvo,Alta,,
+Configurações,CF-07,Campanhas - Bloqueio plano Free,Plano Free/Essencial,"1. Ir em Configurações > Campanhas
+2. Verificar bloqueio",Mensagem de upgrade para Plano Pro,Média,,
+Configurações,CF-08,Restaurar padrão de template,Template customizado salvo,"1. Clicar em 'Restaurar padrão'
+2. Verificar campo limpo",Template volta ao placeholder padrão,Média,,
+Configurações,CF-09,WhatsApp - Status e reconexão,Instância existente,"1. Ir em Configurações > WhatsApp
+2. Verificar status
+3. Tentar reconectar se desconectado",Status correto e QR Code exibido se necessário,Alta,,
+WhatsApp IA,WA-01,Receber e processar mensagem,WhatsApp conectado,"1. Enviar mensagem para o número
+2. Verificar resposta da IA
+3. Verificar registro em conversation_messages",IA responde contextualmente dentro de 8s,Crítica,,
+WhatsApp IA,WA-02,Agendar via WhatsApp,WhatsApp conectado + serviços configurados,"1. Solicitar agendamento via chat
+2. Informar serviço, data e horário
+3. Confirmar",Agendamento criado no sistema,Crítica,,
+WhatsApp IA,WA-03,Horário fora do expediente,WhatsApp conectado,"1. Enviar mensagem fora do horário comercial
+2. Verificar resposta",Mensagem informando horário de atendimento,Alta,,
+WhatsApp IA,WA-04,Rate limiting,WhatsApp conectado,"1. Enviar > 30 mensagens/minuto
+2. Verificar comportamento",Rate limiting aplicado + alerta em system_alerts,Alta,,
+WhatsApp IA,WA-05,Buffer de mensagens,WhatsApp conectado,"1. Enviar várias mensagens seguidas
+2. Verificar agrupamento",Mensagens agrupadas com delay de 8s,Alta,,
+Assinatura,AS-01,Visualizar plano atual,Usuário logado,"1. Ir em Minha Conta
+2. Verificar plano exibido",Plano correto (Free/Essencial/Pro) exibido,Alta,,
+Assinatura,AS-02,Upgrade para Essencial,Plano Free,"1. Clicar em upgrade
+2. Completar checkout Stripe
+3. Verificar ativação",Plano alterado + features desbloqueadas,Crítica,,
+Assinatura,AS-03,Upgrade para Pro,Plano Essencial,"1. Clicar em upgrade
+2. Completar checkout Stripe
+3. Verificar ativação",Plano Pro ativo com campanhas habilitadas,Crítica,,
+Assinatura,AS-04,Cancelar assinatura,Plano pago ativo,"1. Ir em Minha Conta
+2. Clicar em cancelar
+3. Confirmar cancelamento",Cancelamento agendado para fim do período,Alta,,
+Assinatura,AS-05,Reativar assinatura,Assinatura cancelada,"1. Clicar em reativar
+2. Verificar status",Assinatura reativada,Alta,,
+Assinatura,AS-06,Webhook Stripe,Pagamento processado,"1. Simular evento de pagamento
+2. Verificar atualização no banco",Status de pagamento atualizado corretamente,Crítica,,
+Assinatura,AS-07,Bloqueio por limite de trial,Trial com cotas esgotadas,"1. Esgotar mensagens ou agendamentos
+2. Verificar bloqueio do sistema",Tela de upgrade exibida + ações bloqueadas,Alta,,
+Assinatura,AS-08,Portal do cliente Stripe,Plano pago,"1. Clicar em gerenciar assinatura
+2. Verificar redirecionamento",Portal Stripe abre com dados da assinatura,Alta,,
+Campanhas Automáticas,CA-01,Win-back 15 dias,Plano Pro + cliente 15+ dias inativo,"1. Executar winback-campaign
+2. Verificar mensagem enviada",Mensagem de win-back enviada com template correto,Alta,,
+Campanhas Automáticas,CA-02,Win-back com template customizado,Template personalizado salvo,"1. Salvar template customizado
+2. Executar winback-campaign
+3. Verificar mensagem",Mensagem usa template personalizado com variáveis substituídas,Alta,,
+Campanhas Automáticas,CA-03,Win-back deduplicação mensal,Campanha já enviada no mês,"1. Executar winback-campaign duas vezes
+2. Verificar logs",Segunda execução não reenvia para mesmos clientes,Alta,,
+Campanhas Automáticas,CA-04,Upsell pós-atendimento,Plano Pro + agendamento completed ontem,"1. Executar post-service-upsell
+2. Verificar sugestões",Mensagem de upsell com serviços complementares,Alta,,
+Campanhas Automáticas,CA-05,Quiet hours (22h-8h BRT),Qualquer campanha,"1. Executar campanha em horário de silêncio
+2. Verificar comportamento",Campanha pulada com log de quiet hours,Alta,,
+Campanhas Automáticas,CA-06,Cap diário de envios,50+ clientes elegíveis,"1. Executar campanha
+2. Verificar se respeita limite de 50/dia (winback) e 30/dia (upsell)",Envios limitados ao cap diário,Média,,
+Lembretes,LE-01,Lembrete 24h antes,Agendamento amanhã,"1. Executar appointment-reminder
+2. Verificar envio",Lembrete enviado 24h antes,Alta,,
+Lembretes,LE-02,Lembrete 3h antes,Agendamento em 3h,"1. Executar appointment-reminder
+2. Verificar envio",Lembrete enviado 3h antes,Alta,,
+Lembretes,LE-03,Detecção de no-show,Agendamento passado não concluído,"1. Executar detect-no-shows
+2. Verificar status alterado",Agendamento marcado como no_show,Alta,,
+Lembretes,LE-04,Mensagem de recuperação no-show,No-show detectado,"1. Executar send-no-show-recovery
+2. Verificar mensagem",Mensagem de recuperação enviada,Alta,,
+Minha Conta,MC-01,Visualizar dados da conta,Usuário logado,"1. Acessar /my-account
+2. Verificar informações exibidas",Email, plano e dados de uso corretos,Média,,
+Minha Conta,MC-02,Histórico de pagamentos,Pagamentos realizados,"1. Verificar lista de pagamentos
+2. Verificar valores e status",Histórico completo e correto,Média,,
+Suporte,SU-01,Página de suporte,Usuário logado,"1. Acessar /support
+2. Verificar conteúdo",Informações de contato/suporte exibidas,Baixa,,
+Páginas Legais,PL-01,Termos de Uso,Nenhuma,"1. Acessar /terms
+2. Verificar conteúdo
+3. Verificar botão Fechar",Conteúdo renderizado + botão funcional,Média,,
+Páginas Legais,PL-02,Política de Privacidade,Nenhuma,"1. Acessar /privacy
+2. Verificar conteúdo
+3. Verificar botão Fechar",Conteúdo renderizado + botão funcional,Média,,
+Segurança,SE-01,RLS - Isolamento de dados,2+ usuários cadastrados,"1. Logar como usuário A
+2. Verificar que não vê dados do usuário B",Dados isolados por user_id,Crítica,,
+Segurança,SE-02,Rotas protegidas,Usuário não autenticado,"1. Acessar /dashboard sem login
+2. Verificar redirecionamento",Redirecionamento para /auth,Crítica,,
+Segurança,SE-03,Admin - Acesso restrito,Usuário sem role admin,"1. Tentar acessar /admin
+2. Verificar bloqueio",Acesso negado / redirecionamento,Crítica,,
+Segurança,SE-04,Admin - Acesso permitido,Usuário com role admin,"1. Logar como admin
+2. Acessar /admin/dashboard",Dashboard admin carregado com dados,Alta,,
+Segurança,SE-05,Quiet hours respeitadas,Campanhas automatizadas,"1. Verificar que nenhuma mensagem é enviada entre 22h-8h BRT",Nenhum envio em horário de silêncio,Alta,,
+Admin,AD-01,Dashboard admin,Admin logado,"1. Acessar /admin/dashboard
+2. Verificar métricas globais",Dados agregados de todos os usuários,Alta,,
+Admin,AD-02,Lista de clientes,Admin logado,"1. Acessar /admin/clients
+2. Verificar listagem com paginação",Todos os clientes listados,Alta,,
+Admin,AD-03,Detalhes do cliente,Admin logado,"1. Clicar em um cliente
+2. Verificar modal de detalhes",Dados completos do cliente exibidos,Média,,
+Admin,AD-04,Gerenciar usuários,Admin logado,"1. Acessar /admin/users
+2. Verificar ações disponíveis",Lista de usuários com opções de gestão,Alta,,
+Admin,AD-05,Logs de erro,Admin logado,"1. Acessar /admin/logs
+2. Verificar registros",Logs de erro exibidos com detalhes,Média,,
+Admin,AD-06,Monitoramento,Admin logado,"1. Acessar /admin/monitoring
+2. Verificar alertas do sistema",Alertas de system_alerts exibidos,Média,,
+Admin,AD-07,Financeiro,Admin logado,"1. Acessar /admin/financial
+2. Verificar dados de receita",Dados financeiros agregados,Média,,
+Admin,AD-08,Uso de IA,Admin logado,"1. Acessar /admin/ai-usage
+2. Verificar métricas de tokens",Consumo de IA por usuário exibido,Média,,
+Performance,PF-01,Tempo de carregamento inicial,Nenhuma,"1. Medir LCP da landing page
+2. Verificar < 2.5s",LCP dentro do aceitável,Alta,,
+Performance,PF-02,Dashboard com muitos dados,50+ agendamentos,"1. Carregar dashboard
+2. Verificar fluidez",Carregamento sem travamento,Média,,
+Performance,PF-03,Lista de agendamentos grande,100+ agendamentos,"1. Navegar na lista
+2. Verificar virtualização/paginação",Scroll fluido sem lag,Média,,
+Edge Functions,EF-01,evolution-webhook,Webhook da Evolution API,"1. Receber webhook válido
+2. Verificar processamento",Mensagem processada e armazenada,Crítica,,
+Edge Functions,EF-02,chat-simulator,Simulação de chat,"1. Enviar mensagem no simulador
+2. Verificar resposta da IA",Resposta contextual gerada,Alta,,
+Edge Functions,EF-03,create-checkout,Checkout Stripe,"1. Iniciar checkout
+2. Verificar URL de pagamento",URL de checkout Stripe gerada,Crítica,,
+Edge Functions,EF-04,stripe-webhook,Webhook Stripe,"1. Simular evento checkout.session.completed
+2. Verificar ativação do plano",Plano ativado corretamente,Crítica,,
+Edge Functions,EF-05,sync-whatsapp-status,Sync de status,"1. Executar sync
+2. Verificar status atualizado",Status do WhatsApp sincronizado,Alta,,
+Edge Functions,EF-06,reconnect-whatsapp,Reconexão,"1. Tentar reconectar
+2. Verificar QR Code / status",Reconexão iniciada ou erro tratado,Alta,,
+Edge Functions,EF-07,trial-expiry-notification,Expiração de trial,"1. Executar com trial próximo do fim
+2. Verificar notificação",Notificação enviada ao usuário,Média,,
+Cross-Browser,CB-01,Chrome desktop,Nenhuma,"1. Testar fluxo completo no Chrome
+2. Verificar visual e funcionalidade",Tudo funcional,Alta,,
+Cross-Browser,CB-02,Safari mobile,iPhone,"1. Testar fluxo completo no Safari
+2. Verificar responsividade",Tudo funcional sem quebras,Alta,,
+Cross-Browser,CB-03,Firefox desktop,Nenhuma,"1. Testar fluxo principal
+2. Verificar compatibilidade",Funcionalidades principais OK,Média,,
