@@ -255,6 +255,33 @@ const WinbackMetricsCard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Upsell */}
+        <Card className="border-none shadow-md bg-card">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                <Gift className="w-5 h-5 text-accent" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl font-bold">{upsellCount}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  Pós-atendimento
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="text-muted-foreground/60 hover:text-primary transition-colors">
+                        <Info className="w-3.5 h-3.5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
+                      Mensagens de upsell enviadas 24h após atendimentos concluídos, sugerindo serviços complementares.
+                    </PopoverContent>
+                  </Popover>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </section>
   );
