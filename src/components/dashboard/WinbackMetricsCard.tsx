@@ -24,6 +24,7 @@ const WinbackMetricsCard = () => {
     WINBACK_60: { sent: 0, label: "60 dias", emoji: "💎" },
   });
   const [returnedCount, setReturnedCount] = useState(0);
+  const [upsellCount, setUpsellCount] = useState(0);
   const [nextClients, setNextClients] = useState(0);
   const [loading, setLoading] = useState(true);
 
