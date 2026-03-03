@@ -177,7 +177,7 @@ const Settings = () => {
           <StepBusinessHours data={data} onChange={updateData} plan={subscriptionPlan} />
         </TabsContent>
         <TabsContent value="services" className="mt-6">
-          <StepServices data={data} onChange={updateData} errors={noErrors} />
+          <StepServices data={data} onChange={updateData} errors={noErrors} showTip={false} />
         </TabsContent>
         <TabsContent value="ai" className="mt-6">
           <StepPersonalization data={data} onChange={updateData} errors={noErrors} />
