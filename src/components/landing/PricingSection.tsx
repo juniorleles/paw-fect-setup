@@ -33,7 +33,7 @@ const PricingSection = () => (
       >
         <div className="mx-auto max-w-xl rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-4 text-center shadow-sm">
           <p className="text-base sm:text-lg font-semibold text-foreground">
-            🎁 Teste grátis: 50 agendamentos + 250 mensagens. Sem compromisso. Cancele quando quiser.
+            🎁 Comece grátis no plano Free. Sem cartão, sem compromisso.
           </p>
         </div>
       </motion.div>
