@@ -32,6 +32,6 @@ export type StripePlanKey = keyof typeof STRIPE_PLANS;
 
 // Plan limits config for backend reference
 export const PLAN_LIMITS: Record<string, { messagesLimit: number; appointmentsLimit: number }> = {
-  starter: { messagesLimit: 150, appointmentsLimit: 30 },
-  professional: { messagesLimit: 800, appointmentsLimit: -1 }, // -1 = unlimited
+  starter: { messagesLimit: 800, appointmentsLimit: -1 },
+  professional: { messagesLimit: 1500, appointmentsLimit: -1 },
 };
