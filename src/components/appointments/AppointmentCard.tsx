@@ -110,14 +110,14 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="font-bold text-foreground truncate">{apt.owner_name}</p>
-          {apt.confirmation_message_sent_at ? (
+          {(apt as any).reminder_24h_sent || apt.confirmation_message_sent_at ? (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
                   <Bell className="w-3.5 h-3.5 text-success flex-shrink-0" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  Lembrete enviado em {format(new Date(apt.confirmation_message_sent_at), "dd/MM HH:mm")}
+                  ✔ Lembrete 24h enviado{apt.confirmation_message_sent_at ? ` em ${format(new Date(apt.confirmation_message_sent_at), "dd/MM HH:mm")}` : ""}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -127,7 +127,7 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
                 <TooltipTrigger>
                   <BellOff className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
                 </TooltipTrigger>
-                <TooltipContent>Lembrete não enviado</TooltipContent>
+                <TooltipContent>⏳ Lembrete pendente</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
