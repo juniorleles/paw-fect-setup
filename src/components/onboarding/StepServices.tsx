@@ -11,9 +11,10 @@ interface Props {
   data: OnboardingData;
   onChange: (data: Partial<OnboardingData>) => void;
   errors: Record<string, string>;
+  showTip?: boolean;
 }
 
-const StepServices = ({ data, onChange, errors }: Props) => {
+const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("");
@@ -98,9 +99,11 @@ const StepServices = ({ data, onChange, errors }: Props) => {
         <CardDescription className="text-base">
           Cadastre os serviços disponíveis no seu estabelecimento
         </CardDescription>
-        <p className="text-xs text-muted-foreground mt-2 bg-accent/10 rounded-lg px-3 py-2">
-          💡 Relaxa! Preços e duração podem ser adicionados depois em <strong>Configurações</strong>. Aqui só precisa dos nomes dos serviços pra gente começar 😉
-        </p>
+        {showTip && (
+          <p className="text-xs text-muted-foreground mt-2 bg-accent/10 rounded-lg px-3 py-2">
+            💡 Relaxa! Preços e duração podem ser adicionados depois em <strong>Configurações</strong>. Aqui só precisa dos nomes dos serviços pra gente começar 😉
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-5 pt-4">
         {/* Suggestions */}
