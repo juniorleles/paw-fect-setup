@@ -209,12 +209,13 @@ const Index = () => {
 
     // Activate subscription and create per-user Evolution instance
     if (user) {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session?.access_token) {
-        console.warn("No valid session - skipping activate-subscription call.");
+      // Refresh session to ensure valid token before calling edge function
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !refreshData?.session?.access_token) {
+        console.warn("No valid session - skipping activate-subscription call.", refreshError);
         await Promise.all([refetchOnboarding(), refetchSubscription()]);
         setActivated(true);
-        toast({ title: "Secretária configurada!", description: "Confirme seu e-mail para ativar completamente." });
+        toast({ title: "Secretária configurada!", description: "Faça login novamente para conectar o WhatsApp." });
         return;
       }
 
