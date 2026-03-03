@@ -80,7 +80,7 @@ const PricingSection = () => (
           </Card>
         </motion.div>
 
-        {/* Profissional */}
+        {/* Essencial */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -88,7 +88,7 @@ const PricingSection = () => (
           transition={{ duration: 0.5, delay: 0.1 }}
           whileHover={{ y: -8, transition: { duration: 0.2 } }}
         >
-          <Card className="h-full border-2 border-primary shadow-xl scale-[1.03] relative overflow-hidden">
+          <Card className="h-full border-2 border-primary shadow-xl scale-[1.04] relative overflow-hidden">
             {/* Shine effect */}
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent"
@@ -97,18 +97,26 @@ const PricingSection = () => (
             />
             <CardContent className="p-6 flex flex-col h-full relative">
               <Badge className="w-fit mb-3 bg-primary text-primary-foreground">
-                <Sparkles className="w-3 h-3 mr-1" /> Mais Popular
+                <Star className="w-3 h-3 mr-1 fill-current" /> Mais Escolhido
               </Badge>
-              <h3 className="font-display font-bold text-xl mb-1">Profissional</h3>
+              <h3 className="font-display font-bold text-xl mb-1">Essencial</h3>
               <div className="mb-1">
-                <span className="text-4xl font-bold">R$ 167</span>
+                <span className="text-4xl font-bold">R$ 97</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-4">Trial gratuito por cotas</p>
-              <p className="text-sm text-muted-foreground mb-5">Para negócios que querem atendimento inteligente e mais volume.</p>
-              <p className="text-xs font-semibold text-foreground mb-2">Inclui tudo do Starter +</p>
+              <p className="text-xs text-primary font-semibold mb-2">Automação completa para barbearias que querem reduzir faltas e aumentar faturamento.</p>
+              <p className="text-sm text-muted-foreground mb-5">Ideal para quem quer profissionalizar o atendimento e recuperar clientes automaticamente.</p>
               <ul className="space-y-2.5 mb-6 flex-1">
-                {["Até 5 atendentes simultâneos", "Até 1.500 mensagens por mês", "Até 200 agendamentos por mês", "Respostas com IA personalizada", "Fluxos automatizados customizados", "Relatórios de atendimento", "Organização de contatos", "Suporte prioritário"].map((f) => (
+                {[
+                  "1 número de WhatsApp",
+                  "Agendamentos ilimitados",
+                  "Até 800 mensagens por mês",
+                  "Lembrete duplo automático (24h + 3h antes)",
+                  "Botão Confirmar / Reagendar",
+                  "Lista de clientes inativos",
+                  "Recuperação automática de faltas",
+                  "Relatório de faltas evitadas",
+                ].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
@@ -116,7 +124,7 @@ const PricingSection = () => (
                 ))}
               </ul>
               <a href="/auth?signup=true">
-                <Button className="w-full shadow-lg shadow-primary/20">Começar grátis</Button>
+                <Button className="w-full shadow-lg shadow-primary/20 font-bold">Quero Automatizar Minha Barbearia</Button>
               </a>
             </CardContent>
           </Card>
