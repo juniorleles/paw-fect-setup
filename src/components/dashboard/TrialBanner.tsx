@@ -17,24 +17,24 @@ const TrialBanner = () => {
 
   // Blocked — quota exhausted
   if (phase === "blocked") {
-    const aptsExhausted = appointmentsUsed >= appointmentsLimit;
-    const msgsExhausted = messagesUsed >= messagesLimit;
+    const aptsExhausted = appointmentsLimit !== -1 && appointmentsUsed >= appointmentsLimit;
+    const msgsExhausted = messagesLimit > 0 && messagesUsed >= messagesLimit;
     return (
       <Alert className="border-destructive/50 bg-destructive/10">
         <XCircle className="h-4 w-4 text-destructive" />
         <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
           <span className="text-sm font-medium text-destructive">
-            🚫 Seu trial gratuito acabou!{" "}
+            🚫 Limite atingido!{" "}
             {aptsExhausted && msgsExhausted
               ? "Agendamentos e mensagens esgotados."
-              : aptsExhausted
-              ? `Limite de ${appointmentsLimit} agendamentos atingido.`
-              : `Limite de ${messagesLimit} mensagens atingido.`}
-            {" "}Ative seu plano para continuar.
+              : msgsExhausted
+              ? `Limite de ${messagesLimit} mensagens atingido.`
+              : `Limite de ${appointmentsLimit} agendamentos atingido.`}
+            {" "}Faça upgrade para continuar.
           </span>
           <Button size="sm" variant="destructive" className="gap-1" onClick={() => navigate("/my-account")}>
             <Crown className="w-4 h-4" />
-            Ativar agora
+            Ver Plano Pro
           </Button>
         </AlertDescription>
       </Alert>
