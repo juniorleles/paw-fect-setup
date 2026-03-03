@@ -1896,19 +1896,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     // Save assistant reply to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
 
-    // Increment trial message counter for the sent reply
+    // Increment trial message counter for the sent reply — atomic
     if (isTrialUser && subscription) {
-      const { data: freshSub } = await serviceClient
-        .from("subscriptions")
-        .select("trial_messages_used")
-        .eq("user_id", shopConfig.user_id)
-        .maybeSingle();
-      if (freshSub) {
-        await serviceClient
-          .from("subscriptions")
-          .update({ trial_messages_used: (freshSub.trial_messages_used ?? 0) + 1 })
-          .eq("user_id", shopConfig.user_id);
-      }
+      await serviceClient.rpc("increment_trial_messages", { p_user_id: shopConfig.user_id });
     }
 
     // Send reply via WhatsApp
