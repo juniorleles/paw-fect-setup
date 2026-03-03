@@ -456,6 +456,9 @@ const Dashboard = () => {
         </div>
       </section>
 
+      {/* ─── No-Show Recovery ─── */}
+      <NoShowMetricsCard />
+
       {/* ─── Clientes Inativos ─── */}
       <InactiveClientsCard />
 
