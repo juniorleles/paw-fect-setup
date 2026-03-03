@@ -1452,8 +1452,8 @@ Deno.serve(async (req) => {
         // Trial user — check quotas
         const aptsUsed = subscription.trial_appointments_used ?? 0;
         const msgsUsed = subscription.trial_messages_used ?? 0;
-        const aptsLimit = subscription.trial_appointments_limit ?? 50;
-        const msgsLimit = subscription.trial_messages_limit ?? 250;
+        const aptsLimit = subscription.trial_appointments_limit ?? 30;
+        const msgsLimit = subscription.trial_messages_limit ?? 150;
 
         if (aptsUsed >= aptsLimit || msgsUsed >= msgsLimit) {
           blocked = true;
