@@ -58,7 +58,9 @@ export const useTrialStatus = (): TrialStatusInfo => {
     };
 
     // Active paid subscription — full access
-    if (status === "active" && trialEnd && trialEnd < now) {
+    // Detect paid: either trial_end_at is null with active status (webhook cleared it),
+    // or trial_end_at is in the past
+    if (status === "active" && (!trialEnd || trialEnd < now)) {
       return {
         ...base,
         phase: "active" as TrialPhase,
