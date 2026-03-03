@@ -110,6 +110,20 @@ Deno.serve(async (req) => {
 
     console.log(`[detect-no-shows] Marked ${allNoShows.length} as no_show`);
 
+    // Also mark stale pending recoveries as "lost" (48h without response)
+    const staleThreshold = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
+    const { data: staleRecoveries, error: staleErr } = await supabase
+      .from("appointments")
+      .update({ recovery_status: "lost" })
+      .eq("status", "no_show")
+      .eq("recovery_status", "pending")
+      .lt("recovery_message_sent_at", staleThreshold)
+      .select("id");
+
+    if (!staleErr && staleRecoveries && staleRecoveries.length > 0) {
+      console.log(`[detect-no-shows] Marked ${staleRecoveries.length} stale recoveries as lost`);
+    }
+
     return new Response(
       JSON.stringify({
         message: `Detected ${allNoShows.length} no-shows`,
