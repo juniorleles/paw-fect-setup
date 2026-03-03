@@ -288,6 +288,22 @@ const Auth = () => {
                       </button>
                     </div>
                   )}
+                  {isSignUp && selectedPlan && (
+                    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        Incluso no plano {selectedPlan.label}:
+                      </p>
+                      <ul className="space-y-1">
+                        {selectedPlan.benefits.map((b) => (
+                          <li key={b} className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                            {b}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <Button type="submit" className="w-full h-12 font-bold" disabled={submitting}>
                     {submitting ? (
                       <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Aguarde...</>
