@@ -12,6 +12,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import Appointments from "./pages/Appointments";
+import Professionals from "./pages/Professionals";
 
 import MyAccount from "./pages/MyAccount";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
