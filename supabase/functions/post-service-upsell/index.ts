@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
       // Get shop config
       const { data: config } = await supabase
         .from("pet_shop_configs")
-        .select("shop_name, niche, evolution_instance_name, activated, services")
+        .select("shop_name, niche, evolution_instance_name, activated, services, campaign_messages")
         .eq("user_id", userId)
         .maybeSingle();
 
