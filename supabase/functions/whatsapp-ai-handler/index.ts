@@ -1615,6 +1615,18 @@ Deno.serve(async (req) => {
       await serviceClient.rpc("increment_trial_messages", { p_user_id: shopConfig.user_id });
     }
 
+    // Check for no-show recovery responses (1, 2, 3) BEFORE confirmation handler
+    const recoveryReply = await handleNoShowRecoveryResponse(serviceClient, shopConfig, cleanPhone, message);
+    if (recoveryReply) {
+      await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "user", message);
+      await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", recoveryReply);
+      await sendWhatsAppMessage(instanceName, senderPhone, recoveryReply);
+      return new Response(JSON.stringify({ success: true, reply: recoveryReply }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Check for quick confirmation responses (CONFIRMO, REMARCAR, CANCELAR)
     const confirmReply = await handleConfirmationResponse(serviceClient, shopConfig, cleanPhone, message);
     if (confirmReply) {
