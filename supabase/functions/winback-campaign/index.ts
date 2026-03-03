@@ -313,13 +313,15 @@ Deno.serve(async (req) => {
         // Check message budget
         if (sentForUser >= remaining) break;
 
+        const customTemplates = (config as any).campaign_messages as Record<string, string> | undefined;
         const message = buildWinbackMessage(
           stage.type,
           client.owner_name,
           client.last_service,
           client.days_inactive,
           config.shop_name,
-          config.niche
+          config.niche,
+          customTemplates
         );
 
         if (!message) continue;
