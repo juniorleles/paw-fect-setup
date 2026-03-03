@@ -279,7 +279,7 @@ const MyAccount = () => {
     ? "bg-success/10 text-success border-success/20"
     : "bg-destructive/10 text-destructive border-destructive/20";
 
-  const aptsAvailable = Math.max(0, trialAptsLimit - trialAptsUsed);
+  const aptsAvailable = trialAptsLimit === -1 ? -1 : Math.max(0, trialAptsLimit - trialAptsUsed);
   const msgsAvailable = Math.max(0, trialMsgsLimit - trialMsgsUsed);
 
   return (
