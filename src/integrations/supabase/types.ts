@@ -380,6 +380,7 @@ export type Database = {
           address: string
           assistant_name: string
           business_hours: Json
+          campaign_messages: Json
           city: string
           created_at: string
           evolution_instance_name: string
@@ -402,6 +403,7 @@ export type Database = {
           address?: string
           assistant_name?: string
           business_hours?: Json
+          campaign_messages?: Json
           city?: string
           created_at?: string
           evolution_instance_name?: string
@@ -424,6 +426,7 @@ export type Database = {
           address?: string
           assistant_name?: string
           business_hours?: Json
+          campaign_messages?: Json
           city?: string
           created_at?: string
           evolution_instance_name?: string
