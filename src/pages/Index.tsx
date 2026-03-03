@@ -51,14 +51,24 @@ const Index = () => {
   // Handle checkout success return
   useEffect(() => {
     const checkoutResult = searchParams.get("checkout");
-    if (checkoutResult === "success") {
-      // User just returned from successful Stripe checkout — jump to step 6
-      setStep(6);
-      localStorage.removeItem("chosen_plan");
-      refetchSubscription();
-      toast({ title: "Pagamento confirmado!", description: "Agora você pode ativar sua secretária." });
-    }
-  }, [searchParams]);
+    if (checkoutResult !== "success") return;
+
+    setStep(6);
+    localStorage.removeItem("chosen_plan");
+    window.history.replaceState({}, "", location.pathname);
+
+    void refetchSubscription()
+      .then(() => {
+        toast({ title: "Pagamento confirmado!", description: "Agora você pode ativar sua secretária." });
+      })
+      .catch((err) => {
+        console.error("Erro ao sincronizar assinatura após checkout:", err);
+        toast({
+          title: "Pagamento confirmado",
+          description: "Seu pagamento foi confirmado. Atualize a página se o plano ainda não aparecer.",
+        });
+      });
+  }, [searchParams, location.pathname, refetchSubscription, toast]);
 
   // Load existing config
   useEffect(() => {
@@ -166,6 +176,17 @@ const Index = () => {
 
   const goBack = () => step > 1 && setStep(step - 1);
 
+  const redirectToExternalUrl = useCallback((url: string) => {
+    const inIframe = window.self !== window.top;
+
+    if (inIframe) {
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (opened) return;
+    }
+
+    window.location.href = url;
+  }, []);
+
   const handleCheckout = async () => {
     if (!acceptedTerms) {
       toast({
@@ -184,8 +205,7 @@ const Index = () => {
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
       if (result?.url) {
-        // Redirect to Stripe Checkout - set success URL to return to onboarding
-        window.location.href = result.url;
+        redirectToExternalUrl(result.url);
       }
     } catch (e: any) {
       console.error("Checkout error:", e);
