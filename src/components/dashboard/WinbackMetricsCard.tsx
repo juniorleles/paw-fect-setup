@@ -139,7 +139,7 @@ const WinbackMetricsCard = () => {
         <Badge variant="secondary" className="text-[10px] font-bold uppercase">Pro</Badge>
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Total sent */}
         <Card className="border-none shadow-md bg-card">
           <CardContent className="pt-4 pb-3">
