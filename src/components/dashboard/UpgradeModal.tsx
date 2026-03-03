@@ -110,7 +110,7 @@ const UpgradeModal = ({
               onClick={() => onSelectPlan("professional")}
               disabled={checkoutLoading === "professional"}
             >
-              Profissional — R$ {STRIPE_PLANS.professional.price}/mês
+              Essencial — R$ {STRIPE_PLANS.professional.price}/mês
             </Button>
           </div>
         </div>
