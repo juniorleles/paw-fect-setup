@@ -164,14 +164,21 @@ const MyAccount = () => {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { planKey },
       });
-      if (error) throw error;
+      if (error) {
+        console.error("create-checkout error:", error);
+        toast({ title: "Erro ao iniciar pagamento", description: String(error.message || error), variant: "destructive" });
+        setCheckoutLoading(null);
+        return;
+      }
       if (data?.url) {
         window.location.href = data.url;
-      } else {
-        throw new Error("No checkout URL returned");
+        return;
       }
+      console.error("create-checkout no URL:", data);
+      toast({ title: "Erro ao iniciar pagamento", description: "Não foi possível gerar o link de pagamento.", variant: "destructive" });
     } catch (e: any) {
-      toast({ title: "Erro ao iniciar pagamento", description: e.message, variant: "destructive" });
+      console.error("create-checkout exception:", e);
+      toast({ title: "Erro ao iniciar pagamento", description: e.message || "Erro inesperado", variant: "destructive" });
     } finally {
       setCheckoutLoading(null);
     }
