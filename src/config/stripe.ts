@@ -5,7 +5,7 @@ export const STRIPE_PLANS = {
   starter: {
     name: "Starter",
     price_id_live: "price_1T4S0JE3YGO6w5oCBXFikz8v",
-    price_id_test: "price_1T4UnTE3YGO6w5oCkeqZ4Fbb",
+    price_id_test: "price_1T6tafE3YGO6w5oC8iAWHVQB",
     product_id_live: "prod_U2X4v8ah9uiCN0",
     product_id_test: "prod_U2ZxFgQ7HaugUf",
     price: 67,
