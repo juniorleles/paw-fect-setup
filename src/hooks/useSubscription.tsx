@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, createContext, useContext, type ReactNode } from "react";
+import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -35,40 +35,42 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [trialMessagesUsed, setTrialMessagesUsed] = useState(0);
   const [trialAppointmentsLimit, setTrialAppointmentsLimit] = useState(50);
   const [trialMessagesLimit, setTrialMessagesLimit] = useState(250);
-  const fetchedForUser = useRef<string | null>(null);
-
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
+      setStatus("none");
+      setTrialEndAt(null);
+      setPlan("starter");
+      setTrialAppointmentsUsed(0);
+      setTrialMessagesUsed(0);
+      setTrialAppointmentsLimit(30);
+      setTrialMessagesLimit(150);
       setLoading(false);
       return;
     }
 
-    if (fetchedForUser.current === userId) {
-      setLoading(false);
-      return;
-    }
-
-    fetchedForUser.current = userId;
     setLoading(true);
 
     try {
       const { data, error } = await supabase
         .from("subscriptions")
-        .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit")
+        .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit, updated_at")
         .eq("user_id", userId)
-        .maybeSingle();
+        .order("updated_at", { ascending: false })
+        .limit(1);
 
       if (error) {
         throw error;
       }
 
-      setStatus((data?.status as SubscriptionStatus) ?? "none");
-      setTrialEndAt(data?.trial_end_at ?? null);
-      setPlan(data?.plan ?? "starter");
-      setTrialAppointmentsUsed((data as any)?.trial_appointments_used ?? 0);
-      setTrialMessagesUsed((data as any)?.trial_messages_used ?? 0);
-      setTrialAppointmentsLimit((data as any)?.trial_appointments_limit ?? 30);
-      setTrialMessagesLimit((data as any)?.trial_messages_limit ?? 150);
+      const latest = data?.[0];
+
+      setStatus((latest?.status as SubscriptionStatus) ?? "none");
+      setTrialEndAt(latest?.trial_end_at ?? null);
+      setPlan(latest?.plan ?? "starter");
+      setTrialAppointmentsUsed((latest as any)?.trial_appointments_used ?? 0);
+      setTrialMessagesUsed((latest as any)?.trial_messages_used ?? 0);
+      setTrialAppointmentsLimit((latest as any)?.trial_appointments_limit ?? 30);
+      setTrialMessagesLimit((latest as any)?.trial_messages_limit ?? 150);
     } catch (error) {
       console.error("fetchSubscription failed:", error);
       setStatus("none");
@@ -122,7 +124,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refetch = useCallback(async () => {
-    fetchedForUser.current = null;
     await fetchSubscription();
   }, [fetchSubscription]);
 
