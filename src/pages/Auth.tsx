@@ -226,6 +226,15 @@ const Auth = () => {
                     ? "Crie sua conta para configurar sua secretária digital"
                     : "Acesse sua conta para gerenciar sua secretária digital"}
                 </CardDescription>
+                {isSignUp && selectedPlan && (
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <Badge className={`${selectedPlan.color} text-xs font-semibold px-3 py-1 rounded-full border-0`}>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Plano {selectedPlan.label}
+                      {planPrice && ` · ${planPrice}`}
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
