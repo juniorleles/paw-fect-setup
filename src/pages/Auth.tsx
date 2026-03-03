@@ -121,6 +121,10 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
+      // Save chosen plan so onboarding can enforce payment for paid plans
+      if (isSignUp && selectedPlanKey) {
+        localStorage.setItem("chosen_plan", selectedPlanKey);
+      }
       setJustAuthenticated(true);
       if (isSignUp) {
         toast({
