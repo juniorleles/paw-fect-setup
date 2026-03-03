@@ -91,25 +91,62 @@ const MyAccount = () => {
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
-  // Check subscription status from Stripe on load
+  const syncInFlightRef = useRef(false);
+  const lastSyncedUserIdRef = useRef<string | null>(null);
+  const userId = user?.id ?? null;
+
+  // Check subscription status from Stripe on load (without forcing refresh loop)
   const syncSubscription = useCallback(async () => {
-    if (!user) return;
-    // Ensure we have a fresh active session before calling the edge function
-    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-    if (refreshError || !refreshData?.session) {
-      console.warn("No active session for check-subscription, skipping sync");
-      return;
-    }
+    if (!userId) return;
+    if (syncInFlightRef.current) return;
+    if (lastSyncedUserIdRef.current === userId) return;
+
+    syncInFlightRef.current = true;
+
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.warn("No active session for check-subscription, skipping sync");
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("check-subscription");
-      if (error) console.error("check-subscription error:", error);
+
+      if (error) {
+        const message = String(error.message || error);
+
+        // Retry once with refresh only when auth is actually invalid
+        if (message.includes("401") || message.toLowerCase().includes("unauthorized")) {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError && refreshData?.session) {
+            const retry = await supabase.functions.invoke("check-subscription");
+            if (retry.error) {
+              console.error("check-subscription retry error:", retry.error);
+              return;
+            }
+            if (retry.data?.subscribed) {
+              console.log("Stripe subscription synced:", retry.data);
+            }
+            lastSyncedUserIdRef.current = userId;
+            return;
+          }
+        }
+
+        console.error("check-subscription error:", error);
+        return;
+      }
+
       if (data?.subscribed) {
         console.log("Stripe subscription synced:", data);
       }
+
+      lastSyncedUserIdRef.current = userId;
     } catch (e) {
       console.error("check-subscription call failed:", e);
+    } finally {
+      syncInFlightRef.current = false;
     }
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
     if (!user) {
