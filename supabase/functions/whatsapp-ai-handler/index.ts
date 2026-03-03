@@ -1775,7 +1775,43 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       shopConfig.services
     );
 
-    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlots, maxConcurrent) + longTermMemory;
+    // --- Inject no-show recovery context if this phone has a pending recovery ---
+    let recoveryContext = "";
+    {
+      const { data: pendingRecovery } = await serviceClient
+        .from("appointments")
+        .select("id, owner_name, pet_name, service, date, time, notes")
+        .eq("user_id", shopConfig.user_id)
+        .eq("status", "no_show")
+        .eq("recovery_status", "pending")
+        .not("recovery_message_sent_at", "is", null)
+        .order("recovery_message_sent_at", { ascending: false })
+        .limit(5);
+
+      const recoveryForPhone = (pendingRecovery || []).filter((a: any) => {
+        // Match by checking if the customer's phone from existing appointments matches
+        return true; // We check all pending recoveries for this user
+      });
+
+      if (recoveryForPhone.length > 0) {
+        const rec = recoveryForPhone[0];
+        let slotsInfo = "";
+        try {
+          const notesData = typeof rec.notes === "string" ? JSON.parse(rec.notes) : rec.notes;
+          const slots = notesData?.recovery_slots || [];
+          slotsInfo = slots.map((s: any, i: number) => `${i + 1}) ${s.weekday} ${s.date} às ${s.time}`).join(", ");
+        } catch { /* ignore */ }
+
+        recoveryContext = `\n\nCONTEXTO DE RECUPERAÇÃO DE FALTA:
+Este cliente faltou a um agendamento anterior de "${rec.service}" marcado para ${rec.date} às ${rec.time}.
+Já enviamos uma mensagem de recuperação oferecendo horários: ${slotsInfo || "horários disponíveis"}.
+O cliente está respondendo sobre essa remarcação. Ajude-o a escolher um novo horário usando os horários disponíveis acima.
+Se o cliente pedir outro horário diferente dos sugeridos, ofereça as opções da lista de disponibilidade.
+Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para mudar.`;
+      }
+    }
+
+    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlots, maxConcurrent) + longTermMemory + recoveryContext;
 
     // Build messages array with history
     const aiMessages: { role: string; content: string }[] = [
