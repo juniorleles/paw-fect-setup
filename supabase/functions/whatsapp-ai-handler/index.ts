@@ -883,10 +883,11 @@ async function handleNoShowRecoveryResponse(
   message: string
 ): Promise<string | null> {
   const trimmed = message.trim();
-  // Only intercept "1", "2", or "3" as standalone messages
-  if (trimmed !== "1" && trimmed !== "2" && trimmed !== "3") return null;
+  // Intercept standalone numeric replies (valid: 1-3, invalid: 0, negatives, >3)
+  if (!/^-?\d+$/.test(trimmed)) return null;
 
-  const slotIndex = parseInt(trimmed) - 1;
+  const numValue = parseInt(trimmed);
+  const slotIndex = numValue - 1;
 
   // Find pending no-show recovery for this phone
   const { data: noShowAppts } = await serviceClient
