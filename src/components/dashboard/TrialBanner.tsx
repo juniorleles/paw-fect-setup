@@ -72,14 +72,22 @@ const TrialBanner = () => {
   }
 
   // Trial active with some usage info
-  if (phase === "trial_active" && (appointmentsPercent >= 50 || messagesPercent >= 50)) {
+  if (phase === "trial_active" && (
+    (appointmentsLimit !== -1 && appointmentsPercent >= 50) || messagesPercent >= 50
+  )) {
     return (
       <Alert className="border-primary/30 bg-primary/5">
         <AlertDescription className="text-sm flex items-center gap-3">
-          📅 Trial gratuito:{" "}
-          <span className="inline-flex items-center gap-1">
-            <CalendarDays className="w-3.5 h-3.5" /> {appointmentsUsed}/{appointmentsLimit} agendamentos
-          </span>
+          📅 Seus recursos:{" "}
+          {appointmentsLimit === -1 ? (
+            <span className="inline-flex items-center gap-1">
+              <CalendarDays className="w-3.5 h-3.5" /> {appointmentsUsed} agendamentos (ilimitados)
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1">
+              <CalendarDays className="w-3.5 h-3.5" /> {appointmentsUsed}/{appointmentsLimit} agendamentos
+            </span>
+          )}
           <span className="inline-flex items-center gap-1">
             <MessageSquare className="w-3.5 h-3.5" /> {messagesUsed}/{messagesLimit} mensagens
           </span>
