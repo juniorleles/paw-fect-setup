@@ -2035,10 +2035,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     // Save assistant reply to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
 
-    // Increment trial message counter for the sent reply — atomic
-    if (isTrialUser && subscription) {
-      await serviceClient.rpc("increment_trial_messages", { p_user_id: shopConfig.user_id });
-    }
+    // Message counter already incremented at the start of processing (line ~1614)
 
     // Send reply via WhatsApp
     await sendWhatsAppMessage(instanceName, senderPhone, reply);
