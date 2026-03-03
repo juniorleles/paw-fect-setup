@@ -36,7 +36,7 @@ const LandingNavbar = () => {
           <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
             Entrar
           </Button>
-          <a href="/auth?signup=true">
+          <a href="/auth?signup=true&plan=free">
             <Button size="sm">Cadastrar</Button>
           </a>
         </div>
