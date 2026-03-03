@@ -469,100 +469,126 @@ const MyAccount = () => {
       {/* 4. Planos disponíveis */}
       <div id="plans" className="space-y-4">
         <h2 className="text-lg font-display font-bold">Planos disponíveis</h2>
-        <div className="grid sm:grid-cols-3 gap-4">
-          {/* Starter */}
-          <Card className={`border-2 ${currentPlan === "starter" && !isCancelled ? "border-primary shadow-lg" : "border-transparent"}`}>
+        <div className="grid sm:grid-cols-3 gap-4 items-stretch">
+          {/* Free / Starter */}
+          <Card className={`border-2 transition-all ${currentPlan === "starter" && !isCancelled && !isActive ? "border-primary shadow-lg" : "border-border/60"} bg-muted/30`}>
             <CardContent className="p-5 flex flex-col h-full">
-              <Badge className="w-fit mb-2 bg-destructive text-destructive-foreground text-xs">🔥 Fundador</Badge>
-              <h3 className="font-display font-bold text-lg">Starter</h3>
+              <Badge variant="secondary" className="w-fit mb-2 text-[11px]">🔥 Comece Grátis</Badge>
+              <h3 className="font-display font-bold text-lg">Free</h3>
               <div className="mb-1">
-                <span className="text-3xl font-bold">R$ {STRIPE_PLANS.starter.price}</span>
+                <span className="text-3xl font-bold">R$ 0</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-3">Trial gratuito por cotas</p>
-              <ul className="space-y-1.5 mb-4 flex-1 text-sm">
-                {["1 número WhatsApp", "1 atendente por horário", "Até 150 msgs/mês", "Até 30 agendamentos", "Respostas automáticas", "Horário de atendimento", "Suporte padrão"].map((f) => (
+              <p className="text-xs text-primary font-medium mb-3">Ideal para testar a automação</p>
+              <ul className="space-y-1.5 mb-3 flex-1 text-sm">
+                {["1 número de WhatsApp", "1 atendente por horário", "Até 30 agendamentos/mês", "Até 150 mensagens/mês", "1 lembrete automático (24h antes)"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-              {currentPlan === "starter" && !isCancelled && !isExpired ? (
+              <ul className="space-y-1.5 mb-4 text-sm">
+                {["Sem lembrete duplo", "Sem campanhas automáticas", "Sem recuperação de inativos"].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-muted-foreground/70">
+                    <Lock className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              {currentPlan === "starter" && !isCancelled && !isActive ? (
                 <Button variant="outline" disabled className="w-full">Plano atual</Button>
               ) : (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => handleCheckout("starter")}
-                  disabled={checkoutLoading === "starter"}
-                >
-                  {checkoutLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Assinar Starter
-                </Button>
+                <Button variant="outline" className="w-full" disabled>Free</Button>
               )}
             </CardContent>
           </Card>
 
-          {/* Profissional */}
-          <Card className={`border-2 ${currentPlan === "professional" && !isCancelled ? "border-primary shadow-lg" : "border-primary/50"} scale-[1.02]`}>
+          {/* Essencial */}
+          <Card className={`border-2 transition-all relative overflow-hidden ${currentPlan === "professional" && !isCancelled ? "border-primary shadow-xl" : "border-primary/50 shadow-lg"} scale-[1.02]`}>
             <CardContent className="p-5 flex flex-col h-full">
-              <Badge className="w-fit mb-2 bg-primary text-primary-foreground text-xs">⭐ Mais Popular</Badge>
-              <h3 className="font-display font-bold text-lg">Profissional</h3>
+              <Badge className="w-fit mb-2 bg-primary text-primary-foreground text-xs">
+                <Star className="w-3 h-3 mr-1 fill-current" /> Mais Escolhido
+              </Badge>
+              <h3 className="font-display font-bold text-lg">Essencial</h3>
               <div className="mb-1">
                 <span className="text-3xl font-bold">R$ {STRIPE_PLANS.professional.price}</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-3">Trial gratuito por cotas</p>
+              <p className="text-xs text-primary font-medium mb-3">Automação completa para seu negócio</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
-                {["Tudo do Starter +", "Até 5 atendentes simultâneos", "Até 800 msgs/mês", "Agendamentos ilimitados", "IA personalizada", "Fluxos customizados", "Suporte prioritário"].map((f) => (
+                {[
+                  "1 número de WhatsApp",
+                  "Agendamentos ilimitados",
+                  "Até 800 mensagens/mês",
+                  "Lembrete duplo (24h + 3h)",
+                  "Botão Confirmar / Reagendar",
+                  "Lista de clientes inativos",
+                  "Recuperação automática de faltas",
+                  "Relatório de faltas evitadas",
+                ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-              {currentPlan === "professional" && !isCancelled ? (
+              {currentPlan === "professional" && isActive ? (
                 <Button disabled className="w-full">Plano atual</Button>
               ) : (
                 <Button
-                  className="w-full"
+                  className="w-full shadow-lg shadow-primary/20 font-bold"
                   onClick={() => handleCheckout("professional")}
                   disabled={checkoutLoading === "professional"}
                 >
                   {checkoutLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
-                  {currentPlan === "starter" && !isCancelled ? "Fazer upgrade" : "Assinar Profissional"}
+                  Fazer upgrade
                 </Button>
               )}
             </CardContent>
           </Card>
 
-          {/* Empresarial */}
-          <Card className="border-2 border-transparent opacity-80">
+          {/* Pro */}
+          <Card className="border-2 border-primary/40 shadow-md hover:shadow-lg transition-all relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
             <CardContent className="p-5 flex flex-col h-full">
-              <Badge variant="secondary" className="w-fit mb-2 text-xs">🚀 Em breve</Badge>
-              <h3 className="font-display font-bold text-lg">Empresa</h3>
+              <Badge className="w-fit mb-2 bg-primary/15 text-primary border-primary/30" variant="outline">🚀 Para Quem Quer Crescer</Badge>
+              <h3 className="font-display font-bold text-lg">Pro</h3>
               <div className="mb-1">
-                <Lock className="inline w-4 h-4 text-muted-foreground mr-1" />
-                <span className="text-xl font-bold text-muted-foreground">Em breve</span>
+                <span className="text-3xl font-bold">R$ 127</span>
+                <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-muted-foreground mb-3">Teste gratuito no lançamento</p>
-              <ul className="space-y-1.5 mb-4 flex-1 text-sm opacity-60">
-                {["Múltiplos WhatsApp", "Msgs ilimitadas", "Integrações avançadas", "Gerente dedicado"].map((f) => (
+              <p className="text-xs text-primary font-medium mb-3">Automação inteligente com campanhas</p>
+              <ul className="space-y-1.5 mb-4 flex-1 text-sm">
+                {[
+                  "1 número de WhatsApp",
+                  "Agendamentos ilimitados",
+                  "Até 1.500 mensagens/mês",
+                  "Lembrete duplo (24h + 3h)",
+                  "Botão Confirmar / Reagendar",
+                  "Lista automática de inativos",
+                  "Campanha automática de retorno",
+                  "Recuperação automática de faltas",
+                  "Upsell automático de serviços",
+                  "Relatório de faturamento estimado",
+                  "Prioridade no suporte",
+                ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
-                    <Check className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-              <Button variant="outline" className="w-full" disabled>Entrar na lista de espera</Button>
+              <Button className="w-full bg-primary/90 hover:bg-primary font-bold" disabled>
+                Em breve
+              </Button>
             </CardContent>
           </Card>
         </div>
 
         <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-          * <strong>Atendente por horário</strong> refere-se à quantidade de agendamentos simultâneos permitidos no mesmo horário na sua agenda. 
-          No Starter, 1 agendamento por horário. No Profissional, até 5 ao mesmo tempo. A IA responde a todos os clientes sem limite.
+          * <strong>Atendente</strong> refere-se à quantidade de agendamentos simultâneos permitidos no mesmo horário. 
+          No Free, 1 agendamento por horário. No Essencial, até 5 ao mesmo tempo. A IA responde a todos os clientes sem limite.
         </p>
       </div>
 
