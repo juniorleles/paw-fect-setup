@@ -73,7 +73,7 @@ const PricingSection = () => (
                   </li>
                 ))}
               </ul>
-              <a href="/auth?signup=true">
+              <a href="/auth?signup=true&plan=free">
                 <Button className="w-full" variant="outline">Começar Gratuitamente</Button>
               </a>
             </CardContent>
