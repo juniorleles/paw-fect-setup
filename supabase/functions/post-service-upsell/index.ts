@@ -80,12 +80,24 @@ function findUpsellSuggestions(service: string, availableServices: any[]): strin
   );
 }
 
+function applyTemplate(
+  template: string,
+  vars: Record<string, string>
+): string {
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replaceAll(`{${key}}`, val);
+  }
+  return result;
+}
+
 function buildUpsellMessage(
   clientName: string,
   service: string,
   suggestions: string[],
   shopName: string,
-  niche: string
+  niche: string,
+  customTemplate?: string
 ): string {
   const emoji = getEmoji(niche);
   const name = clientName.split(" ")[0];
@@ -93,6 +105,18 @@ function buildUpsellMessage(
   const suggestionList = suggestions
     .map((s) => `• *${s.charAt(0).toUpperCase() + s.slice(1)}*`)
     .join("\n");
+
+  const vars = {
+    nome: name,
+    servico: service,
+    loja: shopName,
+    sugestoes: suggestionList,
+  };
+
+  // Use custom template if provided
+  if (customTemplate) {
+    return applyTemplate(customTemplate, vars);
+  }
 
   if (niche.toLowerCase().includes("barb")) {
     return [
@@ -192,7 +216,7 @@ Deno.serve(async (req) => {
       // Get shop config
       const { data: config } = await supabase
         .from("pet_shop_configs")
-        .select("shop_name, niche, evolution_instance_name, activated, services")
+        .select("shop_name, niche, evolution_instance_name, activated, services, campaign_messages")
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -247,12 +271,14 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        const customUpsell = (config as any).campaign_messages?.upsell as string | undefined;
         const message = buildUpsellMessage(
           apt.owner_name,
           apt.service,
-          suggestions.slice(0, 3), // Max 3 suggestions
+          suggestions.slice(0, 3),
           config.shop_name,
-          config.niche
+          config.niche,
+          customUpsell
         );
 
         try {

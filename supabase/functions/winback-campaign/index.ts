@@ -51,19 +51,44 @@ function getEmoji(niche: string): string {
   return nicheEmoji[key] || "✨";
 }
 
+function applyTemplate(
+  template: string,
+  vars: Record<string, string>
+): string {
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replaceAll(`{${key}}`, val);
+  }
+  return result;
+}
+
 function buildWinbackMessage(
   stage: string,
   clientName: string,
   lastService: string,
   daysInactive: number,
   shopName: string,
-  niche: string
+  niche: string,
+  customTemplates?: Record<string, string>
 ): string {
   const emoji = getEmoji(niche);
-  const name = clientName.split(" ")[0]; // first name only
+  const name = clientName.split(" ")[0];
 
+  const vars = {
+    nome: name,
+    servico: lastService,
+    dias: String(daysInactive),
+    loja: shopName,
+  };
+
+  // Check for custom template
+  const templateKey = stage.toLowerCase(); // e.g. "winback_15"
+  if (customTemplates && customTemplates[templateKey]) {
+    return applyTemplate(customTemplates[templateKey], vars);
+  }
+
+  // Default messages
   if (niche.toLowerCase().includes("barb")) {
-    // Barbershop-specific casual tone
     switch (stage) {
       case "WINBACK_15":
         return [
@@ -99,7 +124,6 @@ function buildWinbackMessage(
     }
   }
 
-  // Generic niche messages
   switch (stage) {
     case "WINBACK_15":
       return [
@@ -202,7 +226,7 @@ Deno.serve(async (req) => {
       // Get shop config
       const { data: config } = await supabase
         .from("pet_shop_configs")
-        .select("shop_name, niche, evolution_instance_name, activated")
+        .select("shop_name, niche, evolution_instance_name, activated, campaign_messages")
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -289,13 +313,15 @@ Deno.serve(async (req) => {
         // Check message budget
         if (sentForUser >= remaining) break;
 
+        const customTemplates = (config as any).campaign_messages as Record<string, string> | undefined;
         const message = buildWinbackMessage(
           stage.type,
           client.owner_name,
           client.last_service,
           client.days_inactive,
           config.shop_name,
-          config.niche
+          config.niche,
+          customTemplates
         );
 
         if (!message) continue;
