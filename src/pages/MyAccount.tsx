@@ -472,7 +472,7 @@ const MyAccount = () => {
               </div>
               <p className="text-xs text-primary font-medium mb-3">Trial gratuito por cotas</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
-                {["1 número WhatsApp", "1 atendente por horário", "Até 250 msgs/mês", "Até 50 agendamentos", "Respostas automáticas", "Horário de atendimento", "Suporte padrão"].map((f) => (
+                {["1 número WhatsApp", "1 atendente por horário", "Até 150 msgs/mês", "Até 30 agendamentos", "Respostas automáticas", "Horário de atendimento", "Suporte padrão"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
