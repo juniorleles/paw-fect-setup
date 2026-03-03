@@ -43,15 +43,15 @@ const TrialBanner = () => {
 
   // Trial expiring — 80%+ of any quota
   if (phase === "trial_expiring") {
-    const aptsLeft = appointmentsLimit - appointmentsUsed;
     const msgsLeft = messagesLimit - messagesUsed;
+    const aptsLeft = appointmentsLimit !== -1 ? appointmentsLimit - appointmentsUsed : -1;
     return (
       <Alert className="border-accent/50 bg-accent/10">
         <AlertTriangle className="h-4 w-4 text-accent" />
         <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
           <span className="text-sm font-medium">
-            ⏰ Seu trial está acabando!{" "}
-            {appointmentsPercent >= 80 && (
+            ⏰ Seus recursos estão acabando!{" "}
+            {appointmentsLimit !== -1 && appointmentsPercent >= 80 && (
               <span className="inline-flex items-center gap-1 mr-2">
                 <CalendarDays className="w-3.5 h-3.5" /> {aptsLeft} agendamentos restantes
               </span>
@@ -64,7 +64,7 @@ const TrialBanner = () => {
           </span>
           <Button size="sm" className="gap-1" onClick={() => navigate("/my-account")}>
             <Crown className="w-4 h-4" />
-            Ativar plano
+            Fazer upgrade
           </Button>
         </AlertDescription>
       </Alert>
