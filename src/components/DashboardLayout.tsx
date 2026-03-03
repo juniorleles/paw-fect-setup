@@ -22,6 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Agendamentos", url: "/appointments", icon: CalendarDays },
+  { title: "Clientes Inativos", url: "/inactive-clients", icon: UserX },
   { title: "Profissionais", url: "/professionals", icon: Users },
   { title: "Configurações", url: "/settings", icon: Settings },
   { title: "Minha Conta", url: "/my-account", icon: UserCircle },
