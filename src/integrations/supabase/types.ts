@@ -242,6 +242,48 @@ export type Database = {
         }
         Relationships: []
       }
+      inactive_campaign_logs: {
+        Row: {
+          campaign_month: string
+          campaign_type: string
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          days_inactive: number | null
+          id: string
+          last_service: string | null
+          message_sent: string | null
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_month: string
+          campaign_type?: string
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          days_inactive?: number | null
+          id?: string
+          last_service?: string | null
+          message_sent?: string | null
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_month?: string
+          campaign_type?: string
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          days_inactive?: number | null
+          id?: string
+          last_service?: string | null
+          message_sent?: string | null
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           created_at: string
