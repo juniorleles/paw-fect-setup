@@ -135,7 +135,16 @@ const StepServices = ({ data, onChange, errors }: Props) => {
             <Input placeholder="Nome do serviço" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Categoria (opcional)" value={category} onChange={(e) => setCategory(e.target.value)} />
             <Input placeholder="Preço R$ (opcional)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
-            <Input placeholder="Duração (min)" type="number" value={duration} onChange={(e) => setDuration(e.target.value)} />
+            <select
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm w-full"
+            >
+              <option value="">Duração (min)</option>
+              {[30, 60, 90, 120, 150, 180].map((m) => (
+                <option key={m} value={String(m)}>{m} min</option>
+              ))}
+            </select>
           </div>
           <Button onClick={addService} disabled={!name} size="sm" className="w-full">
             <Plus className="w-4 h-4 mr-1" /> Adicionar serviço
@@ -154,7 +163,16 @@ const StepServices = ({ data, onChange, errors }: Props) => {
                       <Input placeholder="Nome" value={editName} onChange={(e) => setEditName(e.target.value)} />
                       <Input placeholder="Categoria" value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
                       <Input placeholder="Preço R$" type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
-                      <Input placeholder="Duração (min)" type="number" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} />
+                      <select
+                        value={editDuration}
+                        onChange={(e) => setEditDuration(e.target.value)}
+                        className="h-9 rounded-md border border-input bg-background px-2 text-sm w-full"
+                      >
+                        <option value="">Duração (min)</option>
+                        {[30, 60, 90, 120, 150, 180].map((m) => (
+                          <option key={m} value={String(m)}>{m} min</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="flex gap-2 justify-end">
                       <Button variant="ghost" size="sm" onClick={cancelEdit}>
