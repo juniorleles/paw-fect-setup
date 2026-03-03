@@ -51,19 +51,44 @@ function getEmoji(niche: string): string {
   return nicheEmoji[key] || "✨";
 }
 
+function applyTemplate(
+  template: string,
+  vars: Record<string, string>
+): string {
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replaceAll(`{${key}}`, val);
+  }
+  return result;
+}
+
 function buildWinbackMessage(
   stage: string,
   clientName: string,
   lastService: string,
   daysInactive: number,
   shopName: string,
-  niche: string
+  niche: string,
+  customTemplates?: Record<string, string>
 ): string {
   const emoji = getEmoji(niche);
-  const name = clientName.split(" ")[0]; // first name only
+  const name = clientName.split(" ")[0];
 
+  const vars = {
+    nome: name,
+    servico: lastService,
+    dias: String(daysInactive),
+    loja: shopName,
+  };
+
+  // Check for custom template
+  const templateKey = stage.toLowerCase(); // e.g. "winback_15"
+  if (customTemplates && customTemplates[templateKey]) {
+    return applyTemplate(customTemplates[templateKey], vars);
+  }
+
+  // Default messages
   if (niche.toLowerCase().includes("barb")) {
-    // Barbershop-specific casual tone
     switch (stage) {
       case "WINBACK_15":
         return [
@@ -99,7 +124,6 @@ function buildWinbackMessage(
     }
   }
 
-  // Generic niche messages
   switch (stage) {
     case "WINBACK_15":
       return [
