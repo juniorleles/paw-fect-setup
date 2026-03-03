@@ -130,7 +130,7 @@ const PricingSection = () => (
           </Card>
         </motion.div>
 
-        {/* Empresarial */}
+        {/* Pro */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -138,26 +138,39 @@ const PricingSection = () => (
           transition={{ duration: 0.5, delay: 0.2 }}
           whileHover={{ y: -6, transition: { duration: 0.2 } }}
         >
-          <Card className="h-full border-2 border-transparent shadow-md hover:shadow-xl transition-all">
+          <Card className="h-full border-2 border-primary/40 shadow-lg hover:shadow-xl transition-all relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
             <CardContent className="p-6 flex flex-col h-full">
-              <Badge variant="secondary" className="w-fit mb-3">🚀 Em breve</Badge>
-              <h3 className="font-display font-bold text-xl mb-1">Empresa</h3>
+              <Badge className="w-fit mb-3 bg-primary/15 text-primary border-primary/30" variant="outline">🚀 Para Quem Quer Crescer</Badge>
+              <h3 className="font-display font-bold text-xl mb-1">Pro</h3>
               <div className="mb-1">
-                <Lock className="inline w-5 h-5 text-muted-foreground mr-1" />
-                <span className="text-2xl font-bold text-muted-foreground">Em breve</span>
+                <span className="text-4xl font-bold">R$ 127</span>
+                <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-4">Teste gratuito disponível no lançamento</p>
-              <p className="text-sm text-muted-foreground mb-5">Solução completa para empresas que precisam de múltiplos atendentes e integrações avançadas.</p>
-              <ul className="space-y-2.5 mb-6 flex-1 opacity-60">
-                {["Múltiplos números WhatsApp", "Mensagens ilimitadas", "Tudo do Profissional", "Integração com sistemas", "Gerente de conta dedicado"].map((f) => (
+              <p className="text-xs text-primary font-semibold mb-2">Automação inteligente para barbearias que querem aumentar faturamento todo mês.</p>
+              <p className="text-sm text-muted-foreground mb-5">Ideal para quem quer transformar o WhatsApp em uma máquina automática de agendamentos e retorno de clientes.</p>
+              <ul className="space-y-2.5 mb-6 flex-1">
+                {[
+                  "1 número de WhatsApp",
+                  "Agendamentos ilimitados",
+                  "Até 1.500 mensagens por mês",
+                  "Lembrete duplo automático (24h + 3h antes)",
+                  "Botão Confirmar / Reagendar",
+                  "Lista automática de clientes inativos",
+                  "Campanha automática de retorno de clientes",
+                  "Recuperação automática de faltas",
+                  "Upsell automático de serviços",
+                  "Relatório de faturamento estimado",
+                  "Prioridade no suporte",
+                ].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-              <a href="/auth">
-                <Button className="w-full" variant="outline">Entrar na lista de espera</Button>
+              <a href="/auth?signup=true">
+                <Button className="w-full bg-primary/90 hover:bg-primary font-bold text-wrap py-3 h-auto leading-snug">Quero Crescer no Automático</Button>
               </a>
             </CardContent>
           </Card>
