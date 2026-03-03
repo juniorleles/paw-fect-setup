@@ -17,11 +17,11 @@ const logStep = (step: string, details?: any) => {
 const PRICE_MAP: Record<string, { live: string; test: string }> = {
   starter: {
     live: "price_1T4S0JE3YGO6w5oCBXFikz8v",
-    test: "price_1T4UnTE3YGO6w5oCkeqZ4Fbb",
+    test: "price_1T6tafE3YGO6w5oC8iAWHVQB",
   },
   professional: {
     live: "price_1T4S1KE3YGO6w5oC23qcdMl3",
-    test: "price_1T4UniE3YGO6w5oCiWyqqrfG",
+    test: "price_1T6tcYE3YGO6w5oCZZ6rAitZ",
   },
 };
 

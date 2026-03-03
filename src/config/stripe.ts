@@ -5,7 +5,7 @@ export const STRIPE_PLANS = {
   starter: {
     name: "Starter",
     price_id_live: "price_1T4S0JE3YGO6w5oCBXFikz8v",
-    price_id_test: "price_1T4UnTE3YGO6w5oCkeqZ4Fbb",
+    price_id_test: "price_1T6tafE3YGO6w5oC8iAWHVQB",
     product_id_live: "prod_U2X4v8ah9uiCN0",
     product_id_test: "prod_U2ZxFgQ7HaugUf",
     price: 67,
@@ -18,7 +18,7 @@ export const STRIPE_PLANS = {
   professional: {
     name: "Essencial",
     price_id_live: "price_1T4S1KE3YGO6w5oC23qcdMl3",
-    price_id_test: "price_1T4UniE3YGO6w5oCiWyqqrfG",
+    price_id_test: "price_1T6tcYE3YGO6w5oCZZ6rAitZ",
     product_id_live: "prod_U2X5te6HQ2va2l",
     product_id_test: "prod_U2ZxGxqNGAiwhQ",
     price: 97,
