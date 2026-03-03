@@ -206,18 +206,20 @@ function safeTimestamp(ts: number | null | undefined): string | null {
 
 // Plan limits by plan key — -1 means unlimited
 const PLAN_LIMITS: Record<string, { messagesLimit: number; appointmentsLimit: number }> = {
-  starter: { messagesLimit: 150, appointmentsLimit: 30 },
-  professional: { messagesLimit: 800, appointmentsLimit: -1 },
+  starter: { messagesLimit: 800, appointmentsLimit: -1 },      // Essencial
+  professional: { messagesLimit: 1500, appointmentsLimit: -1 }, // Pro
 };
 
 function detectPlanFromSubscription(sub: Stripe.Subscription): string {
   const priceId = sub.items?.data?.[0]?.price?.id;
-  // Map known price IDs to plan keys
+  // Map known price IDs to plan keys (live + test)
   const priceMap: Record<string, string> = {
-    "price_1T4S0JE3YGO6w5oCBXFikz8v": "starter",
-    "price_1T4UnTE3YGO6w5oCkeqZ4Fbb": "starter",
-    "price_1T4S1KE3YGO6w5oC23qcdMl3": "professional",
-    "price_1T4UniE3YGO6w5oCiWyqqrfG": "professional",
+    "price_1T4S0JE3YGO6w5oCBXFikz8v": "starter",       // Essencial live
+    "price_1T6tafE3YGO6w5oC8iAWHVQB": "starter",       // Essencial test
+    "price_1T4UnTE3YGO6w5oCkeqZ4Fbb": "starter",       // Essencial legacy
+    "price_1T4S1KE3YGO6w5oC23qcdMl3": "professional",  // Pro live
+    "price_1T6tcYE3YGO6w5oCZZ6rAitZ": "professional",  // Pro test
+    "price_1T4UniE3YGO6w5oCiWyqqrfG": "professional",  // Pro legacy
   };
   return priceMap[priceId || ""] || "starter";
 }
