@@ -73,7 +73,7 @@ const PricingSection = () => (
                   </li>
                 ))}
               </ul>
-              <a href="/auth?signup=true">
+              <a href="/auth?signup=true&plan=free">
                 <Button className="w-full" variant="outline">Começar Gratuitamente</Button>
               </a>
             </CardContent>
@@ -123,7 +123,7 @@ const PricingSection = () => (
                   </li>
                 ))}
               </ul>
-              <a href="/auth?signup=true">
+              <a href="/auth?signup=true&plan=starter">
                 <Button className="w-full shadow-lg shadow-primary/20 font-bold text-wrap py-3 h-auto leading-snug">Quero Automatizar Minha Barbearia</Button>
               </a>
             </CardContent>
@@ -169,7 +169,7 @@ const PricingSection = () => (
                   </li>
                 ))}
               </ul>
-              <a href="/auth?signup=true">
+              <a href="/auth?signup=true&plan=professional">
                 <Button className="w-full bg-primary/90 hover:bg-primary font-bold text-wrap py-3 h-auto leading-snug">Quero Crescer no Automático</Button>
               </a>
             </CardContent>

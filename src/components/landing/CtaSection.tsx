@@ -37,7 +37,7 @@ const CtaSection = () => (
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
         >
-          <a href="/auth?signup=true">
+          <a href="/auth?signup=true&plan=free">
             <Button
               size="lg"
               className="h-14 px-10 text-base font-bold bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-xl"
