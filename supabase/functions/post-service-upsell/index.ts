@@ -80,12 +80,24 @@ function findUpsellSuggestions(service: string, availableServices: any[]): strin
   );
 }
 
+function applyTemplate(
+  template: string,
+  vars: Record<string, string>
+): string {
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replaceAll(`{${key}}`, val);
+  }
+  return result;
+}
+
 function buildUpsellMessage(
   clientName: string,
   service: string,
   suggestions: string[],
   shopName: string,
-  niche: string
+  niche: string,
+  customTemplate?: string
 ): string {
   const emoji = getEmoji(niche);
   const name = clientName.split(" ")[0];
@@ -93,6 +105,18 @@ function buildUpsellMessage(
   const suggestionList = suggestions
     .map((s) => `• *${s.charAt(0).toUpperCase() + s.slice(1)}*`)
     .join("\n");
+
+  const vars = {
+    nome: name,
+    servico: service,
+    loja: shopName,
+    sugestoes: suggestionList,
+  };
+
+  // Use custom template if provided
+  if (customTemplate) {
+    return applyTemplate(customTemplate, vars);
+  }
 
   if (niche.toLowerCase().includes("barb")) {
     return [
