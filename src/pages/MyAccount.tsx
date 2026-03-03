@@ -268,7 +268,12 @@ const MyAccount = () => {
 
   const now = new Date();
   const isTrialing = sub?.status === "trialing" || (sub?.status === "active" && sub?.trial_end_at && new Date(sub.trial_end_at) > now);
-  const hasPaidPeriod = sub?.current_period_end && sub?.trial_end_at && new Date(sub.current_period_end) > new Date(sub.trial_end_at);
+  // hasPaidPeriod: user has a paid subscription period (current_period_end set by Stripe webhook)
+  // Either: trial_end_at exists AND current_period_end > trial_end_at (upgraded from trial)
+  // OR: trial_end_at is null AND current_period_end exists (direct paid subscription, webhook cleared trial_end_at)
+  const hasPaidPeriod = sub?.current_period_end && (
+    !sub?.trial_end_at || new Date(sub.current_period_end) > new Date(sub.trial_end_at)
+  );
   const isTrialQuotaUser = sub?.status === "active" && !hasPaidPeriod;
   const isActive = sub?.status === "active" && hasPaidPeriod;
   const isCancelled = sub?.status === "cancelled";
