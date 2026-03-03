@@ -323,6 +323,19 @@ const Index = () => {
             <Button onClick={goNext} className="h-12 px-8 font-bold">
               Próximo <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
+          ) : needsPayment ? (
+            <Button
+              onClick={handleCheckout}
+              disabled={checkoutLoading}
+              className="h-12 px-8 font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+              size="lg"
+            >
+              {checkoutLoading ? (
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Redirecionando...</>
+              ) : (
+                <><CreditCard className="w-5 h-5 mr-2" /> ASSINAR E ATIVAR — R${STRIPE_PLANS[chosenPlan as StripePlanKey]?.price}/mês</>
+              )}
+            </Button>
           ) : (
             <Button
               onClick={handleActivate}
