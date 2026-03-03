@@ -35,6 +35,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import WhatsAppStatusBadge from "@/components/dashboard/WhatsAppStatusBadge";
+import InactiveClientsCard from "@/components/dashboard/InactiveClientsCard";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -453,6 +454,9 @@ const Dashboard = () => {
           ))}
         </div>
       </section>
+
+      {/* ─── Clientes Inativos ─── */}
+      <InactiveClientsCard />
 
       {/* ─── 5. Cotas disponíveis ─── */}
       <section>
