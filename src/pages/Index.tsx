@@ -9,15 +9,16 @@ import StepPersonalization from "@/components/onboarding/StepPersonalization";
 import StepSimulator from "@/components/onboarding/StepSimulator";
 import SuccessScreen from "@/components/onboarding/SuccessScreen";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
-import { ArrowLeft, ArrowRight, Zap, Briefcase, LogOut, Loader2, Copy, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Zap, Briefcase, LogOut, Loader2, Copy, Check, CreditCard } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { STRIPE_PLANS, type StripePlanKey } from "@/config/stripe";
 
 const Index = () => {
   const { user, signOut } = useAuth();
