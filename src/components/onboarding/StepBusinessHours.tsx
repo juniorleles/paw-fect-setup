@@ -81,10 +81,10 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
             className="w-20 text-center font-bold"
           />
         </div>
-        {maxAllowed === 1 && (
+        {maxAllowed <= 1 && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 text-xs text-muted-foreground">
             <Lock className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-            <span>Plano Starter permite apenas 1 atendente. <strong>Faça upgrade para o Profissional</strong> para ter até {STRIPE_PLANS.professional.maxAttendants} atendentes.</span>
+            <span>Plano Free permite apenas 1 atendente. <strong>Faça upgrade para o Essencial</strong> para ter mais atendentes.</span>
           </div>
         )}
 
