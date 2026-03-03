@@ -170,7 +170,7 @@ const MyAccount = () => {
           supabase
             .from("subscriptions")
             .select("*")
-            .eq("user_id", user.id)
+            .eq("user_id", userId)
             .maybeSingle(),
           supabase
             .from("conversation_messages")
