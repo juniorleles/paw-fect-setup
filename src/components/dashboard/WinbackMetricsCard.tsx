@@ -148,9 +148,9 @@ const WinbackMetricsCard = () => {
                 <Send className="w-5 h-5 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-2xl font-bold">{totalSent}</p>
+                <p className="text-2xl font-bold">{totalAll}</p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  Enviados no mês
+                  Total enviados
                   <Popover>
                     <PopoverTrigger asChild>
                       <button className="text-muted-foreground/60 hover:text-primary transition-colors">
