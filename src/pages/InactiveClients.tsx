@@ -48,7 +48,7 @@ const InactiveClients = () => {
 
   const isPaidPlan = plan === "starter" || plan === "professional";
   const campaignLimit = isPaidPlan ? (plan === "professional" ? 999 : 1) : 0;
-  const canSendCampaign = isEssential && campaignsThisMonth < campaignLimit;
+  const canSendCampaign = isPaidPlan && campaignsThisMonth < campaignLimit;
 
   // Check campaigns used this month
   useEffect(() => {
