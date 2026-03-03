@@ -41,7 +41,9 @@ import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOnboardingStatus, OnboardingProvider } from "@/hooks/useOnboardingStatus";
 import { useTrialStatus } from "@/hooks/useTrialStatus";
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1 } },
+});
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, isRecovery } = useAuth();
