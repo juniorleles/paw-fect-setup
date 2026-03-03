@@ -219,7 +219,7 @@ const MyAccount = () => {
   const trialAptsLimit = (sub as any)?.trial_appointments_limit ?? 30;
   const trialMsgsUsed = (sub as any)?.trial_messages_used ?? 0;
   const trialMsgsLimit = (sub as any)?.trial_messages_limit ?? 150;
-  const trialAptsPercent = trialAptsLimit > 0 ? (trialAptsUsed / trialAptsLimit) * 100 : 0;
+  const trialAptsPercent = trialAptsLimit > 0 ? (trialAptsUsed / trialAptsLimit) * 100 : (trialAptsLimit === -1 ? 0 : 0);
   const trialMsgsPercent = trialMsgsLimit > 0 ? (trialMsgsUsed / trialMsgsLimit) * 100 : 0;
   const trialQuotaExhausted = (trialAptsLimit !== -1 && trialAptsUsed >= trialAptsLimit) || trialMsgsUsed >= trialMsgsLimit;
   const maxTrialPercent = Math.max(trialAptsPercent, trialMsgsPercent);
