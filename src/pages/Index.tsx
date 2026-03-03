@@ -9,23 +9,25 @@ import StepPersonalization from "@/components/onboarding/StepPersonalization";
 import StepSimulator from "@/components/onboarding/StepSimulator";
 import SuccessScreen from "@/components/onboarding/SuccessScreen";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
-import { ArrowLeft, ArrowRight, Zap, Briefcase, LogOut, Loader2, Copy, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Zap, Briefcase, LogOut, Loader2, Copy, Check, CreditCard } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { STRIPE_PLANS, type StripePlanKey } from "@/config/stripe";
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const { plan: subscriptionPlan, refetch: refetchSubscription } = useSubscription();
+  const { plan: subscriptionPlan, status: subStatus, refetch: refetchSubscription } = useSubscription();
   const { refetch: refetchOnboarding } = useOnboardingStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const initialStep = (location.state as any)?.step ?? 1;
   const [step, setStep] = useState(initialStep);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
@@ -33,10 +35,29 @@ const Index = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activated, setActivated] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   
   const isMobile = useIsMobile();
   const [configId, setConfigId] = useState<string | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
+
+  // Determine the chosen plan (from localStorage, set during signup)
+  const chosenPlan = localStorage.getItem("chosen_plan") || "free";
+  const isPaidPlan = chosenPlan === "starter" || chosenPlan === "professional";
+  // If user already has an active paid subscription, skip paywall
+  const hasPaidSubscription = subStatus === "active" && (subscriptionPlan === "starter" || subscriptionPlan === "professional");
+  const needsPayment = isPaidPlan && !hasPaidSubscription;
+
+  // Handle checkout success return
+  useEffect(() => {
+    const checkoutResult = searchParams.get("checkout");
+    if (checkoutResult === "success" && step === 6) {
+      // User just returned from successful Stripe checkout
+      localStorage.removeItem("chosen_plan");
+      refetchSubscription();
+      toast({ title: "Pagamento confirmado!", description: "Agora você pode ativar sua secretária." });
+    }
+  }, [searchParams]);
 
   // Load existing config
   useEffect(() => {
@@ -144,6 +165,35 @@ const Index = () => {
 
   const goBack = () => step > 1 && setStep(step - 1);
 
+  const handleCheckout = async () => {
+    if (!acceptedTerms) {
+      toast({
+        title: "Termos obrigatórios",
+        description: "Você precisa aceitar os Termos de Uso e a Política de Privacidade para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setCheckoutLoading(true);
+    await saveConfig(data); // Save config before redirecting
+    try {
+      const { data: result, error } = await supabase.functions.invoke("create-checkout", {
+        body: { planKey: chosenPlan },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      if (result?.url) {
+        // Redirect to Stripe Checkout - set success URL to return to onboarding
+        window.location.href = result.url;
+      }
+    } catch (e: any) {
+      console.error("Checkout error:", e);
+      toast({ title: "Erro", description: "Não foi possível iniciar o pagamento. Tente novamente.", variant: "destructive" });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
   const handleActivate = async () => {
     if (!validate()) return;
     if (!acceptedTerms) {
@@ -159,10 +209,9 @@ const Index = () => {
 
     // Activate subscription and create per-user Evolution instance
     if (user) {
-      // Check if we have a valid session (email might not be confirmed yet)
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.access_token) {
-        console.warn("No valid session - skipping activate-subscription call. User may need to confirm email.");
+        console.warn("No valid session - skipping activate-subscription call.");
         await Promise.all([refetchOnboarding(), refetchSubscription()]);
         setActivated(true);
         toast({ title: "Secretária configurada!", description: "Confirme seu e-mail para ativar completamente." });
@@ -197,6 +246,7 @@ const Index = () => {
       }
     }
 
+    localStorage.removeItem("chosen_plan");
     await Promise.all([refetchOnboarding(), refetchSubscription()]);
     setActivated(true);
     toast({ title: "Secretária ativada!", description: "Sua instância WhatsApp foi criada com sucesso." });
@@ -272,6 +322,19 @@ const Index = () => {
           {step < 6 ? (
             <Button onClick={goNext} className="h-12 px-8 font-bold">
               Próximo <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : needsPayment ? (
+            <Button
+              onClick={handleCheckout}
+              disabled={checkoutLoading}
+              className="h-12 px-8 font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+              size="lg"
+            >
+              {checkoutLoading ? (
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Redirecionando...</>
+              ) : (
+                <><CreditCard className="w-5 h-5 mr-2" /> ASSINAR E ATIVAR — R${STRIPE_PLANS[chosenPlan as StripePlanKey]?.price}/mês</>
+              )}
             </Button>
           ) : (
             <Button
