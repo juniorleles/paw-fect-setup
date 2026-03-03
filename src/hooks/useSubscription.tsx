@@ -57,8 +57,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     setPlan(data?.plan ?? "starter");
     setTrialAppointmentsUsed((data as any)?.trial_appointments_used ?? 0);
     setTrialMessagesUsed((data as any)?.trial_messages_used ?? 0);
-    setTrialAppointmentsLimit((data as any)?.trial_appointments_limit ?? 50);
-    setTrialMessagesLimit((data as any)?.trial_messages_limit ?? 250);
+    setTrialAppointmentsLimit((data as any)?.trial_appointments_limit ?? 30);
+    setTrialMessagesLimit((data as any)?.trial_messages_limit ?? 150);
     setLoading(false);
   }, [userId]);
 

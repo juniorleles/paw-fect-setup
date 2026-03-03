@@ -216,9 +216,9 @@ const MyAccount = () => {
 
   // Quota-based trial data
   const trialAptsUsed = (sub as any)?.trial_appointments_used ?? 0;
-  const trialAptsLimit = (sub as any)?.trial_appointments_limit ?? 50;
+  const trialAptsLimit = (sub as any)?.trial_appointments_limit ?? 30;
   const trialMsgsUsed = (sub as any)?.trial_messages_used ?? 0;
-  const trialMsgsLimit = (sub as any)?.trial_messages_limit ?? 250;
+  const trialMsgsLimit = (sub as any)?.trial_messages_limit ?? 150;
   const trialAptsPercent = trialAptsLimit > 0 ? (trialAptsUsed / trialAptsLimit) * 100 : 0;
   const trialMsgsPercent = trialMsgsLimit > 0 ? (trialMsgsUsed / trialMsgsLimit) * 100 : 0;
   const trialQuotaExhausted = trialAptsUsed >= trialAptsLimit || trialMsgsUsed >= trialMsgsLimit;
@@ -472,7 +472,7 @@ const MyAccount = () => {
               </div>
               <p className="text-xs text-primary font-medium mb-3">Trial gratuito por cotas</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
-                {["1 número WhatsApp", "1 atendente por horário", "Até 250 msgs/mês", "Até 50 agendamentos", "Respostas automáticas", "Horário de atendimento", "Suporte padrão"].map((f) => (
+                {["1 número WhatsApp", "1 atendente por horário", "Até 150 msgs/mês", "Até 30 agendamentos", "Respostas automáticas", "Horário de atendimento", "Suporte padrão"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
