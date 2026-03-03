@@ -48,14 +48,21 @@ const Index = () => {
   const hasPaidSubscription = subStatus === "active" && (subscriptionPlan === "starter" || subscriptionPlan === "professional");
   const needsPayment = isPaidPlan && !hasPaidSubscription;
 
-  // Handle checkout success return
+  // Handle checkout success return (via URL param OR localStorage fallback after re-login)
   useEffect(() => {
     const checkoutResult = searchParams.get("checkout");
-    if (checkoutResult !== "success") return;
+    const checkoutPending = localStorage.getItem("checkout_pending");
+
+    if (checkoutResult !== "success" && !checkoutPending) return;
+
+    // Clear all checkout state
+    localStorage.removeItem("checkout_pending");
+    localStorage.removeItem("chosen_plan");
+    if (checkoutResult) {
+      window.history.replaceState({}, "", location.pathname);
+    }
 
     setStep(6);
-    localStorage.removeItem("chosen_plan");
-    window.history.replaceState({}, "", location.pathname);
 
     void refetchSubscription()
       .then(() => {
