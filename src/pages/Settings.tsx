@@ -91,7 +91,8 @@ const Settings = () => {
           dataToSave.maxConcurrentAppointments,
           subscriptionPlan === "professional" ? STRIPE_PLANS.professional.maxAttendants : STRIPE_PLANS.starter.maxAttendants
         ),
-      })
+        campaign_messages: campaignMessages as any,
+      } as any)
       .eq("id", configId);
     setSaving(false);
     if (error) {
