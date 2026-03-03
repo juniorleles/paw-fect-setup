@@ -176,6 +176,17 @@ const Index = () => {
 
   const goBack = () => step > 1 && setStep(step - 1);
 
+  const redirectToExternalUrl = useCallback((url: string) => {
+    const inIframe = window.self !== window.top;
+
+    if (inIframe) {
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (opened) return;
+    }
+
+    window.location.href = url;
+  }, []);
+
   const handleCheckout = async () => {
     if (!acceptedTerms) {
       toast({
@@ -194,8 +205,7 @@ const Index = () => {
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
       if (result?.url) {
-        // Redirect to Stripe Checkout - set success URL to return to onboarding
-        window.location.href = result.url;
+        redirectToExternalUrl(result.url);
       }
     } catch (e: any) {
       console.error("Checkout error:", e);
