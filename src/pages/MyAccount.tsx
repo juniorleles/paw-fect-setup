@@ -202,11 +202,11 @@ const MyAccount = () => {
 
         if (!isMounted) return;
 
-        const { data, error: refreshedSubError } = await supabase
-          .from("subscriptions")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
+          const { data, error: refreshedSubError } = await supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
 
         if (!refreshedSubError && data) {
           setSub(data as unknown as SubscriptionData);
