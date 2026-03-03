@@ -89,6 +89,11 @@ serve(async (req) => {
     logStep("Trial check", { alreadyUsedTrial, status: subData?.status, hasTrialEnd: !!subData?.trial_end_at });
 
     const origin = req.headers.get("origin") || "https://paw-fect-setup.lovable.app";
+    
+    // Determine redirect URLs - if user is in onboarding flow, return to onboarding
+    const returnTo = req.headers.get("referer")?.includes("/onboarding") ? "/onboarding" : "/my-account";
+    const successUrl = `${origin}${returnTo}?checkout=success`;
+    const cancelUrl = `${origin}${returnTo}?checkout=cancelled`;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -96,8 +101,8 @@ serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       payment_method_types: ["card", "boleto"],
-      success_url: `${origin}/my-account?checkout=success`,
-      cancel_url: `${origin}/my-account?checkout=cancelled`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       subscription_data: {
         metadata: { user_id: user.id },
       },
