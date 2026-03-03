@@ -271,12 +271,14 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        const customUpsell = (config as any).campaign_messages?.upsell as string | undefined;
         const message = buildUpsellMessage(
           apt.owner_name,
           apt.service,
-          suggestions.slice(0, 3), // Max 3 suggestions
+          suggestions.slice(0, 3),
           config.shop_name,
-          config.niche
+          config.niche,
+          customUpsell
         );
 
         try {
