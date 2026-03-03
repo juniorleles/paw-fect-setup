@@ -947,7 +947,7 @@ async function handleNoShowRecoveryResponse(
     .from("appointments")
     .insert({
       user_id: shopConfig.user_id,
-      pet_name: isPetNiche ? recoveryAppt.pet_name : "—",
+      pet_name: recoveryAppt.pet_name || "—",
       owner_name: recoveryAppt.owner_name,
       owner_phone: cleanPhone,
       service: recoveryAppt.service,
