@@ -3,7 +3,7 @@
 
 export const STRIPE_PLANS = {
   starter: {
-    name: "Starter (Plano Fundador)",
+    name: "Starter",
     price_id_live: "price_1T4S0JE3YGO6w5oCBXFikz8v",
     price_id_test: "price_1T4UnTE3YGO6w5oCkeqZ4Fbb",
     product_id_live: "prod_U2X4v8ah9uiCN0",
