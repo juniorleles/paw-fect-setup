@@ -56,6 +56,11 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
+  const selectedPlanKey = searchParams.get("plan") || "";
+  const selectedPlan = PLAN_DISPLAY[selectedPlanKey];
+  const planPrice = selectedPlanKey && selectedPlanKey !== "free" && STRIPE_PLANS[selectedPlanKey as StripePlanKey]
+    ? `R$${STRIPE_PLANS[selectedPlanKey as StripePlanKey].price}/mês`
+    : selectedPlanKey === "free" ? "Grátis" : null;
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
