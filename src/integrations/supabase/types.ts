@@ -212,6 +212,36 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_contacts: {
+        Row: {
+          campaign_month: string
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          message: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_month: string
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          id?: string
+          message?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_month?: string
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          message?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           created_at: string
