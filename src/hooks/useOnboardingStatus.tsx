@@ -15,42 +15,29 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   const userId = user?.id;
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const fetchedForUser = useRef<string | null>(null);
-
-  // Reset loading when userId changes so we don't flash stale completed=false
-  useEffect(() => {
-    if (userId && fetchedForUser.current !== userId) {
-      setLoading(true);
-      setCompleted(false);
-    }
-  }, [userId]);
 
   const fetchStatus = useCallback(async () => {
     if (!userId) {
+      setCompleted(false);
       setLoading(false);
       return;
     }
 
-    if (fetchedForUser.current === userId) {
-      setLoading(false);
-      return;
-    }
-
-    fetchedForUser.current = userId;
     setLoading(true);
 
     try {
       const { data, error } = await supabase
         .from("pet_shop_configs")
-        .select("activated")
+        .select("activated, updated_at")
         .eq("user_id", userId)
-        .maybeSingle();
+        .order("updated_at", { ascending: false })
+        .limit(1);
 
       if (error) {
         throw error;
       }
 
-      setCompleted(data?.activated === true);
+      setCompleted(data?.[0]?.activated === true);
     } catch (error) {
       console.error("fetch onboarding status failed:", error);
       setCompleted(false);
@@ -64,7 +51,6 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchStatus]);
 
   const refetch = useCallback(async () => {
-    fetchedForUser.current = null;
     await fetchStatus();
   }, [fetchStatus]);
 

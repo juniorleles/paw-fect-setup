@@ -124,7 +124,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refetch = useCallback(async () => {
-    fetchedForUser.current = null;
     await fetchSubscription();
   }, [fetchSubscription]);
 
