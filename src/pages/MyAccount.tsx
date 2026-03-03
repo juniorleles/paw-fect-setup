@@ -158,6 +158,19 @@ const MyAccount = () => {
     }
   }, [searchParams, toast]);
 
+  const redirectToExternalUrl = (url: string) => {
+    // In Lovable preview (iframe), Stripe may not render correctly in-frame.
+    // Open in a new tab there; keep same-tab redirect in production.
+    const inIframe = window.self !== window.top;
+
+    if (inIframe) {
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (opened) return;
+    }
+
+    window.location.href = url;
+  };
+
   const handleCheckout = async (planKey: StripePlanKey) => {
     setCheckoutLoading(planKey);
     try {
@@ -171,7 +184,7 @@ const MyAccount = () => {
         return;
       }
       if (data?.url) {
-        window.location.href = data.url;
+        redirectToExternalUrl(data.url);
         return;
       }
       console.error("create-checkout no URL:", data);
@@ -194,7 +207,7 @@ const MyAccount = () => {
         return;
       }
       if (data?.url) {
-        window.location.href = data.url;
+        redirectToExternalUrl(data.url);
       } else {
         throw new Error("No portal URL returned");
       }
