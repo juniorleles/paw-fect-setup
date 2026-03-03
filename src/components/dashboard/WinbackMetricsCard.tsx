@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Send, UserCheck, Clock, CalendarClock, Crown, Info } from "lucide-react";
+import { Send, UserCheck, Clock, CalendarClock, Crown, Info, Gift } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,7 @@ const WinbackMetricsCard = () => {
     WINBACK_60: { sent: 0, label: "60 dias", emoji: "💎" },
   });
   const [returnedCount, setReturnedCount] = useState(0);
+  const [upsellCount, setUpsellCount] = useState(0);
   const [nextClients, setNextClients] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -39,22 +40,26 @@ const WinbackMetricsCard = () => {
     }
 
     const fetchStats = async () => {
-      // 1. Fetch winback campaign logs for this month
+      // 1. Fetch winback + upsell campaign logs for this month
       const { data: logs } = await supabase
         .from("inactive_campaign_logs")
         .select("campaign_type, customer_phone")
         .eq("user_id", user.id)
         .eq("campaign_month", currentMonth)
-        .in("campaign_type", ["WINBACK_15", "WINBACK_30", "WINBACK_60"]);
+        .in("campaign_type", ["WINBACK_15", "WINBACK_30", "WINBACK_60", "POST_SERVICE_UPSELL"]);
 
       if (logs) {
         const stageMap = { ...stages };
+        let upsellTotal = 0;
         for (const log of logs) {
-          if (stageMap[log.campaign_type]) {
+          if (log.campaign_type === "POST_SERVICE_UPSELL") {
+            upsellTotal++;
+          } else if (stageMap[log.campaign_type]) {
             stageMap[log.campaign_type].sent++;
           }
         }
         setStages(stageMap);
+        setUpsellCount(upsellTotal);
 
         // 2. Check how many of those clients returned (have a completed appointment after campaign)
         const phones = [...new Set(logs.map((l) => l.customer_phone))];
@@ -119,22 +124,22 @@ const WinbackMetricsCard = () => {
   if (plan !== "professional" || loading) return null;
 
   const totalSent = stages.WINBACK_15.sent + stages.WINBACK_30.sent + stages.WINBACK_60.sent;
+  const totalAll = totalSent + upsellCount;
 
   // Don't show if no data and no eligible clients
-  if (totalSent === 0 && nextClients === 0) return null;
+  if (totalAll === 0 && nextClients === 0) return null;
 
   const returnRate = totalSent > 0 ? (returnedCount / totalSent) * 100 : 0;
-  const uniqueSent = totalSent; // already counted per stage
 
   return (
     <section>
       <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
         <Crown className="w-4 h-4 text-primary" />
-        Campanha Win-back
+        Campanhas Automáticas
         <Badge variant="secondary" className="text-[10px] font-bold uppercase">Pro</Badge>
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Total sent */}
         <Card className="border-none shadow-md bg-card">
           <CardContent className="pt-4 pb-3">
@@ -143,9 +148,9 @@ const WinbackMetricsCard = () => {
                 <Send className="w-5 h-5 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-2xl font-bold">{totalSent}</p>
+                <p className="text-2xl font-bold">{totalAll}</p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  Enviados no mês
+                  Total enviados
                   <Popover>
                     <PopoverTrigger asChild>
                       <button className="text-muted-foreground/60 hover:text-primary transition-colors">
@@ -154,10 +159,9 @@ const WinbackMetricsCard = () => {
                     </PopoverTrigger>
                     <PopoverContent side="top" className="text-xs max-w-[250px] p-3">
                       <div className="space-y-1">
-                        <p className="font-semibold mb-1">Mensagens por estágio:</p>
-                        <p>{stages.WINBACK_15.emoji} 15 dias: {stages.WINBACK_15.sent}</p>
-                        <p>{stages.WINBACK_30.emoji} 30 dias: {stages.WINBACK_30.sent}</p>
-                        <p>{stages.WINBACK_60.emoji} 60 dias: {stages.WINBACK_60.sent}</p>
+                        <p className="font-semibold mb-1">Detalhamento:</p>
+                        <p>🔄 Win-back: {totalSent}</p>
+                        <p>🎁 Pós-atendimento: {upsellCount}</p>
                       </div>
                     </PopoverContent>
                   </Popover>
@@ -244,6 +248,33 @@ const WinbackMetricsCard = () => {
                     </PopoverTrigger>
                     <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
                       Clientes inativos há 15+ dias que receberão mensagem automática no próximo ciclo (diário às 10h).
+                    </PopoverContent>
+                  </Popover>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Upsell */}
+        <Card className="border-none shadow-md bg-card">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                <Gift className="w-5 h-5 text-accent" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl font-bold">{upsellCount}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  Pós-atendimento
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="text-muted-foreground/60 hover:text-primary transition-colors">
+                        <Info className="w-3.5 h-3.5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="text-xs max-w-[220px] p-3">
+                      Mensagens de upsell enviadas 24h após atendimentos concluídos, sugerindo serviços complementares.
                     </PopoverContent>
                   </Popover>
                 </p>
