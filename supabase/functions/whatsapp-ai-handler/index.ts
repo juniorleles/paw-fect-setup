@@ -935,8 +935,8 @@ async function handleNoShowRecoveryResponse(
     return null;
   }
 
-  if (slotIndex >= recoverySlots.length) {
-    return `Desculpe, opção ${trimmed} não está disponível. Por favor, escolha entre 1 e ${recoverySlots.length}, ou me diga outro horário que funcione pra você! 😊`;
+  if (numValue <= 0 || slotIndex >= recoverySlots.length) {
+    return `Desculpe, opção ${trimmed} não é válida. Por favor, escolha entre 1 e ${recoverySlots.length}, ou me diga outro horário que funcione pra você! 😊`;
   }
 
   const chosenSlot = recoverySlots[slotIndex];
