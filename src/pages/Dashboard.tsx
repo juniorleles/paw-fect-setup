@@ -460,6 +460,9 @@ const Dashboard = () => {
       {/* ─── No-Show Recovery ─── */}
       <NoShowMetricsCard />
 
+      {/* ─── Win-back Campaign (Pro only) ─── */}
+      <WinbackMetricsCard />
+
       {/* ─── Clientes Inativos ─── */}
       <InactiveClientsCard />
 
