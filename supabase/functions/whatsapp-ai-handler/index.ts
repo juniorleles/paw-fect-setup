@@ -1442,20 +1442,22 @@ Deno.serve(async (req) => {
     } else if (subscription.status === "cancelled") {
       blocked = true;
     } else if (subscription.status === "active") {
-      const trialEnd = subscription.trial_end_at ? new Date(subscription.trial_end_at) : null;
-      const hasPaidPeriod = subscription.current_period_end && trialEnd && new Date(subscription.current_period_end) > trialEnd;
+      // Check message quota (applies to ALL plans: trial and paid)
+      const msgsUsed = subscription.trial_messages_used ?? 0;
+      const msgsLimit = subscription.trial_messages_limit ?? 150;
 
-      if (!hasPaidPeriod) {
-        // Trial user — check quotas
-        const aptsUsed = subscription.trial_appointments_used ?? 0;
-        const msgsUsed = subscription.trial_messages_used ?? 0;
-        const aptsLimit = subscription.trial_appointments_limit ?? 30;
-        const msgsLimit = subscription.trial_messages_limit ?? 150;
+      if (msgsLimit > 0 && msgsUsed >= msgsLimit) {
+        blocked = true;
+        console.log(`[QUOTA-BLOCK] Messages exhausted for user ${shopConfig.user_id}: msgs=${msgsUsed}/${msgsLimit}`);
+      }
 
-        if (aptsUsed >= aptsLimit || msgsUsed >= msgsLimit) {
-          blocked = true;
-          console.log(`[TRIAL-BLOCK] Quota exhausted for user ${shopConfig.user_id}: apts=${aptsUsed}/${aptsLimit}, msgs=${msgsUsed}/${msgsLimit}`);
-        }
+      // Check appointment quota only if limit is NOT -1 (unlimited)
+      const aptsUsed = subscription.trial_appointments_used ?? 0;
+      const aptsLimit = subscription.trial_appointments_limit ?? 30;
+
+      if (aptsLimit !== -1 && aptsUsed >= aptsLimit) {
+        blocked = true;
+        console.log(`[QUOTA-BLOCK] Appointments exhausted for user ${shopConfig.user_id}: apts=${aptsUsed}/${aptsLimit}`);
       }
     }
 
@@ -1476,12 +1478,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Increment trial message counter (count received message) — atomic
-    const isTrialUser = subscription && !subscription.current_period_end || 
-      (subscription?.current_period_end && subscription?.trial_end_at && 
-       new Date(subscription.current_period_end) <= new Date(subscription.trial_end_at));
-    
-    if (isTrialUser && subscription) {
+    // Increment message counter for ALL active plans (trial and paid) — atomic
+    if (subscription && subscription.status === "active") {
       await serviceClient.rpc("increment_trial_messages", { p_user_id: shopConfig.user_id });
     }
 

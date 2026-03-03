@@ -204,26 +204,64 @@ function safeTimestamp(ts: number | null | undefined): string | null {
   try { return new Date(ts * 1000).toISOString(); } catch { return null; }
 }
 
+// Plan limits by plan key — -1 means unlimited
+const PLAN_LIMITS: Record<string, { messagesLimit: number; appointmentsLimit: number }> = {
+  starter: { messagesLimit: 150, appointmentsLimit: 30 },
+  professional: { messagesLimit: 800, appointmentsLimit: -1 },
+};
+
+function detectPlanFromSubscription(sub: Stripe.Subscription): string {
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  // Map known price IDs to plan keys
+  const priceMap: Record<string, string> = {
+    "price_1T4S0JE3YGO6w5oCBXFikz8v": "starter",
+    "price_1T4UnTE3YGO6w5oCkeqZ4Fbb": "starter",
+    "price_1T4S1KE3YGO6w5oC23qcdMl3": "professional",
+    "price_1T4UniE3YGO6w5oCiWyqqrfG": "professional",
+  };
+  return priceMap[priceId || ""] || "starter";
+}
+
 async function upsertSubscription(supabase: any, userId: string, sub: Stripe.Subscription) {
   const status = sub.status === "active" || sub.status === "trialing" ? "active" : sub.status;
+  const plan = detectPlanFromSubscription(sub);
+  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.starter;
 
-  const payload = {
+  const payload: Record<string, any> = {
     status,
+    plan,
     current_period_start: safeTimestamp(sub.current_period_start),
     current_period_end: safeTimestamp(sub.current_period_end),
     trial_start_at: safeTimestamp(sub.trial_start),
     trial_end_at: safeTimestamp(sub.trial_end),
     cancel_at_period_end: sub.cancel_at_period_end,
     last_payment_status: sub.status === "active" ? "paid" : null,
+    // Set plan-specific limits
+    trial_messages_limit: limits.messagesLimit,
+    trial_appointments_limit: limits.appointmentsLimit,
   };
 
   const { data: existing } = await supabase
     .from("subscriptions")
-    .select("id")
+    .select("id, trial_messages_used, trial_appointments_used")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (existing) {
+    // On plan upgrade, reset usage counters and reset_at
+    const { data: oldSub } = await supabase
+      .from("subscriptions")
+      .select("plan")
+      .eq("id", existing.id)
+      .single();
+
+    if (oldSub && oldSub.plan !== plan) {
+      payload.trial_messages_used = 0;
+      payload.trial_appointments_used = 0;
+      payload.usage_reset_at = new Date().toISOString();
+      logStep("Plan changed, resetting counters", { from: oldSub.plan, to: plan });
+    }
+
     await supabase.from("subscriptions").update(payload).eq("id", existing.id);
   } else {
     await supabase.from("subscriptions").insert({ user_id: userId, ...payload });
@@ -233,6 +271,6 @@ async function upsertSubscription(supabase: any, userId: string, sub: Stripe.Sub
   await supabase.from("subscription_logs").insert({
     user_id: userId,
     action: `webhook_${sub.status}`,
-    details: { subscription_id: sub.id, cancel_at_period_end: sub.cancel_at_period_end },
+    details: { subscription_id: sub.id, plan, cancel_at_period_end: sub.cancel_at_period_end },
   });
 }

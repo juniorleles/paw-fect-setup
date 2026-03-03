@@ -219,9 +219,9 @@ const MyAccount = () => {
   const trialAptsLimit = (sub as any)?.trial_appointments_limit ?? 30;
   const trialMsgsUsed = (sub as any)?.trial_messages_used ?? 0;
   const trialMsgsLimit = (sub as any)?.trial_messages_limit ?? 150;
-  const trialAptsPercent = trialAptsLimit > 0 ? (trialAptsUsed / trialAptsLimit) * 100 : 0;
+  const trialAptsPercent = trialAptsLimit > 0 ? (trialAptsUsed / trialAptsLimit) * 100 : (trialAptsLimit === -1 ? 0 : 0);
   const trialMsgsPercent = trialMsgsLimit > 0 ? (trialMsgsUsed / trialMsgsLimit) * 100 : 0;
-  const trialQuotaExhausted = trialAptsUsed >= trialAptsLimit || trialMsgsUsed >= trialMsgsLimit;
+  const trialQuotaExhausted = (trialAptsLimit !== -1 && trialAptsUsed >= trialAptsLimit) || trialMsgsUsed >= trialMsgsLimit;
   const maxTrialPercent = Math.max(trialAptsPercent, trialMsgsPercent);
 
   const currentPlan = (sub?.plan as keyof typeof PLANS) ?? "starter";
@@ -279,7 +279,7 @@ const MyAccount = () => {
     ? "bg-success/10 text-success border-success/20"
     : "bg-destructive/10 text-destructive border-destructive/20";
 
-  const aptsAvailable = Math.max(0, trialAptsLimit - trialAptsUsed);
+  const aptsAvailable = trialAptsLimit === -1 ? -1 : Math.max(0, trialAptsLimit - trialAptsUsed);
   const msgsAvailable = Math.max(0, trialMsgsLimit - trialMsgsUsed);
 
   return (
@@ -379,11 +379,20 @@ const MyAccount = () => {
                     <CalendarCheck className="w-4 h-4 text-primary" />
                     <span className="text-sm font-semibold text-foreground">Clientes agendados pela IA</span>
                   </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{aptsAvailable} agendamentos disponíveis</span>
-                    <span className="font-bold text-foreground">{trialAptsUsed}/{trialAptsLimit}</span>
-                  </div>
-                  <Progress value={Math.min(trialAptsPercent, 100)} className={`h-2.5 ${trialAptsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
+                  {trialAptsLimit === -1 ? (
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span className="text-success font-semibold">Ilimitados</span>
+                      <span className="font-bold text-foreground">{trialAptsUsed} agendamentos</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{aptsAvailable} agendamentos disponíveis</span>
+                        <span className="font-bold text-foreground">{trialAptsUsed}/{trialAptsLimit}</span>
+                      </div>
+                      <Progress value={Math.min(trialAptsPercent, 100)} className={`h-2.5 ${trialAptsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
+                    </>
+                  )}
                 </div>
 
                 {/* Messages progress */}
@@ -506,7 +515,7 @@ const MyAccount = () => {
               </div>
               <p className="text-xs text-primary font-medium mb-3">Trial gratuito por cotas</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
-                {["Tudo do Starter +", "Até 5 atendentes simultâneos", "Até 1.500 msgs/mês", "Até 200 agendamentos", "IA personalizada", "Fluxos customizados", "Suporte prioritário"].map((f) => (
+                {["Tudo do Starter +", "Até 5 atendentes simultâneos", "Até 800 msgs/mês", "Agendamentos ilimitados", "IA personalizada", "Fluxos customizados", "Suporte prioritário"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>

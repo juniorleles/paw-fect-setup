@@ -465,14 +465,23 @@ const Dashboard = () => {
                 <CalendarDays className="w-4 h-4 text-primary" />
                 <span className="text-sm font-semibold text-foreground">Clientes agendados pela IA</span>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{Math.max(0, trialAppointmentsLimit - trialAppointmentsUsed)} agendamentos disponíveis</span>
-                <span className="font-bold text-foreground">{trialAppointmentsUsed}/{trialAppointmentsLimit}</span>
-              </div>
-              <Progress
-                value={Math.min(trialAppointmentsLimit > 0 ? (trialAppointmentsUsed / trialAppointmentsLimit) * 100 : 0, 100)}
-                className={`h-2.5 ${(trialAppointmentsUsed / trialAppointmentsLimit) * 100 >= 80 ? "[&>div]:bg-accent" : ""}`}
-              />
+              {trialAppointmentsLimit === -1 ? (
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="text-success font-semibold">Ilimitados</span>
+                  <span className="font-bold text-foreground">{trialAppointmentsUsed} agendamentos</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{Math.max(0, trialAppointmentsLimit - trialAppointmentsUsed)} agendamentos disponíveis</span>
+                    <span className="font-bold text-foreground">{trialAppointmentsUsed}/{trialAppointmentsLimit}</span>
+                  </div>
+                  <Progress
+                    value={Math.min(trialAppointmentsLimit > 0 ? (trialAppointmentsUsed / trialAppointmentsLimit) * 100 : 0, 100)}
+                    className={`h-2.5 ${(trialAppointmentsUsed / trialAppointmentsLimit) * 100 >= 80 ? "[&>div]:bg-accent" : ""}`}
+                  />
+                </>
+              )}
             </CardContent>
           </Card>
 

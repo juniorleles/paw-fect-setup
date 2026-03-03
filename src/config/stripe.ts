@@ -11,6 +11,9 @@ export const STRIPE_PLANS = {
     price: 67,
     limit: 1000,
     maxAttendants: 1,
+    // Trial/Free quotas
+    trialMessagesLimit: 150,
+    trialAppointmentsLimit: 30,
   },
   professional: {
     name: "Essencial",
@@ -21,7 +24,16 @@ export const STRIPE_PLANS = {
     price: 97,
     limit: 3000,
     maxAttendants: 5,
+    // Paid plan quotas: -1 = unlimited
+    trialMessagesLimit: 800,
+    trialAppointmentsLimit: -1,
   },
 } as const;
 
 export type StripePlanKey = keyof typeof STRIPE_PLANS;
+
+// Plan limits config for backend reference
+export const PLAN_LIMITS: Record<string, { messagesLimit: number; appointmentsLimit: number }> = {
+  starter: { messagesLimit: 150, appointmentsLimit: 30 },
+  professional: { messagesLimit: 800, appointmentsLimit: -1 }, // -1 = unlimited
+};
