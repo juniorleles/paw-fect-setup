@@ -110,10 +110,13 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          no_show_detected_at: string | null
           notes: string | null
           owner_name: string
           owner_phone: string
           pet_name: string
+          recovery_message_sent_at: string | null
+          recovery_status: string | null
           reminder_24h_sent: boolean
           reminder_3h_sent: boolean
           reminder_rescheduled: boolean
@@ -128,10 +131,13 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          no_show_detected_at?: string | null
           notes?: string | null
           owner_name: string
           owner_phone?: string
           pet_name: string
+          recovery_message_sent_at?: string | null
+          recovery_status?: string | null
           reminder_24h_sent?: boolean
           reminder_3h_sent?: boolean
           reminder_rescheduled?: boolean
@@ -146,10 +152,13 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          no_show_detected_at?: string | null
           notes?: string | null
           owner_name?: string
           owner_phone?: string
           pet_name?: string
+          recovery_message_sent_at?: string | null
+          recovery_status?: string | null
           reminder_24h_sent?: boolean
           reminder_3h_sent?: boolean
           reminder_rescheduled?: boolean
