@@ -230,7 +230,7 @@ const MyAccount = () => {
     return () => {
       isMounted = false;
     };
-  }, [user, syncSubscription, toast]);
+  }, [userId, syncSubscription, toast]);
 
   // Show success toast after checkout
   useEffect(() => {
