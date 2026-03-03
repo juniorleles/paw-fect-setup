@@ -51,8 +51,9 @@ const Index = () => {
   // Handle checkout success return
   useEffect(() => {
     const checkoutResult = searchParams.get("checkout");
-    if (checkoutResult === "success" && step === 6) {
-      // User just returned from successful Stripe checkout
+    if (checkoutResult === "success") {
+      // User just returned from successful Stripe checkout — jump to step 6
+      setStep(6);
       localStorage.removeItem("chosen_plan");
       refetchSubscription();
       toast({ title: "Pagamento confirmado!", description: "Agora você pode ativar sua secretária." });
