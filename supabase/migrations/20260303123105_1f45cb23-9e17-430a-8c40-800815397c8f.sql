@@ -1,0 +1,1 @@
+ALTER TABLE public.appointments ADD COLUMN reminder_rescheduled BOOLEAN NOT NULL DEFAULT false;

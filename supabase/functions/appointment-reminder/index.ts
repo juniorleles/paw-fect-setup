@@ -15,6 +15,14 @@ interface PetShopConfig {
   whatsapp_status: string;
 }
 
+// ─── Quiet Hours: 22:00–08:00 BRT ───
+// If a reminder would fire during quiet hours, reschedule to 09:00 BRT same day.
+// Returns true if current BRT time is within the allowed sending window OR
+// if we're at 09:00 and there are rescheduled reminders to send.
+function isQuietHours(brHour: number): boolean {
+  return brHour >= 22 || brHour < 8;
+}
+
 function buildReminder24hMessage(config: PetShopConfig, appt: any): string {
   const name = config.assistant_name || "Secretária";
   const clientName = appt.owner_name || "";
@@ -100,6 +108,25 @@ async function queryAppointmentsInWindow(
   };
 }
 
+// Query appointments whose reminders were rescheduled to 09:00 (quiet hours)
+// These are appointments that fell in the quiet window and need sending now.
+async function queryRescheduledReminders(
+  client: any,
+  sentField: string,
+  reminderType: "24h" | "3h"
+) {
+  // Find appointments where reminder_rescheduled=true and the sent flag is still false
+  // and the appointment hasn't been cancelled
+  const { data, error } = await client
+    .from("appointments")
+    .select("*")
+    .eq("reminder_rescheduled", true)
+    .eq(sentField, false)
+    .in("status", ["pending", "confirmed"]);
+
+  return { data: data || [], error };
+}
+
 async function sendMessage(
   evolutionUrl: string,
   evolutionKey: string,
@@ -152,9 +179,18 @@ Deno.serve(async (req) => {
       minute: "2-digit",
       hour12: false,
     });
+    const brHourFormatter = new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      hour12: false,
+    });
 
     const nowTimeBR = brTimeFormatter.format(now);
-    console.log(`Reminder check: ${brFormatter.format(now)} ${nowTimeBR}`);
+    const currentBRHour = parseInt(brHourFormatter.format(now), 10);
+    const currentBRMinute = parseInt(nowTimeBR.split(":")[1], 10);
+    const inQuietHours = isQuietHours(currentBRHour);
+
+    console.log(`Reminder check: ${brFormatter.format(now)} ${nowTimeBR} | Quiet hours: ${inQuietHours}`);
 
     const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
     const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
@@ -168,6 +204,7 @@ Deno.serve(async (req) => {
 
     let sent24h = 0;
     let sent3h = 0;
+    let rescheduled = 0;
     const errors: string[] = [];
 
     // Cache configs and plans per user
@@ -197,96 +234,140 @@ Deno.serve(async (req) => {
       return plan;
     }
 
+    // Helper: process a reminder (send or reschedule based on quiet hours)
+    async function processReminder(
+      appt: any,
+      config: PetShopConfig,
+      message: string,
+      sentField: string,
+      type: "24h" | "3h"
+    ): Promise<"sent" | "rescheduled" | "error"> {
+      // Calculate what BRT hour the reminder would fire at (now)
+      if (inQuietHours) {
+        // Don't send – mark as rescheduled for 09:00 delivery
+        await serviceClient
+          .from("appointments")
+          .update({ reminder_rescheduled: true })
+          .eq("id", appt.id);
+        console.log(`${type} reminder for appt ${appt.id} rescheduled to 09:00 (quiet hours)`);
+        return "rescheduled";
+      }
+
+      try {
+        const ok = await sendMessage(
+          evolutionUrl!, evolutionKey!,
+          config.evolution_instance_name,
+          appt.owner_phone, message
+        );
+        if (ok) {
+          const updateData: Record<string, any> = { [sentField]: true };
+          if (type === "24h") {
+            updateData.confirmation_message_sent_at = new Date().toISOString();
+          }
+          // Reset rescheduled flag after successful send
+          updateData.reminder_rescheduled = false;
+          await serviceClient
+            .from("appointments")
+            .update(updateData)
+            .eq("id", appt.id);
+          console.log(`${type} reminder sent for appt ${appt.id}`);
+          return "sent";
+        }
+        return "error";
+      } catch (e) {
+        errors.push(`${type} appt ${appt.id}: ${String(e)}`);
+        return "error";
+      }
+    }
+
+    // ─── PROCESS RESCHEDULED REMINDERS (at 09:00 BRT window: 08:55–09:05) ───
+    const isRescheduleWindow = currentBRHour === 9 && currentBRMinute <= 5 ||
+                               currentBRHour === 8 && currentBRMinute >= 55;
+
+    if (isRescheduleWindow) {
+      console.log("Processing rescheduled reminders (09:00 window)");
+
+      // 24h rescheduled
+      const { data: rescheduled24h } = await queryRescheduledReminders(
+        serviceClient, "reminder_24h_sent", "24h"
+      );
+      for (const appt of rescheduled24h) {
+        const config = await getConfig(appt.user_id);
+        if (!config || config.whatsapp_status !== "connected" || !appt.owner_phone) continue;
+        const message = buildReminder24hMessage(config, appt);
+        const result = await processReminder(appt, config, message, "reminder_24h_sent", "24h");
+        if (result === "sent") sent24h++;
+      }
+
+      // 3h rescheduled (only paid plans)
+      const { data: rescheduled3h } = await queryRescheduledReminders(
+        serviceClient, "reminder_3h_sent", "3h"
+      );
+      for (const appt of rescheduled3h) {
+        const plan = await getPlan(appt.user_id);
+        if (plan === "starter") continue;
+        const config = await getConfig(appt.user_id);
+        if (!config || config.whatsapp_status !== "connected" || !appt.owner_phone) continue;
+        const message = buildReminder3hMessage(config, appt);
+        const result = await processReminder(appt, config, message, "reminder_3h_sent", "3h");
+        if (result === "sent") sent3h++;
+      }
+    }
+
     // ─── 24h REMINDERS (all plans) ───
     const { data: appts24h, error: err24h } = await queryAppointmentsInWindow(
       serviceClient, brFormatter, brTimeFormatter, now,
-      24 * 60, // 24h ahead
-      5,       // ±5 min window
-      "reminder_24h_sent"
+      24 * 60, 5, "reminder_24h_sent"
     );
 
     if (err24h) {
       console.error("Error fetching 24h appointments:", err24h);
     } else if (appts24h.length > 0) {
       console.log(`Found ${appts24h.length} appointments for 24h reminder`);
-
       for (const appt of appts24h) {
         const config = await getConfig(appt.user_id);
-        if (!config || config.whatsapp_status !== "connected") continue;
-        if (!appt.owner_phone) continue;
+        if (!config || config.whatsapp_status !== "connected" || !appt.owner_phone) continue;
 
         const message = buildReminder24hMessage(config, appt);
-        try {
-          const ok = await sendMessage(evolutionUrl, evolutionKey, config.evolution_instance_name, appt.owner_phone, message);
-          if (ok) {
-            await serviceClient
-              .from("appointments")
-              .update({
-                reminder_24h_sent: true,
-                confirmation_message_sent_at: new Date().toISOString(),
-              })
-              .eq("id", appt.id);
-            sent24h++;
-            console.log(`24h reminder sent for appt ${appt.id}`);
-          } else {
-            errors.push(`24h appt ${appt.id}: send failed`);
-          }
-        } catch (e) {
-          errors.push(`24h appt ${appt.id}: ${String(e)}`);
-        }
+        const result = await processReminder(appt, config, message, "reminder_24h_sent", "24h");
+        if (result === "sent") sent24h++;
+        if (result === "rescheduled") rescheduled++;
       }
     }
 
     // ─── 3h REMINDERS (Essencial & Pro only) ───
     const { data: appts3h, error: err3h } = await queryAppointmentsInWindow(
       serviceClient, brFormatter, brTimeFormatter, now,
-      3 * 60, // 3h ahead
-      5,      // ±5 min window
-      "reminder_3h_sent"
+      3 * 60, 5, "reminder_3h_sent"
     );
 
     if (err3h) {
       console.error("Error fetching 3h appointments:", err3h);
     } else if (appts3h.length > 0) {
       console.log(`Found ${appts3h.length} candidates for 3h reminder`);
-
       for (const appt of appts3h) {
-        // Check plan - Free (starter) does NOT get 3h reminder
         const plan = await getPlan(appt.user_id);
         if (plan === "starter") {
           console.log(`Skipping 3h reminder for appt ${appt.id} (Free plan)`);
           continue;
         }
-
         const config = await getConfig(appt.user_id);
-        if (!config || config.whatsapp_status !== "connected") continue;
-        if (!appt.owner_phone) continue;
+        if (!config || config.whatsapp_status !== "connected" || !appt.owner_phone) continue;
 
         const message = buildReminder3hMessage(config, appt);
-        try {
-          const ok = await sendMessage(evolutionUrl, evolutionKey, config.evolution_instance_name, appt.owner_phone, message);
-          if (ok) {
-            await serviceClient
-              .from("appointments")
-              .update({ reminder_3h_sent: true })
-              .eq("id", appt.id);
-            sent3h++;
-            console.log(`3h reminder sent for appt ${appt.id}`);
-          } else {
-            errors.push(`3h appt ${appt.id}: send failed`);
-          }
-        } catch (e) {
-          errors.push(`3h appt ${appt.id}: ${String(e)}`);
-        }
+        const result = await processReminder(appt, config, message, "reminder_3h_sent", "3h");
+        if (result === "sent") sent3h++;
+        if (result === "rescheduled") rescheduled++;
       }
     }
 
-    console.log(`Reminders done: 24h=${sent24h}, 3h=${sent3h}, errors=${errors.length}`);
+    console.log(`Reminders done: 24h=${sent24h}, 3h=${sent3h}, rescheduled=${rescheduled}, errors=${errors.length}`);
 
     return new Response(
       JSON.stringify({
         sent_24h: sent24h,
         sent_3h: sent3h,
+        rescheduled,
         errors: errors.length > 0 ? errors : undefined,
       }),
       {

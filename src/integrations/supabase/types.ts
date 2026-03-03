@@ -116,6 +116,7 @@ export type Database = {
           pet_name: string
           reminder_24h_sent: boolean
           reminder_3h_sent: boolean
+          reminder_rescheduled: boolean
           service: string
           status: string
           time: string
@@ -133,6 +134,7 @@ export type Database = {
           pet_name: string
           reminder_24h_sent?: boolean
           reminder_3h_sent?: boolean
+          reminder_rescheduled?: boolean
           service: string
           status?: string
           time: string
@@ -150,6 +152,7 @@ export type Database = {
           pet_name?: string
           reminder_24h_sent?: boolean
           reminder_3h_sent?: boolean
+          reminder_rescheduled?: boolean
           service?: string
           status?: string
           time?: string
