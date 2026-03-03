@@ -50,12 +50,16 @@ const WinbackMetricsCard = () => {
 
       if (logs) {
         const stageMap = { ...stages };
+        let upsellTotal = 0;
         for (const log of logs) {
-          if (stageMap[log.campaign_type]) {
+          if (log.campaign_type === "POST_SERVICE_UPSELL") {
+            upsellTotal++;
+          } else if (stageMap[log.campaign_type]) {
             stageMap[log.campaign_type].sent++;
           }
         }
         setStages(stageMap);
+        setUpsellCount(upsellTotal);
 
         // 2. Check how many of those clients returned (have a completed appointment after campaign)
         const phones = [...new Set(logs.map((l) => l.customer_phone))];
