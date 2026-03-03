@@ -525,14 +525,14 @@ const MyAccount = () => {
           </Card>
 
           {/* Essencial */}
-          <Card className={`border-2 transition-all relative overflow-hidden ${currentPlan === "professional" && !isCancelled ? "border-primary shadow-xl" : "border-primary/50 shadow-lg"} scale-[1.02]`}>
+          <Card className={`border-2 transition-all relative overflow-hidden ${(currentPlan === "starter" && isActive) ? "border-primary shadow-xl" : "border-primary/50 shadow-lg"} scale-[1.02]`}>
             <CardContent className="p-5 flex flex-col h-full">
               <Badge className="w-fit mb-2 bg-primary text-primary-foreground text-xs">
                 <Star className="w-3 h-3 mr-1 fill-current" /> Mais Escolhido
               </Badge>
               <h3 className="font-display font-bold text-lg">Essencial</h3>
               <div className="mb-1">
-                <span className="text-3xl font-bold">R$ {STRIPE_PLANS.professional.price}</span>
+                <span className="text-3xl font-bold">R$ {STRIPE_PLANS.starter.price}</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
               <p className="text-xs text-primary font-medium mb-3">Automação completa para seu negócio</p>
@@ -553,15 +553,15 @@ const MyAccount = () => {
                   </li>
                 ))}
               </ul>
-              {currentPlan === "professional" && isActive ? (
+              {currentPlan === "starter" && isActive ? (
                 <Button disabled className="w-full">Plano atual</Button>
               ) : (
                 <Button
                   className="w-full shadow-lg shadow-primary/20 font-bold"
-                  onClick={() => handleCheckout("professional")}
-                  disabled={checkoutLoading === "professional"}
+                  onClick={() => handleCheckout("starter")}
+                  disabled={checkoutLoading === "starter"}
                 >
-                  {checkoutLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
+                  {checkoutLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
                   Fazer upgrade
                 </Button>
               )}
@@ -569,13 +569,13 @@ const MyAccount = () => {
           </Card>
 
           {/* Pro */}
-          <Card className="border-2 border-primary/40 shadow-md hover:shadow-lg transition-all relative overflow-hidden">
+          <Card className={`border-2 transition-all relative overflow-hidden ${(currentPlan === "professional" && isActive) ? "border-primary shadow-xl" : "border-primary/40 shadow-md hover:shadow-lg"}`}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
             <CardContent className="p-5 flex flex-col h-full">
               <Badge className="w-fit mb-2 bg-primary/15 text-primary border-primary/30" variant="outline">🚀 Para Quem Quer Crescer</Badge>
               <h3 className="font-display font-bold text-lg">Pro</h3>
               <div className="mb-1">
-                <span className="text-3xl font-bold">R$ 127</span>
+                <span className="text-3xl font-bold">R$ {STRIPE_PLANS.professional.price}</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
               <p className="text-xs text-primary font-medium mb-3">Automação inteligente com campanhas</p>
@@ -599,16 +599,25 @@ const MyAccount = () => {
                   </li>
                 ))}
               </ul>
-              <Button className="w-full bg-primary/90 hover:bg-primary font-bold" disabled>
-                Em breve
-              </Button>
+              {currentPlan === "professional" && isActive ? (
+                <Button disabled className="w-full">Plano atual</Button>
+              ) : (
+                <Button
+                  className="w-full bg-primary/90 hover:bg-primary font-bold"
+                  onClick={() => handleCheckout("professional")}
+                  disabled={checkoutLoading === "professional"}
+                >
+                  {checkoutLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-1" />}
+                  Fazer upgrade
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
 
         <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
           * <strong>Atendente</strong> refere-se à quantidade de agendamentos simultâneos permitidos no mesmo horário. 
-          No Free, 1 agendamento por horário. No Essencial, até 5 ao mesmo tempo. A IA responde a todos os clientes sem limite.
+          No Free, 1 agendamento por horário. No Essencial, até 3 ao mesmo tempo. A IA responde a todos os clientes sem limite.
         </p>
       </div>
 
