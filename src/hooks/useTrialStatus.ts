@@ -114,7 +114,10 @@ export const useTrialStatus = (): TrialStatusInfo => {
       };
     }
 
-    const isExpiring = aptsPercent >= 80 || msgsPercent >= 80;
+    // Only consider expiring for quotas that have limits (not -1/unlimited)
+    const aptsExpiring = trialAppointmentsLimit !== -1 && aptsPercent >= 80;
+    const msgsExpiring = trialMessagesLimit > 0 && msgsPercent >= 80;
+    const isExpiring = aptsExpiring || msgsExpiring;
 
     return {
       ...base,
