@@ -49,6 +49,7 @@ const Index = () => {
   const needsPayment = isPaidPlan && !hasPaidSubscription;
 
   // Handle checkout success return (via URL param OR localStorage fallback after re-login)
+  // Auto-activate and redirect to dashboard
   useEffect(() => {
     const checkoutResult = searchParams.get("checkout");
     const checkoutPending = localStorage.getItem("checkout_pending");
@@ -62,20 +63,46 @@ const Index = () => {
       window.history.replaceState({}, "", location.pathname);
     }
 
-    setStep(6);
+    const autoActivate = async () => {
+      try {
+        // 1. Sync subscription status
+        await refetchSubscription();
 
-    void refetchSubscription()
-      .then(() => {
-        toast({ title: "Pagamento confirmado!", description: "Agora você pode ativar sua secretária." });
-      })
-      .catch((err) => {
-        console.error("Erro ao sincronizar assinatura após checkout:", err);
+        // 2. Save config as activated
+        await saveConfig(data, true);
+
+        // 3. Call activate-subscription to create Evolution instance
+        if (user) {
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          if (refreshData?.session?.access_token) {
+            const { error } = await supabase.functions.invoke("activate-subscription", {
+              method: "POST",
+            });
+            if (error) console.error("Activate subscription error:", error);
+          }
+        }
+
+        // 4. Refresh onboarding/subscription state
+        await Promise.all([refetchOnboarding(), refetchSubscription()]);
+
+        toast({ title: "Secretária ativada!", description: "Seu pagamento foi confirmado e sua secretária já está funcionando." });
+
+        // 5. Redirect to dashboard
+        navigate("/dashboard", { replace: true });
+      } catch (err) {
+        console.error("Auto-activate error:", err);
+        // Fallback: show step 6 for manual activation
+        setStep(6);
         toast({
           title: "Pagamento confirmado",
-          description: "Seu pagamento foi confirmado. Atualize a página se o plano ainda não aparecer.",
+          description: "Clique em 'Ativar Secretária' para finalizar.",
         });
-      });
-  }, [searchParams, location.pathname, refetchSubscription, toast]);
+      }
+    };
+
+    autoActivate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Load existing config
   useEffect(() => {
