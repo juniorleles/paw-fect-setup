@@ -206,6 +206,9 @@ const Index = () => {
     setCheckoutLoading(true);
     await saveConfig(data); // Save config before redirecting
     try {
+      // Persist checkout state so we can restore Step 6 after Stripe redirect + re-login
+      localStorage.setItem("checkout_pending", "true");
+
       const { data: result, error } = await supabase.functions.invoke("create-checkout", {
         body: { planKey: chosenPlan },
       });
@@ -215,6 +218,7 @@ const Index = () => {
         redirectToExternalUrl(result.url);
       }
     } catch (e: any) {
+      localStorage.removeItem("checkout_pending");
       console.error("Checkout error:", e);
       toast({ title: "Erro", description: "Não foi possível iniciar o pagamento. Tente novamente.", variant: "destructive" });
     } finally {
