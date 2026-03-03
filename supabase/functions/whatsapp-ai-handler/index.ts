@@ -1345,21 +1345,18 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         return `Desculpe, não consegui finalizar o agendamento agora. Pode tentar novamente? 😊`;
       }
 
-      // Increment trial appointment counter
+      // Increment trial appointment counter — atomic
       try {
         const { data: subData } = await serviceClient
           .from("subscriptions")
-          .select("trial_appointments_used, current_period_end, trial_end_at")
+          .select("current_period_end, trial_end_at")
           .eq("user_id", shopConfig.user_id)
           .maybeSingle();
         if (subData) {
           const hasPaid = subData.current_period_end && subData.trial_end_at && 
             new Date(subData.current_period_end) > new Date(subData.trial_end_at);
           if (!hasPaid) {
-            await serviceClient
-              .from("subscriptions")
-              .update({ trial_appointments_used: (subData.trial_appointments_used ?? 0) + 1 })
-              .eq("user_id", shopConfig.user_id);
+            await serviceClient.rpc("increment_trial_appointments", { p_user_id: shopConfig.user_id });
           }
         }
       } catch { /* ignore */ }
