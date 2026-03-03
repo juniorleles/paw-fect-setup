@@ -94,9 +94,12 @@ const MyAccount = () => {
   // Check subscription status from Stripe on load
   const syncSubscription = useCallback(async () => {
     if (!user) return;
-    // Ensure we have an active session before calling the edge function
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData?.session) return;
+    // Ensure we have a fresh active session before calling the edge function
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError || !refreshData?.session) {
+      console.warn("No active session for check-subscription, skipping sync");
+      return;
+    }
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription");
       if (error) console.error("check-subscription error:", error);
