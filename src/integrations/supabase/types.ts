@@ -115,6 +115,7 @@ export type Database = {
           owner_phone: string
           pet_name: string
           reminder_24h_sent: boolean
+          reminder_3h_sent: boolean
           service: string
           status: string
           time: string
@@ -131,6 +132,7 @@ export type Database = {
           owner_phone?: string
           pet_name: string
           reminder_24h_sent?: boolean
+          reminder_3h_sent?: boolean
           service: string
           status?: string
           time: string
@@ -147,6 +149,7 @@ export type Database = {
           owner_phone?: string
           pet_name?: string
           reminder_24h_sent?: boolean
+          reminder_3h_sent?: boolean
           service?: string
           status?: string
           time?: string
