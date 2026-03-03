@@ -24,6 +24,8 @@ const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
+  const [campaignMessages, setCampaignMessages] = useState<CampaignMessages>({});
+  const [niche, setNiche] = useState("petshop");
   const [configId, setConfigId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
