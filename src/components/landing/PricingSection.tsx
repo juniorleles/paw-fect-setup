@@ -39,35 +39,42 @@ const PricingSection = () => (
       </motion.div>
 
       <div className="grid sm:grid-cols-3 gap-6 items-stretch">
-        {/* Starter */}
+        {/* Free */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0 }}
-          whileHover={{ y: -6, transition: { duration: 0.2 } }}
+          whileHover={{ y: -4, transition: { duration: 0.2 } }}
         >
-          <Card className="h-full border-2 border-transparent shadow-md hover:shadow-xl transition-all">
+          <Card className="h-full border border-border/60 shadow-sm hover:shadow-md transition-all bg-muted/30">
             <CardContent className="p-6 flex flex-col h-full">
-              <Badge className="w-fit mb-3 bg-destructive text-destructive-foreground">🔥 Plano Fundador – Vagas Limitadas</Badge>
-              <h3 className="font-display font-bold text-xl mb-1">Starter</h3>
+              <Badge variant="secondary" className="w-fit mb-3 text-[11px]">🔥 Comece Grátis</Badge>
+              <h3 className="font-display font-bold text-xl mb-1">Free</h3>
               <div className="mb-1">
-                <span className="text-4xl font-bold">R$ 67</span>
+                <span className="text-4xl font-bold">R$ 0</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
-              <p className="text-xs text-primary font-medium mb-4">Trial gratuito por cotas</p>
-              <p className="text-sm text-muted-foreground mb-5">Ideal para pequenos negócios que querem automatizar o WhatsApp sem complicação.</p>
-              <ul className="space-y-2.5 mb-5 flex-1">
-                {["1 número WhatsApp", "1 atendente por horário", "Até 250 mensagens por mês", "Até 50 agendamentos por mês", "Respostas automáticas básicas", "Mensagem de boas-vindas automática", "Configuração de horário de atendimento", "Suporte padrão"].map((f) => (
+              <p className="text-xs text-primary font-semibold mb-2">Ideal para testar a automação na sua barbearia</p>
+              <p className="text-sm text-muted-foreground mb-5">Perfeito para conhecer o sistema e automatizar seus primeiros agendamentos.</p>
+              <ul className="space-y-2.5 mb-4 flex-1">
+                {["1 número de WhatsApp", "1 atendente", "Até 30 agendamentos por mês", "Até 150 mensagens por mês", "1 lembrete automático (24h antes)"].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-              <p className="text-[11px] text-muted-foreground mb-4 leading-snug">Após o período promocional, o valor será R$ 97/mês. Clientes fundadores mantêm o valor.</p>
+              <ul className="space-y-2 mb-5">
+                {["Sem lembrete duplo", "Sem campanhas automáticas", "Sem recuperação de clientes inativos", "Sem relatórios financeiros"].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground/70">
+                    <Lock className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
               <a href="/auth?signup=true">
-                <Button className="w-full" variant="outline">Começar grátis</Button>
+                <Button className="w-full" variant="outline">Começar Gratuitamente</Button>
               </a>
             </CardContent>
           </Card>
