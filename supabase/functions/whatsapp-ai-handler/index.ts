@@ -874,6 +874,138 @@ async function getLatestAssistantMessage(
   return data?.content || "";
 }
 
+// --- No-Show Recovery Response Handler ---
+
+async function handleNoShowRecoveryResponse(
+  serviceClient: any,
+  shopConfig: PetShopConfig,
+  cleanPhone: string,
+  message: string
+): Promise<string | null> {
+  const trimmed = message.trim();
+  // Only intercept "1", "2", or "3" as standalone messages
+  if (trimmed !== "1" && trimmed !== "2" && trimmed !== "3") return null;
+
+  const slotIndex = parseInt(trimmed) - 1;
+
+  // Find pending no-show recovery for this phone
+  const { data: noShowAppts } = await serviceClient
+    .from("appointments")
+    .select("id, user_id, owner_name, pet_name, service, date, time, notes, recovery_status")
+    .eq("user_id", shopConfig.user_id)
+    .eq("status", "no_show")
+    .eq("recovery_status", "pending")
+    .order("no_show_detected_at", { ascending: false });
+
+  // Filter by phone match
+  const matchingAppts = (noShowAppts || []).filter((a: any) => {
+    // We need to check the phone from a broader query since owner_phone might need matching
+    return true; // We'll match by phone below
+  });
+
+  if (!matchingAppts || matchingAppts.length === 0) return null;
+
+  // Find the specific no-show that was sent a recovery to this phone
+  // Check all no-shows from this user and match phone
+  const { data: phoneMatchAppts } = await serviceClient
+    .from("appointments")
+    .select("id, owner_name, pet_name, service, date, time, notes, owner_phone, recovery_status")
+    .eq("user_id", shopConfig.user_id)
+    .eq("status", "no_show")
+    .eq("recovery_status", "pending")
+    .not("recovery_message_sent_at", "is", null)
+    .order("recovery_message_sent_at", { ascending: false });
+
+  const recoveryAppt = (phoneMatchAppts || []).find((a: any) =>
+    phoneMatches(a.owner_phone || "", cleanPhone)
+  );
+
+  if (!recoveryAppt) return null;
+
+  // Parse recovery slots from notes
+  let recoverySlots: { date: string; time: string; weekday: string }[] = [];
+  try {
+    const notesData = typeof recoveryAppt.notes === "string"
+      ? JSON.parse(recoveryAppt.notes)
+      : recoveryAppt.notes;
+    recoverySlots = notesData?.recovery_slots || [];
+  } catch {
+    console.error("[NoShowRecovery] Failed to parse recovery slots from notes");
+    return null;
+  }
+
+  if (slotIndex >= recoverySlots.length) {
+    return `Desculpe, opção ${trimmed} não está disponível. Por favor, escolha entre 1 e ${recoverySlots.length}, ou me diga outro horário que funcione pra você! 😊`;
+  }
+
+  const chosenSlot = recoverySlots[slotIndex];
+
+  // Check if chosen slot is still available (validate via insert — the trigger will catch conflicts)
+  const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
+
+  const { error: insertErr } = await serviceClient
+    .from("appointments")
+    .insert({
+      user_id: shopConfig.user_id,
+      pet_name: isPetNiche ? recoveryAppt.pet_name : "—",
+      owner_name: recoveryAppt.owner_name,
+      owner_phone: cleanPhone,
+      service: recoveryAppt.service,
+      date: chosenSlot.date,
+      time: chosenSlot.time,
+      notes: `Reagendamento automático (recuperação de no-show do dia ${recoveryAppt.date})`,
+      status: "pending",
+    });
+
+  if (insertErr) {
+    console.error("[NoShowRecovery] Insert error:", insertErr);
+    const isSlotConflict = /lot(ado|ação)|conflita/i.test(insertErr.message || "");
+    if (isSlotConflict) {
+      return `Poxa, o horário ${chosenSlot.time} do dia ${formatDateBRHelper(chosenSlot.date)} não está mais disponível 😕\nMe diga outro horário que funcione pra você!`;
+    }
+    return `Desculpe, não consegui finalizar o reagendamento agora. Pode tentar novamente? 😊`;
+  }
+
+  // Mark the original no-show as recovered
+  await serviceClient
+    .from("appointments")
+    .update({ recovery_status: "recovered" })
+    .eq("id", recoveryAppt.id);
+
+  // Increment trial appointment counter
+  try {
+    await serviceClient.rpc("increment_trial_appointments", { p_user_id: shopConfig.user_id });
+  } catch { /* ignore */ }
+
+  const dayLabel = chosenSlot.weekday
+    ? `${getWeekdayShortHelper(chosenSlot.weekday)} ${formatDateBRHelper(chosenSlot.date)}`
+    : formatDateBRHelper(chosenSlot.date);
+
+  return `✅ Reagendamento confirmado!\n\n` +
+    `📋 *${recoveryAppt.service}*${isPetNiche ? ` para *${recoveryAppt.pet_name}*` : ""}\n` +
+    `📅 ${dayLabel} às ${chosenSlot.time}\n\n` +
+    `Te esperamos! 💜`;
+}
+
+// Helper functions for no-show recovery (avoid name clash with edge function scope)
+function formatDateBRHelper(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}`;
+}
+
+function getWeekdayShortHelper(weekday: string): string {
+  const map: Record<string, string> = {
+    "Domingo": "Dom",
+    "Segunda-feira": "Seg",
+    "Terça-feira": "Ter",
+    "Quarta-feira": "Qua",
+    "Quinta-feira": "Qui",
+    "Sexta-feira": "Sex",
+    "Sábado": "Sáb",
+  };
+  return map[weekday] || weekday;
+}
+
 // --- Confirmation Quick Responses ---
 
 async function handleConfirmationResponse(
