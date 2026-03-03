@@ -46,9 +46,9 @@ const InactiveClients = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [campaignsThisMonth, setCampaignsThisMonth] = useState(0);
 
-  const isEssential = plan === "professional";
-  const campaignLimit = isEssential ? 1 : 0;
-  const canSendCampaign = isEssential && campaignsThisMonth < campaignLimit;
+  const isPaidPlan = plan === "starter" || plan === "professional";
+  const campaignLimit = isPaidPlan ? (plan === "professional" ? 999 : 1) : 0;
+  const canSendCampaign = isPaidPlan && campaignsThisMonth < campaignLimit;
 
   // Check campaigns used this month
   useEffect(() => {
@@ -70,7 +70,7 @@ const InactiveClients = () => {
     setModalOpen(true);
   };
 
-  if (!isEssential) {
+  if (!isPaidPlan) {
     return (
       <div className="flex-1 p-4 md:p-8 max-w-6xl mx-auto">
         <Card className="border-none shadow-lg">
