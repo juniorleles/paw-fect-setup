@@ -42,6 +42,8 @@ const Settings = () => {
       if (configs && configs.length > 0) {
         const c = configs[0];
         setConfigId(c.id);
+        setNiche((c as any).niche ?? "petshop");
+        setCampaignMessages((c as any).campaign_messages ?? {});
         setData({
           phone: c.phone,
           phoneVerified: c.phone_verified,
