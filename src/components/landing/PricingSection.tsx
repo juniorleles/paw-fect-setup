@@ -124,7 +124,7 @@ const PricingSection = () => (
                 ))}
               </ul>
               <a href="/auth?signup=true">
-                <Button className="w-full shadow-lg shadow-primary/20 font-bold">Quero Automatizar Minha Barbearia</Button>
+                <Button className="w-full shadow-lg shadow-primary/20 font-bold text-wrap py-3 h-auto leading-snug">Quero Automatizar Minha Barbearia</Button>
               </a>
             </CardContent>
           </Card>
