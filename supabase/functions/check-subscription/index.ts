@@ -96,10 +96,10 @@ serve(async (req) => {
 
     // Map product IDs to plan names
     const PRODUCT_TO_PLAN: Record<string, string> = {
-      "prod_U2X4v8ah9uiCN0": "starter",
-      "prod_U2ZxFgQ7HaugUf": "starter",
-      "prod_U2X5te6HQ2va2l": "professional",
-      "prod_U2ZxGxqNGAiwhQ": "professional",
+      "prod_U2X4v8ah9uiCN0": "starter",       // Essencial live
+      "prod_U2ZxGxqNGAiwhQ": "starter",        // Essencial test
+      "prod_U2X5te6HQ2va2l": "professional",   // Pro live
+      "prod_U2ZxFgQ7HaugUf": "professional",   // Pro test
     };
     const resolvedPlan = PRODUCT_TO_PLAN[productId] || "starter";
 
