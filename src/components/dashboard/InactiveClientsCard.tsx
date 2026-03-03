@@ -8,13 +8,13 @@ import { useNavigate } from "react-router-dom";
 const InactiveClientsCard = () => {
   const { plan } = useSubscription();
   const navigate = useNavigate();
-  const isEssential = plan === "professional";
+  const isPaidPlan = plan === "starter" || plan === "professional";
   const { clients, loading, potentialRevenue } = useInactiveClients({ daysThreshold: 30 });
 
   const formatCurrency = (v: number) =>
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  if (!isEssential) return null;
+  if (!isPaidPlan) return null;
 
   return (
     <Card className="border-none shadow-md bg-card">

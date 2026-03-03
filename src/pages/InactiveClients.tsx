@@ -70,7 +70,7 @@ const InactiveClients = () => {
     setModalOpen(true);
   };
 
-  if (!isEssential) {
+  if (!isPaidPlan) {
     return (
       <div className="flex-1 p-4 md:p-8 max-w-6xl mx-auto">
         <Card className="border-none shadow-lg">
