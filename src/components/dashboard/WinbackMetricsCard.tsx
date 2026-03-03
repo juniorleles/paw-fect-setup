@@ -40,13 +40,13 @@ const WinbackMetricsCard = () => {
     }
 
     const fetchStats = async () => {
-      // 1. Fetch winback campaign logs for this month
+      // 1. Fetch winback + upsell campaign logs for this month
       const { data: logs } = await supabase
         .from("inactive_campaign_logs")
         .select("campaign_type, customer_phone")
         .eq("user_id", user.id)
         .eq("campaign_month", currentMonth)
-        .in("campaign_type", ["WINBACK_15", "WINBACK_30", "WINBACK_60"]);
+        .in("campaign_type", ["WINBACK_15", "WINBACK_30", "WINBACK_60", "POST_SERVICE_UPSELL"]);
 
       if (logs) {
         const stageMap = { ...stages };
