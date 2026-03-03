@@ -15,28 +15,117 @@ interface PetShopConfig {
   whatsapp_status: string;
 }
 
-function buildReminderMessage(
-  config: PetShopConfig,
-  appt: any
-): string {
+function buildReminder24hMessage(config: PetShopConfig, appt: any): string {
   const name = config.assistant_name || "Secretária";
   const clientName = appt.owner_name || "";
   const service = appt.service;
-  const time = appt.time?.substring(0, 5) || appt.time; // HH:MM
+  const time = appt.time?.substring(0, 5) || appt.time;
   const shopName = config.shop_name;
-
   const tone = config.voice_tone || "friendly";
 
   if (tone === "formal") {
     return `Olá${clientName ? `, ${clientName}` : ""}! Aqui é a ${name} do ${shopName}. Seu horário de ${service} está agendado para amanhã às ${time}.\n\nResponda:\n1️⃣ CONFIRMO\n2️⃣ REMARCAR\n3️⃣ CANCELAR`;
   }
-
   if (tone === "fun") {
     return `Oii${clientName ? `, ${clientName}` : ""}! Aqui é a ${name} 😄 Lembrando que amanhã às ${time} tem ${service} no ${shopName}! Tá de pé?\n\nResponde:\n1️⃣ CONFIRMO\n2️⃣ REMARCAR\n3️⃣ CANCELAR 🐾`;
   }
-
-  // friendly (default)
   return `Olá${clientName ? `, ${clientName}` : ""} 👋\nSeu horário na ${shopName} está agendado para amanhã às ${time}.\n\nResponda:\n1️⃣ Confirmar\n2️⃣ Reagendar\n3️⃣ Cancelar`;
+}
+
+function buildReminder3hMessage(config: PetShopConfig, appt: any): string {
+  const clientName = appt.owner_name || "";
+  const time = appt.time?.substring(0, 5) || appt.time;
+  const shopName = config.shop_name;
+  const tone = config.voice_tone || "friendly";
+
+  if (tone === "formal") {
+    return `Olá${clientName ? `, ${clientName}` : ""}. Apenas um lembrete: seu horário é hoje às ${time} na ${shopName}. Aguardamos sua presença.`;
+  }
+  if (tone === "fun") {
+    return `⏰ Ei${clientName ? `, ${clientName}` : ""}! Faltam poucas horas pro seu horário às ${time} na ${shopName}! Te esperamos 👊🔥`;
+  }
+  return `⏰ Lembrete rápido${clientName ? `, ${clientName}` : ""}!\nSeu horário é hoje às ${time} na ${shopName}.\nTe esperamos 👊`;
+}
+
+// Helper to query appointments in a BRT time window
+async function queryAppointmentsInWindow(
+  client: any,
+  brFormatter: Intl.DateTimeFormat,
+  brTimeFormatter: Intl.DateTimeFormat,
+  now: Date,
+  minutesAhead: number,
+  windowHalf: number,
+  sentField: string
+) {
+  const minTime = new Date(now.getTime() + (minutesAhead - windowHalf) * 60000);
+  const maxTime = new Date(now.getTime() + (minutesAhead + windowHalf) * 60000);
+
+  const targetDateMin = brFormatter.format(minTime);
+  const targetDateMax = brFormatter.format(maxTime);
+  const targetTimeMin = brTimeFormatter.format(minTime);
+  const targetTimeMax = brTimeFormatter.format(maxTime);
+
+  if (targetDateMin === targetDateMax) {
+    const { data, error } = await client
+      .from("appointments")
+      .select("*")
+      .eq("date", targetDateMin)
+      .gte("time", targetTimeMin)
+      .lte("time", targetTimeMax)
+      .in("status", ["pending", "confirmed"])
+      .eq(sentField, false);
+    return { data: data || [], error };
+  }
+
+  // Crosses midnight
+  const { data: d1, error: e1 } = await client
+    .from("appointments")
+    .select("*")
+    .eq("date", targetDateMin)
+    .gte("time", targetTimeMin)
+    .in("status", ["pending", "confirmed"])
+    .eq(sentField, false);
+
+  const { data: d2, error: e2 } = await client
+    .from("appointments")
+    .select("*")
+    .eq("date", targetDateMax)
+    .lte("time", targetTimeMax)
+    .in("status", ["pending", "confirmed"])
+    .eq(sentField, false);
+
+  return {
+    data: [...(d1 || []), ...(d2 || [])],
+    error: e1 || e2,
+  };
+}
+
+async function sendMessage(
+  evolutionUrl: string,
+  evolutionKey: string,
+  instanceName: string,
+  phone: string,
+  text: string
+): Promise<boolean> {
+  const baseUrl = evolutionUrl.replace(/\/+$/, "");
+  const cleanPhone = phone.replace(/\D/g, "");
+  const res = await fetch(
+    `${baseUrl}/message/sendText/${instanceName}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: evolutionKey.trim(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ number: cleanPhone, text }),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`Send failed (${res.status}): ${body}`);
+    return false;
+  }
+  return true;
 }
 
 Deno.serve(async (req) => {
@@ -50,11 +139,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get current time in São Paulo timezone (BRT = UTC-3)
     const now = new Date();
-    const BRT_OFFSET_MS = -3 * 60 * 60 * 1000;
-    const nowBRT = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + BRT_OFFSET_MS);
-
     const brFormatter = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Sao_Paulo",
       year: "numeric",
@@ -69,165 +154,141 @@ Deno.serve(async (req) => {
     });
 
     const nowTimeBR = brTimeFormatter.format(now);
-
-    // 24h reminder window: appointments between 23h55min and 24h05min from now
-    const minMinutes = 23 * 60 + 55; // 1435 minutes
-    const maxMinutes = 24 * 60 + 5;  // 1445 minutes
-
-    const minTime = new Date(now.getTime() + minMinutes * 60000);
-    const maxTime = new Date(now.getTime() + maxMinutes * 60000);
-
-    // Format target date and time window in BRT
-    const targetDateMin = brFormatter.format(minTime);
-    const targetDateMax = brFormatter.format(maxTime);
-    const targetTimeMin = brTimeFormatter.format(minTime);
-    const targetTimeMax = brTimeFormatter.format(maxTime);
-
-    console.log(`Checking 24h reminders: now=${brFormatter.format(now)} ${nowTimeBR}`);
-    console.log(`Window: ${targetDateMin} ${targetTimeMin} - ${targetDateMax} ${targetTimeMax}`);
-
-    let allAppointments: any[] = [];
-
-    if (targetDateMin === targetDateMax) {
-      // Same day - simple query
-      const { data, error } = await serviceClient
-        .from("appointments")
-        .select("*")
-        .eq("date", targetDateMin)
-        .gte("time", targetTimeMin)
-        .lte("time", targetTimeMax)
-        .in("status", ["pending", "confirmed"])
-        .eq("reminder_24h_sent", false);
-
-      if (error) {
-        console.error("Error fetching appointments:", error);
-        return new Response(JSON.stringify({ error: "DB error" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      allAppointments = data || [];
-    } else {
-      // Crosses midnight - query both dates
-      const { data: d1, error: e1 } = await serviceClient
-        .from("appointments")
-        .select("*")
-        .eq("date", targetDateMin)
-        .gte("time", targetTimeMin)
-        .in("status", ["pending", "confirmed"])
-        .eq("reminder_24h_sent", false);
-
-      const { data: d2, error: e2 } = await serviceClient
-        .from("appointments")
-        .select("*")
-        .eq("date", targetDateMax)
-        .lte("time", targetTimeMax)
-        .in("status", ["pending", "confirmed"])
-        .eq("reminder_24h_sent", false);
-
-      if (e1 || e2) {
-        console.error("Error fetching appointments:", e1 || e2);
-        return new Response(JSON.stringify({ error: "DB error" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      allAppointments = [...(d1 || []), ...(d2 || [])];
-    }
-
-    if (allAppointments.length === 0) {
-      console.log("No appointments need 24h reminders right now.");
-      return new Response(JSON.stringify({ sent: 0 }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    console.log(`Found ${allAppointments.length} appointments needing 24h reminders`);
+    console.log(`Reminder check: ${brFormatter.format(now)} ${nowTimeBR}`);
 
     const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
     const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
 
-    let sentCount = 0;
+    if (!evolutionUrl || !evolutionKey) {
+      return new Response(JSON.stringify({ error: "Evolution API not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let sent24h = 0;
+    let sent3h = 0;
     const errors: string[] = [];
 
-    // Group by user_id to load configs efficiently
-    const userIds = [...new Set(allAppointments.map((a: any) => a.user_id))];
+    // Cache configs and plans per user
+    const configCache = new Map<string, PetShopConfig | null>();
+    const planCache = new Map<string, string>();
 
-    for (const userId of userIds) {
-      const { data: config } = await serviceClient
+    async function getConfig(userId: string): Promise<PetShopConfig | null> {
+      if (configCache.has(userId)) return configCache.get(userId)!;
+      const { data } = await serviceClient
         .from("pet_shop_configs")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
+      configCache.set(userId, data as PetShopConfig | null);
+      return data as PetShopConfig | null;
+    }
 
-      if (!config) {
-        console.error(`No config for user ${userId}`);
-        continue;
-      }
+    async function getPlan(userId: string): Promise<string> {
+      if (planCache.has(userId)) return planCache.get(userId)!;
+      const { data } = await serviceClient
+        .from("subscriptions")
+        .select("plan")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const plan = data?.plan || "starter";
+      planCache.set(userId, plan);
+      return plan;
+    }
 
-      const shopConfig = config as PetShopConfig;
+    // ─── 24h REMINDERS (all plans) ───
+    const { data: appts24h, error: err24h } = await queryAppointmentsInWindow(
+      serviceClient, brFormatter, brTimeFormatter, now,
+      24 * 60, // 24h ahead
+      5,       // ±5 min window
+      "reminder_24h_sent"
+    );
 
-      // Check WhatsApp connection
-      if (shopConfig.whatsapp_status !== "connected") {
-        console.log(`WhatsApp disconnected for ${shopConfig.shop_name}, skipping. Will retry later.`);
-        continue; // Don't mark as sent, will retry next cycle
-      }
+    if (err24h) {
+      console.error("Error fetching 24h appointments:", err24h);
+    } else if (appts24h.length > 0) {
+      console.log(`Found ${appts24h.length} appointments for 24h reminder`);
 
-      const userAppts = allAppointments.filter((a: any) => a.user_id === userId);
+      for (const appt of appts24h) {
+        const config = await getConfig(appt.user_id);
+        if (!config || config.whatsapp_status !== "connected") continue;
+        if (!appt.owner_phone) continue;
 
-      for (const appt of userAppts) {
-        if (!appt.owner_phone) {
-          console.log(`No phone for appointment ${appt.id}, skipping`);
-          continue;
-        }
-
-        const message = buildReminderMessage(shopConfig, appt);
-
+        const message = buildReminder24hMessage(config, appt);
         try {
-          if (evolutionUrl && evolutionKey) {
-            const baseUrl = evolutionUrl.replace(/\/+$/, "");
-            const phone = appt.owner_phone.replace(/\D/g, "");
-            const sendRes = await fetch(
-              `${baseUrl}/message/sendText/${shopConfig.evolution_instance_name}`,
-              {
-                method: "POST",
-                headers: {
-                  apikey: evolutionKey.trim(),
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ number: phone, text: message }),
-              }
-            );
-
-            console.log(`24h reminder sent to ${phone} for appt ${appt.id}: status ${sendRes.status}`);
-
-            if (sendRes.ok) {
-              // Mark as sent (both fields for compatibility)
-              await serviceClient
-                .from("appointments")
-                .update({
-                  reminder_24h_sent: true,
-                  confirmation_message_sent_at: new Date().toISOString(),
-                })
-                .eq("id", appt.id);
-              sentCount++;
-            } else {
-              const errBody = await sendRes.text();
-              errors.push(`Appt ${appt.id}: send failed (${sendRes.status}) - ${errBody}`);
-            }
+          const ok = await sendMessage(evolutionUrl, evolutionKey, config.evolution_instance_name, appt.owner_phone, message);
+          if (ok) {
+            await serviceClient
+              .from("appointments")
+              .update({
+                reminder_24h_sent: true,
+                confirmation_message_sent_at: new Date().toISOString(),
+              })
+              .eq("id", appt.id);
+            sent24h++;
+            console.log(`24h reminder sent for appt ${appt.id}`);
+          } else {
+            errors.push(`24h appt ${appt.id}: send failed`);
           }
-        } catch (sendErr) {
-          console.error(`Error sending reminder for appt ${appt.id}:`, sendErr);
-          errors.push(`Appt ${appt.id}: ${String(sendErr)}`);
+        } catch (e) {
+          errors.push(`24h appt ${appt.id}: ${String(e)}`);
         }
       }
     }
 
-    console.log(`24h reminders complete: ${sentCount} sent, ${errors.length} errors`);
+    // ─── 3h REMINDERS (Essencial & Pro only) ───
+    const { data: appts3h, error: err3h } = await queryAppointmentsInWindow(
+      serviceClient, brFormatter, brTimeFormatter, now,
+      3 * 60, // 3h ahead
+      5,      // ±5 min window
+      "reminder_3h_sent"
+    );
+
+    if (err3h) {
+      console.error("Error fetching 3h appointments:", err3h);
+    } else if (appts3h.length > 0) {
+      console.log(`Found ${appts3h.length} candidates for 3h reminder`);
+
+      for (const appt of appts3h) {
+        // Check plan - Free (starter) does NOT get 3h reminder
+        const plan = await getPlan(appt.user_id);
+        if (plan === "starter") {
+          console.log(`Skipping 3h reminder for appt ${appt.id} (Free plan)`);
+          continue;
+        }
+
+        const config = await getConfig(appt.user_id);
+        if (!config || config.whatsapp_status !== "connected") continue;
+        if (!appt.owner_phone) continue;
+
+        const message = buildReminder3hMessage(config, appt);
+        try {
+          const ok = await sendMessage(evolutionUrl, evolutionKey, config.evolution_instance_name, appt.owner_phone, message);
+          if (ok) {
+            await serviceClient
+              .from("appointments")
+              .update({ reminder_3h_sent: true })
+              .eq("id", appt.id);
+            sent3h++;
+            console.log(`3h reminder sent for appt ${appt.id}`);
+          } else {
+            errors.push(`3h appt ${appt.id}: send failed`);
+          }
+        } catch (e) {
+          errors.push(`3h appt ${appt.id}: ${String(e)}`);
+        }
+      }
+    }
+
+    console.log(`Reminders done: 24h=${sent24h}, 3h=${sent3h}, errors=${errors.length}`);
 
     return new Response(
-      JSON.stringify({ sent: sentCount, errors: errors.length > 0 ? errors : undefined }),
+      JSON.stringify({
+        sent_24h: sent24h,
+        sent_3h: sent3h,
+        errors: errors.length > 0 ? errors : undefined,
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
