@@ -1478,12 +1478,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Increment trial message counter (count received message) — atomic
-    const isTrialUser = subscription && !subscription.current_period_end || 
-      (subscription?.current_period_end && subscription?.trial_end_at && 
-       new Date(subscription.current_period_end) <= new Date(subscription.trial_end_at));
-    
-    if (isTrialUser && subscription) {
+    // Increment message counter for ALL active plans (trial and paid) — atomic
+    if (subscription && subscription.status === "active") {
       await serviceClient.rpc("increment_trial_messages", { p_user_id: shopConfig.user_id });
     }
 
