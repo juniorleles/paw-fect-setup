@@ -221,7 +221,7 @@ const MyAccount = () => {
   const trialMsgsLimit = (sub as any)?.trial_messages_limit ?? 150;
   const trialAptsPercent = trialAptsLimit > 0 ? (trialAptsUsed / trialAptsLimit) * 100 : 0;
   const trialMsgsPercent = trialMsgsLimit > 0 ? (trialMsgsUsed / trialMsgsLimit) * 100 : 0;
-  const trialQuotaExhausted = trialAptsUsed >= trialAptsLimit || trialMsgsUsed >= trialMsgsLimit;
+  const trialQuotaExhausted = (trialAptsLimit !== -1 && trialAptsUsed >= trialAptsLimit) || trialMsgsUsed >= trialMsgsLimit;
   const maxTrialPercent = Math.max(trialAptsPercent, trialMsgsPercent);
 
   const currentPlan = (sub?.plan as keyof typeof PLANS) ?? "starter";
