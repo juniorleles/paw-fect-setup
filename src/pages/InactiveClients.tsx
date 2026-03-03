@@ -46,8 +46,8 @@ const InactiveClients = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [campaignsThisMonth, setCampaignsThisMonth] = useState(0);
 
-  const isEssential = plan === "professional";
-  const campaignLimit = isEssential ? 1 : 0;
+  const isPaidPlan = plan === "starter" || plan === "professional";
+  const campaignLimit = isPaidPlan ? (plan === "professional" ? 999 : 1) : 0;
   const canSendCampaign = isEssential && campaignsThisMonth < campaignLimit;
 
   // Check campaigns used this month
