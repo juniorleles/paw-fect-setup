@@ -515,7 +515,7 @@ const MyAccount = () => {
               </div>
               <p className="text-xs text-primary font-medium mb-3">Trial gratuito por cotas</p>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm">
-                {["Tudo do Starter +", "Até 5 atendentes simultâneos", "Até 1.500 msgs/mês", "Até 200 agendamentos", "IA personalizada", "Fluxos customizados", "Suporte prioritário"].map((f) => (
+                {["Tudo do Starter +", "Até 5 atendentes simultâneos", "Até 800 msgs/mês", "Agendamentos ilimitados", "IA personalizada", "Fluxos customizados", "Suporte prioritário"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
