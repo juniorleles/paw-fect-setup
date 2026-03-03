@@ -15,28 +15,28 @@ interface PetShopConfig {
   whatsapp_status: string;
 }
 
-function buildConfirmationMessage(
+function buildReminderMessage(
   config: PetShopConfig,
   appt: any
 ): string {
   const name = config.assistant_name || "Secretária";
-  const pet = appt.pet_name;
+  const clientName = appt.owner_name || "";
   const service = appt.service;
-  const time = appt.time;
-  const statusLabel = appt.status === "pending" ? " (⚠️ ainda não confirmado)" : "";
+  const time = appt.time?.substring(0, 5) || appt.time; // HH:MM
+  const shopName = config.shop_name;
 
   const tone = config.voice_tone || "friendly";
 
   if (tone === "formal") {
-    return `Olá${appt.owner_name ? `, ${appt.owner_name}` : ""}! Aqui é a ${name} do ${config.shop_name}. Seu agendamento de ${service} para ${pet} está marcado para hoje às ${time}${statusLabel}. Você confirma sua presença?\n\nResponda:\n✅ CONFIRMO\n📅 REMARCAR\n❌ CANCELAR`;
+    return `Olá${clientName ? `, ${clientName}` : ""}! Aqui é a ${name} do ${shopName}. Seu horário de ${service} está agendado para amanhã às ${time}.\n\nResponda:\n1️⃣ CONFIRMO\n2️⃣ REMARCAR\n3️⃣ CANCELAR`;
   }
 
   if (tone === "fun") {
-    return `Oii${appt.owner_name ? `, ${appt.owner_name}` : ""}! Aqui é a ${name} 😄 Só confirmando: ${pet} tem ${service} hoje às ${time}${statusLabel}. Tá de pé?\n\nResponde:\n✅ CONFIRMO\n📅 REMARCAR\n❌ CANCELAR 🐾`;
+    return `Oii${clientName ? `, ${clientName}` : ""}! Aqui é a ${name} 😄 Lembrando que amanhã às ${time} tem ${service} no ${shopName}! Tá de pé?\n\nResponde:\n1️⃣ CONFIRMO\n2️⃣ REMARCAR\n3️⃣ CANCELAR 🐾`;
   }
 
   // friendly (default)
-  return `Oi${appt.owner_name ? `, ${appt.owner_name}` : ""}! Eu sou a ${name} 😊 Passando pra confirmar: o ${pet} tem ${service} hoje às ${time}${statusLabel}. Você confirma?\n\nResponda:\n✅ CONFIRMO\n📅 REMARCAR\n❌ CANCELAR`;
+  return `Olá${clientName ? `, ${clientName}` : ""} 👋\nSeu horário na ${shopName} está agendado para amanhã às ${time}.\n\nResponda:\n1️⃣ Confirmar\n2️⃣ Reagendar\n3️⃣ Cancelar`;
 }
 
 Deno.serve(async (req) => {
@@ -50,8 +50,11 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get current time in São Paulo timezone
+    // Get current time in São Paulo timezone (BRT = UTC-3)
     const now = new Date();
+    const BRT_OFFSET_MS = -3 * 60 * 60 * 1000;
+    const nowBRT = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + BRT_OFFSET_MS);
+
     const brFormatter = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Sao_Paulo",
       year: "numeric",
@@ -65,48 +68,82 @@ Deno.serve(async (req) => {
       hour12: false,
     });
 
-    const todayBR = brFormatter.format(now); // YYYY-MM-DD
-    const nowTimeBR = brTimeFormatter.format(now); // HH:MM
+    const nowTimeBR = brTimeFormatter.format(now);
 
-    // Calculate the window: appointments between 55 and 65 minutes from now
-    const minMinutes = 55;
-    const maxMinutes = 65;
+    // 24h reminder window: appointments between 23h55min and 24h05min from now
+    const minMinutes = 23 * 60 + 55; // 1435 minutes
+    const maxMinutes = 24 * 60 + 5;  // 1445 minutes
 
     const minTime = new Date(now.getTime() + minMinutes * 60000);
     const maxTime = new Date(now.getTime() + maxMinutes * 60000);
 
-    const minTimeBR = brTimeFormatter.format(minTime);
-    const maxTimeBR = brTimeFormatter.format(maxTime);
+    // Format target date and time window in BRT
+    const targetDateMin = brFormatter.format(minTime);
+    const targetDateMax = brFormatter.format(maxTime);
+    const targetTimeMin = brTimeFormatter.format(minTime);
+    const targetTimeMax = brTimeFormatter.format(maxTime);
 
-    console.log(`Checking reminders: now=${todayBR} ${nowTimeBR}, window=${minTimeBR}-${maxTimeBR}`);
+    console.log(`Checking 24h reminders: now=${brFormatter.format(now)} ${nowTimeBR}`);
+    console.log(`Window: ${targetDateMin} ${targetTimeMin} - ${targetDateMax} ${targetTimeMax}`);
 
-    // Find appointments in the window that haven't had confirmation sent
-    const { data: appointments, error: fetchErr } = await serviceClient
-      .from("appointments")
-      .select("*")
-      .eq("date", todayBR)
-      .gte("time", minTimeBR)
-      .lte("time", maxTimeBR)
-      .in("status", ["pending", "confirmed"])
-      .is("confirmation_message_sent_at", null);
+    let allAppointments: any[] = [];
 
-    if (fetchErr) {
-      console.error("Error fetching appointments:", fetchErr);
-      return new Response(JSON.stringify({ error: "DB error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (targetDateMin === targetDateMax) {
+      // Same day - simple query
+      const { data, error } = await serviceClient
+        .from("appointments")
+        .select("*")
+        .eq("date", targetDateMin)
+        .gte("time", targetTimeMin)
+        .lte("time", targetTimeMax)
+        .in("status", ["pending", "confirmed"])
+        .eq("reminder_24h_sent", false);
+
+      if (error) {
+        console.error("Error fetching appointments:", error);
+        return new Response(JSON.stringify({ error: "DB error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      allAppointments = data || [];
+    } else {
+      // Crosses midnight - query both dates
+      const { data: d1, error: e1 } = await serviceClient
+        .from("appointments")
+        .select("*")
+        .eq("date", targetDateMin)
+        .gte("time", targetTimeMin)
+        .in("status", ["pending", "confirmed"])
+        .eq("reminder_24h_sent", false);
+
+      const { data: d2, error: e2 } = await serviceClient
+        .from("appointments")
+        .select("*")
+        .eq("date", targetDateMax)
+        .lte("time", targetTimeMax)
+        .in("status", ["pending", "confirmed"])
+        .eq("reminder_24h_sent", false);
+
+      if (e1 || e2) {
+        console.error("Error fetching appointments:", e1 || e2);
+        return new Response(JSON.stringify({ error: "DB error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      allAppointments = [...(d1 || []), ...(d2 || [])];
     }
 
-    if (!appointments || appointments.length === 0) {
-      console.log("No appointments need reminders right now.");
+    if (allAppointments.length === 0) {
+      console.log("No appointments need 24h reminders right now.");
       return new Response(JSON.stringify({ sent: 0 }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Found ${appointments.length} appointments needing reminders`);
+    console.log(`Found ${allAppointments.length} appointments needing 24h reminders`);
 
     const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
     const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
@@ -115,7 +152,7 @@ Deno.serve(async (req) => {
     const errors: string[] = [];
 
     // Group by user_id to load configs efficiently
-    const userIds = [...new Set(appointments.map((a: any) => a.user_id))];
+    const userIds = [...new Set(allAppointments.map((a: any) => a.user_id))];
 
     for (const userId of userIds) {
       const { data: config } = await serviceClient
@@ -137,7 +174,7 @@ Deno.serve(async (req) => {
         continue; // Don't mark as sent, will retry next cycle
       }
 
-      const userAppts = appointments.filter((a: any) => a.user_id === userId);
+      const userAppts = allAppointments.filter((a: any) => a.user_id === userId);
 
       for (const appt of userAppts) {
         if (!appt.owner_phone) {
@@ -145,7 +182,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const message = buildConfirmationMessage(shopConfig, appt);
+        const message = buildReminderMessage(shopConfig, appt);
 
         try {
           if (evolutionUrl && evolutionKey) {
@@ -163,13 +200,16 @@ Deno.serve(async (req) => {
               }
             );
 
-            console.log(`Reminder sent to ${phone} for appt ${appt.id}: status ${sendRes.status}`);
+            console.log(`24h reminder sent to ${phone} for appt ${appt.id}: status ${sendRes.status}`);
 
             if (sendRes.ok) {
-              // Mark as sent
+              // Mark as sent (both fields for compatibility)
               await serviceClient
                 .from("appointments")
-                .update({ confirmation_message_sent_at: new Date().toISOString() })
+                .update({
+                  reminder_24h_sent: true,
+                  confirmation_message_sent_at: new Date().toISOString(),
+                })
                 .eq("id", appt.id);
               sentCount++;
             } else {
@@ -184,7 +224,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Reminders complete: ${sentCount} sent, ${errors.length} errors`);
+    console.log(`24h reminders complete: ${sentCount} sent, ${errors.length} errors`);
 
     return new Response(
       JSON.stringify({ sent: sentCount, errors: errors.length > 0 ? errors : undefined }),

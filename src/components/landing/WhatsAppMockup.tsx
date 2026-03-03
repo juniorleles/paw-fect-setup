@@ -9,7 +9,7 @@ const messages = [
   { from: "client", text: "Quero! Tem vaga amanhã à tarde?", time: "10:33" },
   { from: "bot", text: "Tenho às 14h e às 16h. Qual prefere?", time: "10:33" },
   { from: "client", text: "14h!", time: "10:33" },
-  { from: "bot", text: "Pronto! ✅ Agendado para amanhã às 14h. Enviarei um lembrete 1h antes. Até lá!", time: "10:34" },
+  { from: "bot", text: "Pronto! ✅ Agendado para amanhã às 14h. Enviarei um lembrete 24h antes. Até lá!", time: "10:34" },
 ];
 
 const TypingIndicator = () => (
