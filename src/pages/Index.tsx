@@ -165,6 +165,35 @@ const Index = () => {
 
   const goBack = () => step > 1 && setStep(step - 1);
 
+  const handleCheckout = async () => {
+    if (!acceptedTerms) {
+      toast({
+        title: "Termos obrigatórios",
+        description: "Você precisa aceitar os Termos de Uso e a Política de Privacidade para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setCheckoutLoading(true);
+    await saveConfig(data); // Save config before redirecting
+    try {
+      const { data: result, error } = await supabase.functions.invoke("create-checkout", {
+        body: { planKey: chosenPlan },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      if (result?.url) {
+        // Redirect to Stripe Checkout - set success URL to return to onboarding
+        window.location.href = result.url;
+      }
+    } catch (e: any) {
+      console.error("Checkout error:", e);
+      toast({ title: "Erro", description: "Não foi possível iniciar o pagamento. Tente novamente.", variant: "destructive" });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
   const handleActivate = async () => {
     if (!validate()) return;
     if (!acceptedTerms) {
@@ -180,10 +209,9 @@ const Index = () => {
 
     // Activate subscription and create per-user Evolution instance
     if (user) {
-      // Check if we have a valid session (email might not be confirmed yet)
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.access_token) {
-        console.warn("No valid session - skipping activate-subscription call. User may need to confirm email.");
+        console.warn("No valid session - skipping activate-subscription call.");
         await Promise.all([refetchOnboarding(), refetchSubscription()]);
         setActivated(true);
         toast({ title: "Secretária configurada!", description: "Confirme seu e-mail para ativar completamente." });
@@ -218,6 +246,7 @@ const Index = () => {
       }
     }
 
+    localStorage.removeItem("chosen_plan");
     await Promise.all([refetchOnboarding(), refetchSubscription()]);
     setActivated(true);
     toast({ title: "Secretária ativada!", description: "Sua instância WhatsApp foi criada com sucesso." });
