@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Lock, Sparkles } from "lucide-react";
+import { Check, Lock, Sparkles, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
