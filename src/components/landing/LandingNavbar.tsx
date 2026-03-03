@@ -55,7 +55,7 @@ const LandingNavbar = () => {
             <Button variant="outline" size="sm" className="flex-1" onClick={() => { setMobileMenu(false); navigate("/auth"); }}>
               Entrar
             </Button>
-            <a href="/auth?signup=true" className="flex-1" onClick={() => setMobileMenu(false)}>
+            <a href="/auth?signup=true&plan=free" className="flex-1" onClick={() => setMobileMenu(false)}>
               <Button size="sm" className="w-full">Cadastrar</Button>
             </a>
           </div>
