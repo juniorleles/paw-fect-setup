@@ -116,7 +116,7 @@ const LandingHero = () => (
           transition={{ duration: 0.5, delay: 0.4 }}
           className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
         >
-          <a href="/auth?signup=true">
+          <a href="/auth?signup=true&plan=free">
             <Button size="lg" className="h-14 px-8 text-base font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
               Testar grátis no meu WhatsApp <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
