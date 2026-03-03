@@ -36,6 +36,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import WhatsAppStatusBadge from "@/components/dashboard/WhatsAppStatusBadge";
 import InactiveClientsCard from "@/components/dashboard/InactiveClientsCard";
+import NoShowMetricsCard from "@/components/dashboard/NoShowMetricsCard";
 
 const Dashboard = () => {
   const { user } = useAuth();
