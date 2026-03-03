@@ -189,12 +189,13 @@ const Settings = () => {
 
 
       <Tabs defaultValue="shop" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
           <TabsTrigger value="shop">Dados</TabsTrigger>
           <TabsTrigger value="hours">Horários</TabsTrigger>
           <TabsTrigger value="services">Serviços</TabsTrigger>
           <TabsTrigger value="ai">IA</TabsTrigger>
+          <TabsTrigger value="campaigns">Campanhas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="whatsapp" className="mt-6 space-y-4">
@@ -212,6 +213,14 @@ const Settings = () => {
         </TabsContent>
         <TabsContent value="ai" className="mt-6">
           <StepPersonalization data={data} onChange={updateData} errors={noErrors} />
+        </TabsContent>
+        <TabsContent value="campaigns" className="mt-6">
+          <StepCampaigns
+            messages={campaignMessages}
+            onChange={setCampaignMessages}
+            isPro={subscriptionPlan === "professional"}
+            niche={niche}
+          />
         </TabsContent>
       </Tabs>
     </div>
