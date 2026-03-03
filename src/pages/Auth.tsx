@@ -7,10 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Briefcase, Loader2, Eye, EyeOff } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Briefcase, Loader2, Eye, EyeOff, Check, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PLANS, type StripePlanKey } from "@/config/stripe";
+
+const PLAN_DISPLAY: Record<string, { label: string; benefits: string[]; color: string }> = {
+  free: {
+    label: "Free",
+    benefits: ["30 agendamentos/mês", "150 mensagens/mês", "1 profissional"],
+    color: "bg-muted text-muted-foreground",
+  },
+  starter: {
+    label: "Essencial",
+    benefits: ["Agendamentos ilimitados", "800 mensagens/mês", "Até 3 profissionais"],
+    color: "bg-primary/10 text-primary",
+  },
+  professional: {
+    label: "Pro",
+    benefits: ["Agendamentos ilimitados", "1.500 mensagens/mês", "Profissionais ilimitados"],
+    color: "bg-primary text-primary-foreground",
+  },
+};
 
 const translateAuthError = (msg: string): string => {
   const map: Record<string, string> = {
@@ -36,6 +56,11 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
+  const selectedPlanKey = searchParams.get("plan") || "";
+  const selectedPlan = PLAN_DISPLAY[selectedPlanKey];
+  const planPrice = selectedPlanKey && selectedPlanKey !== "free" && STRIPE_PLANS[selectedPlanKey as StripePlanKey]
+    ? `R$${STRIPE_PLANS[selectedPlanKey as StripePlanKey].price}/mês`
+    : selectedPlanKey === "free" ? "Grátis" : null;
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -201,6 +226,15 @@ const Auth = () => {
                     ? "Crie sua conta para configurar sua secretária digital"
                     : "Acesse sua conta para gerenciar sua secretária digital"}
                 </CardDescription>
+                {isSignUp && selectedPlan && (
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <Badge className={`${selectedPlan.color} text-xs font-semibold px-3 py-1 rounded-full border-0`}>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Plano {selectedPlan.label}
+                      {planPrice && ` · ${planPrice}`}
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -252,6 +286,22 @@ const Auth = () => {
                       >
                         Esqueceu sua senha?
                       </button>
+                    </div>
+                  )}
+                  {isSignUp && selectedPlan && (
+                    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        Incluso no plano {selectedPlan.label}:
+                      </p>
+                      <ul className="space-y-1">
+                        {selectedPlan.benefits.map((b) => (
+                          <li key={b} className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                            {b}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                   <Button type="submit" className="w-full h-12 font-bold" disabled={submitting}>
