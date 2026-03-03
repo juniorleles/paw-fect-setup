@@ -69,8 +69,8 @@ interface PaymentRecord {
 }
 
 const PLANS = {
-  starter: { name: "Starter", price: STRIPE_PLANS.starter.price, limit: STRIPE_PLANS.starter.limit },
-  professional: { name: "Profissional", price: STRIPE_PLANS.professional.price, limit: STRIPE_PLANS.professional.limit },
+  starter: { name: "Essencial", price: STRIPE_PLANS.starter.price, limit: STRIPE_PLANS.starter.limit },
+  professional: { name: "Pro", price: STRIPE_PLANS.professional.price, limit: STRIPE_PLANS.professional.limit },
 };
 
 // Ticket médio estimado (usado para calcular valor gerado)
