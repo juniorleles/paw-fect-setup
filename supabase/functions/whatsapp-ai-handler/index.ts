@@ -1345,21 +1345,18 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         return `Desculpe, não consegui finalizar o agendamento agora. Pode tentar novamente? 😊`;
       }
 
-      // Increment trial appointment counter
+      // Increment trial appointment counter — atomic
       try {
         const { data: subData } = await serviceClient
           .from("subscriptions")
-          .select("trial_appointments_used, current_period_end, trial_end_at")
+          .select("current_period_end, trial_end_at")
           .eq("user_id", shopConfig.user_id)
           .maybeSingle();
         if (subData) {
           const hasPaid = subData.current_period_end && subData.trial_end_at && 
             new Date(subData.current_period_end) > new Date(subData.trial_end_at);
           if (!hasPaid) {
-            await serviceClient
-              .from("subscriptions")
-              .update({ trial_appointments_used: (subData.trial_appointments_used ?? 0) + 1 })
-              .eq("user_id", shopConfig.user_id);
+            await serviceClient.rpc("increment_trial_appointments", { p_user_id: shopConfig.user_id });
           }
         }
       } catch { /* ignore */ }
@@ -1479,17 +1476,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Increment trial message counter (count received message)
-    // We'll also increment after sending the reply (for sent message)
+    // Increment trial message counter (count received message) — atomic
     const isTrialUser = subscription && !subscription.current_period_end || 
       (subscription?.current_period_end && subscription?.trial_end_at && 
        new Date(subscription.current_period_end) <= new Date(subscription.trial_end_at));
     
     if (isTrialUser && subscription) {
-      await serviceClient
-        .from("subscriptions")
-        .update({ trial_messages_used: (subscription.trial_messages_used ?? 0) + 1 })
-        .eq("user_id", shopConfig.user_id);
+      await serviceClient.rpc("increment_trial_messages", { p_user_id: shopConfig.user_id });
     }
 
     // Check for quick confirmation responses (CONFIRMO, REMARCAR, CANCELAR)
@@ -1900,19 +1893,9 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     // Save assistant reply to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
 
-    // Increment trial message counter for the sent reply
+    // Increment trial message counter for the sent reply — atomic
     if (isTrialUser && subscription) {
-      const { data: freshSub } = await serviceClient
-        .from("subscriptions")
-        .select("trial_messages_used")
-        .eq("user_id", shopConfig.user_id)
-        .maybeSingle();
-      if (freshSub) {
-        await serviceClient
-          .from("subscriptions")
-          .update({ trial_messages_used: (freshSub.trial_messages_used ?? 0) + 1 })
-          .eq("user_id", shopConfig.user_id);
-      }
+      await serviceClient.rpc("increment_trial_messages", { p_user_id: shopConfig.user_id });
     }
 
     // Send reply via WhatsApp
