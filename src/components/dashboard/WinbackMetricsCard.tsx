@@ -159,10 +159,9 @@ const WinbackMetricsCard = () => {
                     </PopoverTrigger>
                     <PopoverContent side="top" className="text-xs max-w-[250px] p-3">
                       <div className="space-y-1">
-                        <p className="font-semibold mb-1">Mensagens por estágio:</p>
-                        <p>{stages.WINBACK_15.emoji} 15 dias: {stages.WINBACK_15.sent}</p>
-                        <p>{stages.WINBACK_30.emoji} 30 dias: {stages.WINBACK_30.sent}</p>
-                        <p>{stages.WINBACK_60.emoji} 60 dias: {stages.WINBACK_60.sent}</p>
+                        <p className="font-semibold mb-1">Detalhamento:</p>
+                        <p>🔄 Win-back: {totalSent}</p>
+                        <p>🎁 Pós-atendimento: {upsellCount}</p>
                       </div>
                     </PopoverContent>
                   </Popover>
