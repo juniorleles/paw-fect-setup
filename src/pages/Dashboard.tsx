@@ -455,6 +455,9 @@ const Dashboard = () => {
         </div>
       </section>
 
+      {/* ─── Clientes Inativos ─── */}
+      <InactiveClientsCard />
+
       {/* ─── 5. Cotas disponíveis ─── */}
       <section>
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Seus recursos</h2>
