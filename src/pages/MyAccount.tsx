@@ -106,48 +106,88 @@ const MyAccount = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
-    const load = async () => {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-
-      const [subRes, messagesRes, payRes] = await Promise.all([
-        supabase
-          .from("subscriptions")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("conversation_messages")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .gte("created_at", monthStart)
-          .lte("created_at", monthEnd),
-        supabase
-          .from("payment_history")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(10),
-      ]);
-
-      setSub((subRes.data as unknown as SubscriptionData) ?? null);
-      setMessagesUsed(messagesRes.count ?? 0);
-      setPayments((payRes.data as unknown as PaymentRecord[]) ?? []);
+    if (!user) {
+      setSub(null);
+      setMessagesUsed(0);
+      setPayments([]);
       setLoading(false);
+      return;
+    }
 
-      syncSubscription().then(async () => {
-        const { data } = await supabase
+    let isMounted = true;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+        const [subRes, messagesRes, payRes] = await Promise.all([
+          supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("conversation_messages")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .gte("created_at", monthStart)
+            .lte("created_at", monthEnd),
+          supabase
+            .from("payment_history")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(10),
+        ]);
+
+        if (!isMounted) return;
+
+        if (subRes.error || messagesRes.error || payRes.error) {
+          throw new Error(
+            subRes.error?.message || messagesRes.error?.message || payRes.error?.message || "Falha ao carregar dados da conta"
+          );
+        }
+
+        setSub((subRes.data as unknown as SubscriptionData) ?? null);
+        setMessagesUsed(messagesRes.count ?? 0);
+        setPayments((payRes.data as unknown as PaymentRecord[]) ?? []);
+
+        await syncSubscription();
+
+        if (!isMounted) return;
+
+        const { data, error: refreshedSubError } = await supabase
           .from("subscriptions")
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle();
-        if (data) setSub(data as unknown as SubscriptionData);
-      });
+
+        if (!refreshedSubError && data) {
+          setSub(data as unknown as SubscriptionData);
+        }
+      } catch (e: any) {
+        console.error("MyAccount load error:", e);
+        if (isMounted) {
+          toast({
+            title: "Erro ao carregar Minha Conta",
+            description: e?.message || "Tente novamente em alguns segundos.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
+
     load();
-  }, [user, syncSubscription]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, syncSubscription, toast]);
 
   // Show success toast after checkout
   useEffect(() => {

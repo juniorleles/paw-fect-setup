@@ -30,18 +30,33 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       return;
     }
-    if (fetchedForUser.current === userId) return;
+
+    if (fetchedForUser.current === userId) {
+      setLoading(false);
+      return;
+    }
+
     fetchedForUser.current = userId;
-
     setLoading(true);
-    const { data } = await supabase
-      .from("pet_shop_configs")
-      .select("activated")
-      .eq("user_id", userId)
-      .maybeSingle();
 
-    setCompleted(data?.activated === true);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("pet_shop_configs")
+        .select("activated")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      setCompleted(data?.activated === true);
+    } catch (error) {
+      console.error("fetch onboarding status failed:", error);
+      setCompleted(false);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
   useEffect(() => {
