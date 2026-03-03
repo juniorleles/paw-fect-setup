@@ -169,7 +169,7 @@ const PricingSection = () => (
                   </li>
                 ))}
               </ul>
-              <a href="/auth?signup=true">
+              <a href="/auth?signup=true&plan=professional">
                 <Button className="w-full bg-primary/90 hover:bg-primary font-bold text-wrap py-3 h-auto leading-snug">Quero Crescer no Automático</Button>
               </a>
             </CardContent>
