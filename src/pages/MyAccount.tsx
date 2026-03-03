@@ -175,7 +175,7 @@ const MyAccount = () => {
           supabase
             .from("conversation_messages")
             .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
+            .eq("user_id", userId)
             .gte("created_at", monthStart)
             .lte("created_at", monthEnd),
           supabase
