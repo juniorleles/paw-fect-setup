@@ -379,11 +379,20 @@ const MyAccount = () => {
                     <CalendarCheck className="w-4 h-4 text-primary" />
                     <span className="text-sm font-semibold text-foreground">Clientes agendados pela IA</span>
                   </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{aptsAvailable} agendamentos disponíveis</span>
-                    <span className="font-bold text-foreground">{trialAptsUsed}/{trialAptsLimit}</span>
-                  </div>
-                  <Progress value={Math.min(trialAptsPercent, 100)} className={`h-2.5 ${trialAptsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
+                  {trialAptsLimit === -1 ? (
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span className="text-success font-semibold">Ilimitados</span>
+                      <span className="font-bold text-foreground">{trialAptsUsed} agendamentos</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{aptsAvailable} agendamentos disponíveis</span>
+                        <span className="font-bold text-foreground">{trialAptsUsed}/{trialAptsLimit}</span>
+                      </div>
+                      <Progress value={Math.min(trialAptsPercent, 100)} className={`h-2.5 ${trialAptsPercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
+                    </>
+                  )}
                 </div>
 
                 {/* Messages progress */}
