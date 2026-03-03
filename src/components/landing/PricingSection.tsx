@@ -166,7 +166,7 @@ const PricingSection = () => (
 
       <p className="text-xs text-muted-foreground mt-6 text-center max-w-2xl mx-auto leading-relaxed">
         * <strong>Atendente</strong> refere-se à quantidade de agendamentos simultâneos permitidos no mesmo horário na sua agenda. 
-        No plano Free, apenas 1 agendamento por horário. No Profissional, até 5 agendamentos ao mesmo tempo — ideal para negócios com mais de um profissional atendendo. A IA responde a todos os clientes simultaneamente, sem limite.
+        No plano Free, apenas 1 agendamento por horário. No Essencial, até 5 agendamentos ao mesmo tempo — ideal para negócios com mais de um profissional atendendo. A IA responde a todos os clientes simultaneamente, sem limite.
       </p>
     </div>
   </section>
