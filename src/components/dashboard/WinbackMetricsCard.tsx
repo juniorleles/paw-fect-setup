@@ -124,18 +124,18 @@ const WinbackMetricsCard = () => {
   if (plan !== "professional" || loading) return null;
 
   const totalSent = stages.WINBACK_15.sent + stages.WINBACK_30.sent + stages.WINBACK_60.sent;
+  const totalAll = totalSent + upsellCount;
 
   // Don't show if no data and no eligible clients
-  if (totalSent === 0 && nextClients === 0) return null;
+  if (totalAll === 0 && nextClients === 0) return null;
 
   const returnRate = totalSent > 0 ? (returnedCount / totalSent) * 100 : 0;
-  const uniqueSent = totalSent; // already counted per stage
 
   return (
     <section>
       <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
         <Crown className="w-4 h-4 text-primary" />
-        Campanha Win-back
+        Campanhas Automáticas
         <Badge variant="secondary" className="text-[10px] font-bold uppercase">Pro</Badge>
       </h2>
 
