@@ -22,11 +22,12 @@ import { STRIPE_PLANS, type StripePlanKey } from "@/config/stripe";
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const { plan: subscriptionPlan, refetch: refetchSubscription } = useSubscription();
+  const { plan: subscriptionPlan, status: subStatus, refetch: refetchSubscription } = useSubscription();
   const { refetch: refetchOnboarding } = useOnboardingStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const initialStep = (location.state as any)?.step ?? 1;
   const [step, setStep] = useState(initialStep);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
@@ -34,10 +35,29 @@ const Index = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activated, setActivated] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   
   const isMobile = useIsMobile();
   const [configId, setConfigId] = useState<string | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
+
+  // Determine the chosen plan (from localStorage, set during signup)
+  const chosenPlan = localStorage.getItem("chosen_plan") || "free";
+  const isPaidPlan = chosenPlan === "starter" || chosenPlan === "professional";
+  // If user already has an active paid subscription, skip paywall
+  const hasPaidSubscription = subStatus === "active" && (subscriptionPlan === "starter" || subscriptionPlan === "professional");
+  const needsPayment = isPaidPlan && !hasPaidSubscription;
+
+  // Handle checkout success return
+  useEffect(() => {
+    const checkoutResult = searchParams.get("checkout");
+    if (checkoutResult === "success" && step === 6) {
+      // User just returned from successful Stripe checkout
+      localStorage.removeItem("chosen_plan");
+      refetchSubscription();
+      toast({ title: "Pagamento confirmado!", description: "Agora você pode ativar sua secretária." });
+    }
+  }, [searchParams]);
 
   // Load existing config
   useEffect(() => {
