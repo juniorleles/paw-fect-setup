@@ -152,17 +152,45 @@ const UpgradeRequired = () => {
 
         {/* Plans */}
         <div className="grid sm:grid-cols-2 gap-4">
-          {/* Starter */}
-          <Card className="border-2 border-muted">
+          {/* Essencial */}
+          <Card className="border-2 border-primary shadow-lg scale-[1.02]">
             <CardContent className="p-5 flex flex-col h-full">
-              <Badge className="w-fit mb-2 bg-destructive text-destructive-foreground text-xs">🔥 Fundador</Badge>
-              <h3 className="font-display font-bold text-lg">Starter</h3>
+              <Badge className="w-fit mb-2 bg-primary text-primary-foreground text-xs">⭐ Mais Escolhido</Badge>
+              <h3 className="font-display font-bold text-lg">Essencial</h3>
               <div className="mb-1">
                 <span className="text-3xl font-bold">R$ {STRIPE_PLANS.starter.price}</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
               <ul className="space-y-1.5 mb-4 flex-1 text-sm mt-3">
-                {["1 número WhatsApp", "Até 1.000 msgs/mês", "Respostas automáticas", "Suporte padrão"].map((f) => (
+                {["Agendamentos ilimitados", "Até 800 msgs/mês", "Até 3 profissionais", "Suporte prioritário"].map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                className="w-full font-bold"
+                onClick={() => handleCheckout("starter")}
+                disabled={checkoutLoading === "starter"}
+              >
+                {checkoutLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-2" />}
+                Ativar Essencial
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Pro */}
+          <Card className="border-2 border-muted">
+            <CardContent className="p-5 flex flex-col h-full">
+              <Badge className="w-fit mb-2 bg-destructive text-destructive-foreground text-xs">🚀 Crescimento</Badge>
+              <h3 className="font-display font-bold text-lg">Pro</h3>
+              <div className="mb-1">
+                <span className="text-3xl font-bold">R$ {STRIPE_PLANS.professional.price}</span>
+                <span className="text-muted-foreground text-sm">/mês</span>
+              </div>
+              <ul className="space-y-1.5 mb-4 flex-1 text-sm mt-3">
+                {["Tudo do Essencial +", "Até 1.500 msgs/mês", "Profissionais ilimitados", "Campanhas automáticas"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
@@ -172,39 +200,11 @@ const UpgradeRequired = () => {
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => handleCheckout("starter")}
-                disabled={checkoutLoading === "starter"}
-              >
-                {checkoutLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
-                Ativar Starter
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Professional */}
-          <Card className="border-2 border-primary shadow-lg scale-[1.02]">
-            <CardContent className="p-5 flex flex-col h-full">
-              <Badge className="w-fit mb-2 bg-primary text-primary-foreground text-xs">⭐ Mais Popular</Badge>
-              <h3 className="font-display font-bold text-lg">Profissional</h3>
-              <div className="mb-1">
-                <span className="text-3xl font-bold">R$ {STRIPE_PLANS.professional.price}</span>
-                <span className="text-muted-foreground text-sm">/mês</span>
-              </div>
-              <ul className="space-y-1.5 mb-4 flex-1 text-sm mt-3">
-                {["Tudo do Starter +", "Até 3.000 msgs/mês", "IA personalizada", "Suporte prioritário"].map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                className="w-full font-bold"
                 onClick={() => handleCheckout("professional")}
                 disabled={checkoutLoading === "professional"}
               >
-                {checkoutLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-2" />}
-                Ativar Profissional
+                {checkoutLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
+                Ativar Pro
               </Button>
             </CardContent>
           </Card>
