@@ -29,3 +29,5 @@ project_id = "kxcqizfxfqzmnhxeaepc"
     verify_jwt = false
   [functions.process-sender]
     verify_jwt = false
+  [functions.detect-no-shows]
+    verify_jwt = false
