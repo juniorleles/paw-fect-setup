@@ -246,6 +246,218 @@ function getServiceClient() {
   );
 }
 
+// --- Structured Conversation State ---
+// Persists booking flow progress so the AI never loses context.
+
+interface ConversationState {
+  step: string;       // greeting | service_selection | date_selection | time_selection | name_collection | confirming | post_booking
+  service: string | null;
+  date: string | null;
+  time: string | null;
+  client_name: string | null;
+  pet_name: string | null;
+  notes: string | null;
+  extra: Record<string, any>;
+}
+
+const EMPTY_STATE: ConversationState = {
+  step: "greeting",
+  service: null,
+  date: null,
+  time: null,
+  client_name: null,
+  pet_name: null,
+  notes: null,
+  extra: {},
+};
+
+async function getConversationState(
+  serviceClient: any,
+  userId: string,
+  phone: string
+): Promise<ConversationState> {
+  const { data } = await serviceClient
+    .from("conversation_state")
+    .select("step, service, date, time, client_name, pet_name, notes, extra")
+    .eq("user_id", userId)
+    .eq("phone", phone)
+    .maybeSingle();
+
+  if (!data) return { ...EMPTY_STATE };
+  return {
+    step: data.step || "greeting",
+    service: data.service,
+    date: data.date,
+    time: data.time,
+    client_name: data.client_name,
+    pet_name: data.pet_name,
+    notes: data.notes,
+    extra: data.extra || {},
+  };
+}
+
+async function updateConversationState(
+  serviceClient: any,
+  userId: string,
+  phone: string,
+  updates: Partial<ConversationState>
+): Promise<void> {
+  const row = {
+    user_id: userId,
+    phone,
+    ...updates,
+    updated_at: new Date().toISOString(),
+  };
+  await serviceClient
+    .from("conversation_state")
+    .upsert(row, { onConflict: "user_id,phone" });
+}
+
+async function clearConversationState(
+  serviceClient: any,
+  userId: string,
+  phone: string
+): Promise<void> {
+  await serviceClient
+    .from("conversation_state")
+    .delete()
+    .eq("user_id", userId)
+    .eq("phone", phone);
+}
+
+// Infer conversation state updates from user message + context
+function inferStateFromUserMessage(
+  userMessage: string,
+  currentState: ConversationState,
+  services: any[],
+  ownerName: string | null
+): Partial<ConversationState> {
+  const updates: Partial<ConversationState> = {};
+  const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+  // Detect service
+  const normalizeForMatch = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+  const normalizeConnectors = (text: string) => normalizeForMatch(text).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+
+  const serviceList = (services || [])
+    .map((s: any) => ({ original: s?.name || "", normalized: normalizeForMatch(s?.name || ""), withConnectors: normalizeConnectors(s?.name || "") }))
+    .filter((s: any) => s.normalized.length > 1)
+    .sort((a: any, b: any) => b.normalized.length - a.normalized.length);
+
+  const userForMatch = normalizeForMatch(userMessage || "");
+  const userConnectors = normalizeConnectors(userMessage || "");
+  const matchedService = serviceList.find((s: any) => userForMatch.includes(s.normalized) || userConnectors.includes(s.withConnectors));
+  if (matchedService) {
+    updates.service = matchedService.original;
+    if (currentState.step === "greeting" || currentState.step === "service_selection") {
+      updates.step = "date_selection";
+    }
+  }
+
+  // Detect date
+  if (/\bamanha\b/i.test(userNorm)) {
+    const tomorrow = new Date(Date.now() - 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000);
+    updates.date = tomorrow.toISOString().split("T")[0];
+    if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+  } else if (/\bhoje\b/i.test(userNorm)) {
+    const today = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    updates.date = today.toISOString().split("T")[0];
+    if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+  } else {
+    const weekdays: Record<string, number> = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
+    for (const [name, dayNum] of Object.entries(weekdays)) {
+      if (userNorm.includes(name)) {
+        const brNow = new Date(Date.now() - 3 * 60 * 60 * 1000);
+        const diff = ((dayNum - brNow.getUTCDay()) + 7) % 7 || 7;
+        const target = new Date(brNow.getTime() + diff * 24 * 60 * 60 * 1000);
+        updates.date = target.toISOString().split("T")[0];
+        if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+        break;
+      }
+    }
+  }
+
+  // Detect time
+  const exactTimeMatch = userNorm.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if (exactTimeMatch) {
+    updates.time = `${exactTimeMatch[1].padStart(2, "0")}:${exactTimeMatch[2]}`;
+    updates.step = "name_collection";
+  } else {
+    const hourWithAs = userNorm.match(/(?:as\s*)([01]?\d|2[0-3])\b/);
+    const hourWithH = userNorm.match(/\b([01]?\d|2[0-3])h\b/);
+    if (hourWithAs) {
+      updates.time = `${hourWithAs[1].padStart(2, "0")}:00`;
+      updates.step = "name_collection";
+    } else if (hourWithH) {
+      updates.time = `${hourWithH[1].padStart(2, "0")}:00`;
+      updates.step = "name_collection";
+    }
+  }
+
+  // Detect name (simple heuristic: short message after AI asked for name)
+  const namePatterns = userMessage.match(/(?:meu nome [eé]|me chamo|sou o|sou a|pode me chamar de)\s+(\w+)/i);
+  if (namePatterns) {
+    updates.client_name = namePatterns[1];
+    updates.step = "confirming";
+  }
+
+  // If ownerName is known from memory and not yet in state
+  if (ownerName && !currentState.client_name && !updates.client_name) {
+    updates.client_name = ownerName;
+  }
+
+  // If we have all info, advance to confirming
+  if ((currentState.service || updates.service) && (currentState.date || updates.date) && (currentState.time || updates.time) && (currentState.client_name || updates.client_name)) {
+    updates.step = "confirming";
+  }
+
+  return updates;
+}
+
+// After successful booking, mark state as post_booking
+function stateAfterBooking(): Partial<ConversationState> {
+  return {
+    step: "post_booking",
+    service: null,
+    date: null,
+    time: null,
+    notes: null,
+  };
+}
+
+// Build state context string for injection into system prompt
+function buildStateContext(state: ConversationState): string {
+  if (state.step === "greeting") return "";
+
+  const lines: string[] = [];
+  lines.push("\n\n=== ESTADO ATUAL DA CONVERSA (ESTRUTURADO) ===");
+  lines.push(`Etapa: ${state.step}`);
+  if (state.service) lines.push(`Serviço escolhido: ${state.service}`);
+  if (state.date) {
+    const [y, m, d] = state.date.split("-");
+    lines.push(`Data escolhida: ${d}/${m}/${y}`);
+  }
+  if (state.time) lines.push(`Horário escolhido: ${state.time}`);
+  if (state.client_name) lines.push(`Nome do cliente: ${state.client_name}`);
+  if (state.pet_name) lines.push(`Nome do pet: ${state.pet_name}`);
+
+  const missing: string[] = [];
+  if (!state.service) missing.push("serviço");
+  if (!state.date) missing.push("data");
+  if (!state.time) missing.push("horário");
+  if (!state.client_name) missing.push("nome do cliente");
+
+  if (missing.length > 0) {
+    lines.push(`INFORMAÇÕES FALTANTES: ${missing.join(", ")}`);
+    lines.push("REGRA: Pergunte APENAS o que está faltando. NÃO peça informações que já estão preenchidas acima.");
+  } else {
+    lines.push("TODAS as informações estão completas. Confirme o agendamento AUTOMATICAMENTE com o bloco <action>.");
+  }
+  lines.push("=== FIM DO ESTADO ===");
+
+  return lines.join("\n");
+}
+
 function cleanPhoneNumber(phone: string): string {
   return phone.replace("@s.whatsapp.net", "").replace(/\D/g, "");
 }
