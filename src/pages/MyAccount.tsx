@@ -58,6 +58,8 @@ interface SubscriptionData {
   payment_method: string | null;
   last_payment_status: string | null;
   created_at: string;
+  next_plan: string | null;
+  next_plan_effective_at: string | null;
 }
 
 interface PaymentRecord {
@@ -90,6 +92,9 @@ const MyAccount = () => {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [planChangeLoading, setPlanChangeLoading] = useState<string | null>(null);
+  const [planChangePreview, setPlanChangePreview] = useState<any>(null);
+  const [planChangeDialogOpen, setPlanChangeDialogOpen] = useState(false);
 
   const syncInFlightRef = useRef(false);
   const lastSyncedUserIdRef = useRef<string | null>(null);
@@ -298,6 +303,59 @@ const MyAccount = () => {
       toast({ title: "Erro", description: e.message, variant: "destructive" });
     } finally {
       setPortalLoading(false);
+    }
+  };
+
+  const handlePlanChange = async (targetPlan: string) => {
+    setPlanChangeLoading(targetPlan);
+    try {
+      const { data, error } = await supabase.functions.invoke("change-plan", {
+        body: { targetPlan, action: "preview" },
+      });
+      if (error) throw new Error(String(error.message || error));
+      if (data?.error) throw new Error(data.error);
+      setPlanChangePreview({ ...data, targetPlan });
+      setPlanChangeDialogOpen(true);
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally {
+      setPlanChangeLoading(null);
+    }
+  };
+
+  const confirmPlanChange = async () => {
+    if (!planChangePreview) return;
+    setPlanChangeLoading(planChangePreview.targetPlan);
+    setPlanChangeDialogOpen(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("change-plan", {
+        body: { targetPlan: planChangePreview.targetPlan, action: "confirm" },
+      });
+      if (error) throw new Error(String(error.message || error));
+      if (data?.error) throw new Error(data.error);
+      toast({
+        title: data.type === "upgrade" ? "Upgrade realizado! 🎉" : "Downgrade agendado",
+        description: data.message,
+      });
+      setPlanChangePreview(null);
+      window.location.reload();
+    } catch (e: any) {
+      toast({ title: "Erro ao alterar plano", description: e.message, variant: "destructive" });
+    } finally {
+      setPlanChangeLoading(null);
+    }
+  };
+
+  const cancelScheduledDowngrade = async () => {
+    try {
+      await supabase
+        .from("subscriptions")
+        .update({ next_plan: null, next_plan_effective_at: null })
+        .eq("user_id", userId!);
+      toast({ title: "Downgrade cancelado", description: "Seu plano atual será mantido." });
+      window.location.reload();
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
     }
   };
 
@@ -606,6 +664,10 @@ const MyAccount = () => {
               </ul>
               {currentPlan === "starter" && !isCancelled && !isActive ? (
                 <Button variant="outline" disabled className="w-full">Plano atual</Button>
+              ) : isActive ? (
+                <Button variant="outline" className="w-full" disabled>
+                  <Lock className="w-4 h-4 mr-1" /> Free
+                </Button>
               ) : (
                 <Button variant="outline" className="w-full" disabled>Free</Button>
               )}
@@ -643,6 +705,16 @@ const MyAccount = () => {
               </ul>
               {currentPlan === "starter" && isActive ? (
                 <Button disabled className="w-full">Plano atual</Button>
+              ) : currentPlan === "professional" && isActive ? (
+                <Button
+                  variant="outline"
+                  className="w-full border-primary/30 font-bold"
+                  onClick={() => handlePlanChange("starter")}
+                  disabled={planChangeLoading === "starter"}
+                >
+                  {planChangeLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
+                  {sub?.next_plan === "starter" ? "Downgrade agendado" : "Fazer downgrade"}
+                </Button>
               ) : (
                 <Button
                   className="w-full shadow-lg shadow-primary/20 font-bold"
@@ -650,7 +722,7 @@ const MyAccount = () => {
                   disabled={checkoutLoading === "starter"}
                 >
                   {checkoutLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
-                  {currentPlan === "professional" && isActive ? "Fazer downgrade" : "Fazer upgrade"}
+                  Fazer upgrade
                 </Button>
               )}
             </CardContent>
@@ -689,6 +761,15 @@ const MyAccount = () => {
               </ul>
               {currentPlan === "professional" && isActive ? (
                 <Button disabled className="w-full">Plano atual</Button>
+              ) : currentPlan === "starter" && isActive ? (
+                <Button
+                  className="w-full bg-primary/90 hover:bg-primary font-bold"
+                  onClick={() => handlePlanChange("professional")}
+                  disabled={planChangeLoading === "professional"}
+                >
+                  {planChangeLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-1" />}
+                  Fazer upgrade
+                </Button>
               ) : (
                 <Button
                   className="w-full bg-primary/90 hover:bg-primary font-bold"
@@ -707,6 +788,24 @@ const MyAccount = () => {
           * <strong>Atendente</strong> refere-se à quantidade de agendamentos simultâneos permitidos no mesmo horário. 
           No Free, 1 agendamento por horário. No Essencial, até 3 ao mesmo tempo. A IA responde a todos os clientes sem limite.
         </p>
+
+        {/* Scheduled downgrade banner */}
+        {sub?.next_plan && sub?.next_plan_effective_at && (
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 flex items-center gap-3 flex-wrap">
+            <Zap className="w-5 h-5 text-accent flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">
+                Downgrade agendado para {sub.next_plan === "starter" ? "Essencial" : "Pro"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Seu plano atual continua ativo até {format(new Date(sub.next_plan_effective_at), "dd/MM/yyyy")}. Após essa data, o plano será alterado automaticamente.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={cancelScheduledDowngrade}>
+              Cancelar downgrade
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* 5. Forma de pagamento */}
@@ -845,6 +944,52 @@ const MyAccount = () => {
         onSelectPlan={(plan) => handleCheckout(plan)}
         checkoutLoading={checkoutLoading}
       />
+
+      {/* Plan Change Confirmation Dialog */}
+      <AlertDialog open={planChangeDialogOpen} onOpenChange={setPlanChangeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {planChangePreview?.type === "upgrade" ? "Confirmar upgrade" : "Confirmar downgrade"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {planChangePreview?.type === "upgrade" ? (
+                  <>
+                    <p>
+                      Você pagará <strong className="text-foreground">R$ {planChangePreview?.prorationAmount?.toFixed(2)}</strong> hoje para atualizar seu plano.
+                    </p>
+                    <p>
+                      O plano <strong className="text-foreground">{planChangePreview?.targetPlan === "professional" ? "Pro" : "Essencial"}</strong> será ativado imediatamente com todos os recursos desbloqueados.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Na próxima renovação, você será cobrado normalmente R$ {planChangePreview?.nextBillingAmount}/mês.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Seu plano será alterado para <strong className="text-foreground">{planChangePreview?.targetPlan === "starter" ? "Essencial" : "Pro"}</strong> na próxima data de cobrança.
+                    </p>
+                    <p>
+                      Os recursos do plano atual continuarão disponíveis até <strong className="text-foreground">{planChangePreview?.effectiveAt ? format(new Date(planChangePreview.effectiveAt), "dd/MM/yyyy") : ""}</strong>.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Não haverá cobrança ou reembolso proporcional.
+                    </p>
+                  </>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPlanChange}>
+              {planChangePreview?.type === "upgrade" ? "Confirmar e pagar" : "Confirmar downgrade"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

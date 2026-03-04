@@ -15,6 +15,8 @@ interface SubscriptionContextValue {
   trialMessagesUsed: number;
   trialAppointmentsLimit: number;
   trialMessagesLimit: number;
+  nextPlan: string | null;
+  nextPlanEffectiveAt: string | null;
   cancel: () => Promise<{ error?: string }>;
   reactivate: () => Promise<{ error?: string; qr_code?: string }>;
   refetch: () => Promise<void>;
@@ -35,6 +37,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [trialMessagesUsed, setTrialMessagesUsed] = useState(0);
   const [trialAppointmentsLimit, setTrialAppointmentsLimit] = useState(50);
   const [trialMessagesLimit, setTrialMessagesLimit] = useState(250);
+  const [nextPlan, setNextPlan] = useState<string | null>(null);
+  const [nextPlanEffectiveAt, setNextPlanEffectiveAt] = useState<string | null>(null);
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
       setStatus("none");
@@ -53,7 +57,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase
         .from("subscriptions")
-        .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit, updated_at")
+        .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit, updated_at, next_plan, next_plan_effective_at")
         .eq("user_id", userId)
         .order("updated_at", { ascending: false })
         .limit(1);
@@ -71,6 +75,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setTrialMessagesUsed((latest as any)?.trial_messages_used ?? 0);
       setTrialAppointmentsLimit((latest as any)?.trial_appointments_limit ?? 30);
       setTrialMessagesLimit((latest as any)?.trial_messages_limit ?? 150);
+      setNextPlan((latest as any)?.next_plan ?? null);
+      setNextPlanEffectiveAt((latest as any)?.next_plan_effective_at ?? null);
     } catch (error) {
       console.error("fetchSubscription failed:", error);
       setStatus("none");
@@ -132,6 +138,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       value={{
         status, loading, cancelling, reactivating, trialEndAt, plan,
         trialAppointmentsUsed, trialMessagesUsed, trialAppointmentsLimit, trialMessagesLimit,
+        nextPlan, nextPlanEffectiveAt,
         cancel, reactivate, refetch,
       }}
     >

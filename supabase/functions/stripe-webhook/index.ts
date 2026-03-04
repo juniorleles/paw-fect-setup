@@ -226,7 +226,7 @@ function detectPlanFromSubscription(sub: Stripe.Subscription): string {
 
 async function upsertSubscription(supabase: any, userId: string, sub: Stripe.Subscription) {
   const status = sub.status === "active" || sub.status === "trialing" ? "active" : sub.status;
-  const plan = detectPlanFromSubscription(sub);
+  let plan = detectPlanFromSubscription(sub);
   const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.starter;
 
   const payload: Record<string, any> = {
@@ -245,23 +245,42 @@ async function upsertSubscription(supabase: any, userId: string, sub: Stripe.Sub
 
   const { data: existing } = await supabase
     .from("subscriptions")
-    .select("id, trial_messages_used, trial_appointments_used")
+    .select("id, trial_messages_used, trial_appointments_used, plan, next_plan, next_plan_effective_at")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (existing) {
-    // On plan upgrade, reset usage counters and reset_at
-    const { data: oldSub } = await supabase
-      .from("subscriptions")
-      .select("plan")
-      .eq("id", existing.id)
-      .single();
+    // Check if there's a scheduled downgrade that should now take effect
+    if (existing.next_plan && existing.next_plan_effective_at) {
+      const effectiveAt = new Date(existing.next_plan_effective_at);
+      const now = new Date();
+      if (now >= effectiveAt) {
+        logStep("Applying scheduled downgrade", { from: existing.plan, to: existing.next_plan });
+        const downgradePlan = existing.next_plan;
+        const downgradeLimits = PLAN_LIMITS[downgradePlan] || PLAN_LIMITS.starter;
+        payload.plan = downgradePlan;
+        payload.trial_messages_limit = downgradeLimits.messagesLimit;
+        payload.trial_appointments_limit = downgradeLimits.appointmentsLimit;
+        payload.next_plan = null;
+        payload.next_plan_effective_at = null;
+        payload.trial_messages_used = 0;
+        payload.trial_appointments_used = 0;
+        payload.usage_reset_at = new Date().toISOString();
 
-    if (oldSub && oldSub.plan !== plan) {
+        await supabase.from("subscription_logs").insert({
+          user_id: userId,
+          action: "plan_downgrade_applied",
+          details: { from: existing.plan, to: downgradePlan },
+        });
+      }
+    }
+
+    // On plan upgrade (not downgrade), reset usage counters
+    if (existing.plan !== payload.plan && !existing.next_plan) {
       payload.trial_messages_used = 0;
       payload.trial_appointments_used = 0;
       payload.usage_reset_at = new Date().toISOString();
-      logStep("Plan changed, resetting counters", { from: oldSub.plan, to: plan });
+      logStep("Plan changed, resetting counters", { from: existing.plan, to: payload.plan });
     }
 
     await supabase.from("subscriptions").update(payload).eq("id", existing.id);
@@ -273,6 +292,6 @@ async function upsertSubscription(supabase: any, userId: string, sub: Stripe.Sub
   await supabase.from("subscription_logs").insert({
     user_id: userId,
     action: `webhook_${sub.status}`,
-    details: { subscription_id: sub.id, plan, cancel_at_period_end: sub.cancel_at_period_end },
+    details: { subscription_id: sub.id, plan: payload.plan, cancel_at_period_end: sub.cancel_at_period_end },
   });
 }

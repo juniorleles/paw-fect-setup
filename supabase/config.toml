@@ -33,3 +33,5 @@ project_id = "kxcqizfxfqzmnhxeaepc"
     verify_jwt = false
   [functions.send-no-show-recovery]
     verify_jwt = false
+  [functions.change-plan]
+    verify_jwt = false
