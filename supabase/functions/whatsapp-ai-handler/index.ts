@@ -887,8 +887,16 @@ async function findLastMentionedService(
     .replace(/\s+/g, " ")
     .trim();
 
+  // Normalize connectors: "+" "e" "&" all become a single canonical separator
+  const normalizeConnectors = (text: string) =>
+    normalize(text).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+
   const serviceList = (services || [])
-    .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
+    .map((s: any) => ({
+      original: s?.name || "",
+      normalized: normalize(s?.name || ""),
+      withConnectors: normalizeConnectors(s?.name || ""),
+    }))
     .filter((s: { original: string; normalized: string }) => s.normalized.length > 1)
     .sort((a: { normalized: string }, b: { normalized: string }) => b.normalized.length - a.normalized.length);
 
@@ -905,7 +913,10 @@ async function findLastMentionedService(
   const messages = data || [];
   for (const msg of messages) {
     const normalizedMessage = normalize(msg.content || "");
-    const found = serviceList.find((s: { original: string; normalized: string }) => normalizedMessage.includes(s.normalized));
+    const connectorMessage = normalizeConnectors(msg.content || "");
+    const found = serviceList.find((s: { original: string; normalized: string; withConnectors: string }) =>
+      normalizedMessage.includes(s.normalized) || connectorMessage.includes(s.withConnectors)
+    );
     if (found) return found.original;
   }
 
