@@ -2461,11 +2461,31 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       ? getServiceDuration(shopConfig.services || [], lastMentionedService)
       : null;
 
+    // --- Load and update structured conversation state ---
+    const convState = await getConversationState(serviceClient, shopConfig.user_id, cleanPhone);
+    console.log(`[STATE] Loaded state for ${cleanPhone}: step=${convState.step}, service=${convState.service}, date=${convState.date}, time=${convState.time}, name=${convState.client_name}`);
+
+    // Apply known owner name from long-term memory
+    if (ownerName && !convState.client_name) {
+      convState.client_name = ownerName;
+    }
+
+    // Infer state updates from the user message
+    const stateUpdates = inferStateFromUserMessage(message, convState, shopConfig.services || [], ownerName);
+    if (Object.keys(stateUpdates).length > 0) {
+      // Merge updates into current state
+      Object.assign(convState, stateUpdates);
+      await updateConversationState(serviceClient, shopConfig.user_id, cleanPhone, stateUpdates);
+      console.log(`[STATE] Updated: step=${convState.step}, service=${convState.service}, date=${convState.date}, time=${convState.time}, name=${convState.client_name}`);
+    }
+
     const availableSlotsForContext = serviceDurationForContext
       ? filterAvailableSlotsForService(availableSlots, serviceDurationForContext)
       : availableSlots;
 
     if (serviceDurationForContext) {
+      console.log(`[AVAILABILITY_CONTEXT] Service "${lastMentionedService}" (${serviceDurationForContext}min) filtered for AI context`);
+    }
       console.log(`[AVAILABILITY_CONTEXT] Service "${lastMentionedService}" (${serviceDurationForContext}min) filtered for AI context`);
     }
 
