@@ -48,7 +48,7 @@ export interface Service {
 export const INITIAL_DATA: OnboardingData = {
   phone: "",
   phoneVerified: false,
-  niche: "petshop",
+  niche: "barbearia",
   shopName: "",
   address: "",
   neighborhood: "",
