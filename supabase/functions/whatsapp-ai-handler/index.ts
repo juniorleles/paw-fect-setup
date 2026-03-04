@@ -2489,8 +2489,6 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     if (serviceDurationForContext) {
       console.log(`[AVAILABILITY_CONTEXT] Service "${lastMentionedService}" (${serviceDurationForContext}min) filtered for AI context`);
     }
-      console.log(`[AVAILABILITY_CONTEXT] Service "${lastMentionedService}" (${serviceDurationForContext}min) filtered for AI context`);
-    }
 
     // --- Inject no-show recovery context if this phone has a pending recovery ---
     let recoveryContext = "";
