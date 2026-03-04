@@ -815,6 +815,10 @@ async function getConversationHistory(
     "Tive uma dificuldade técnica",
     "Desculpe, não consegui processar",
     "instabilidade temporária",
+    "resposta anterior continha apenas emojis",
+    "notei que a resposta anterior",
+    "Peço desculpas por isso",
+    "ignore a mensagem anterior",
   ];
 
   // Helper: check if a message contains actual text (not just emojis)
