@@ -330,25 +330,36 @@ function inferStateFromUserMessage(
   userMessage: string,
   currentState: ConversationState,
   services: any[],
-  ownerName: string | null
+  ownerName: string | null,
+  conversationHistory: { role: string; content: string }[] = [],
+  lastMentionedService: string | null = null,
 ): Partial<ConversationState> {
   const updates: Partial<ConversationState> = {};
   const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-  // Detect service
-  const normalizeForMatch = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-  const normalizeConnectors = (text: string) => normalizeForMatch(text).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+  // Detect service directly from user message
+  let matchedService = inferServiceFromText(userMessage || "", services);
 
-  const serviceList = (services || [])
-    .map((s: any) => ({ original: s?.name || "", normalized: normalizeForMatch(s?.name || ""), withConnectors: normalizeConnectors(s?.name || "") }))
-    .filter((s: any) => s.normalized.length > 1)
-    .sort((a: any, b: any) => b.normalized.length - a.normalized.length);
+  // Fallback 1: explicit service already remembered by guardrail logic
+  if (!matchedService && lastMentionedService) {
+    matchedService = lastMentionedService;
+  }
 
-  const userForMatch = normalizeForMatch(userMessage || "");
-  const userConnectors = normalizeConnectors(userMessage || "");
-  const matchedService = serviceList.find((s: any) => userForMatch.includes(s.normalized) || userConnectors.includes(s.withConnectors));
+  // Fallback 2: recover service from recent assistant context (e.g. "seu serviço de Corte + Barba")
+  if (!matchedService && conversationHistory.length > 0) {
+    const lastAssistant = [...conversationHistory].reverse().find((m) => m.role === "assistant");
+    if (lastAssistant?.content) {
+      matchedService = inferServiceFromText(lastAssistant.content, services);
+    }
+  }
+
+  // Fallback 3: keep previously known state service
+  if (!matchedService && currentState.service) {
+    matchedService = currentState.service;
+  }
+
   if (matchedService) {
-    updates.service = matchedService.original;
+    updates.service = matchedService;
     if (currentState.step === "greeting" || currentState.step === "service_selection") {
       updates.step = "date_selection";
     }
@@ -358,11 +369,11 @@ function inferStateFromUserMessage(
   if (/\bamanha\b/i.test(userNorm)) {
     const tomorrow = new Date(Date.now() - 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000);
     updates.date = tomorrow.toISOString().split("T")[0];
-    if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+    if (!updates.step) updates.step = (currentState.service || updates.service) ? "time_selection" : currentState.step;
   } else if (/\bhoje\b/i.test(userNorm)) {
     const today = new Date(Date.now() - 3 * 60 * 60 * 1000);
     updates.date = today.toISOString().split("T")[0];
-    if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+    if (!updates.step) updates.step = (currentState.service || updates.service) ? "time_selection" : currentState.step;
   } else {
     const weekdays: Record<string, number> = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
     for (const [name, dayNum] of Object.entries(weekdays)) {
@@ -371,27 +382,17 @@ function inferStateFromUserMessage(
         const diff = ((dayNum - brNow.getUTCDay()) + 7) % 7 || 7;
         const target = new Date(brNow.getTime() + diff * 24 * 60 * 60 * 1000);
         updates.date = target.toISOString().split("T")[0];
-        if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+        if (!updates.step) updates.step = (currentState.service || updates.service) ? "time_selection" : currentState.step;
         break;
       }
     }
   }
 
-  // Detect time
-  const exactTimeMatch = userNorm.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-  if (exactTimeMatch) {
-    updates.time = `${exactTimeMatch[1].padStart(2, "0")}:${exactTimeMatch[2]}`;
+  // Detect time (supports flexible formats like 8:0, 8h, às 8)
+  const parsedTime = parseFlexibleTimeFromMessage(userMessage || "");
+  if (parsedTime) {
+    updates.time = parsedTime;
     updates.step = "name_collection";
-  } else {
-    const hourWithAs = userNorm.match(/(?:as\s*)([01]?\d|2[0-3])\b/);
-    const hourWithH = userNorm.match(/\b([01]?\d|2[0-3])h\b/);
-    if (hourWithAs) {
-      updates.time = `${hourWithAs[1].padStart(2, "0")}:00`;
-      updates.step = "name_collection";
-    } else if (hourWithH) {
-      updates.time = `${hourWithH[1].padStart(2, "0")}:00`;
-      updates.step = "name_collection";
-    }
   }
 
   // Detect name (simple heuristic: short message after AI asked for name)
