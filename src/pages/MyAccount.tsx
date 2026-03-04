@@ -664,6 +664,10 @@ const MyAccount = () => {
               </ul>
               {currentPlan === "starter" && !isCancelled && !isActive ? (
                 <Button variant="outline" disabled className="w-full">Plano atual</Button>
+              ) : isActive ? (
+                <Button variant="outline" className="w-full" disabled>
+                  <Lock className="w-4 h-4 mr-1" /> Free
+                </Button>
               ) : (
                 <Button variant="outline" className="w-full" disabled>Free</Button>
               )}
