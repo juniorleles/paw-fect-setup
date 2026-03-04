@@ -761,6 +761,15 @@ const MyAccount = () => {
               </ul>
               {currentPlan === "professional" && isActive ? (
                 <Button disabled className="w-full">Plano atual</Button>
+              ) : currentPlan === "starter" && isActive ? (
+                <Button
+                  className="w-full bg-primary/90 hover:bg-primary font-bold"
+                  onClick={() => handlePlanChange("professional")}
+                  disabled={planChangeLoading === "professional"}
+                >
+                  {planChangeLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-1" />}
+                  Fazer upgrade
+                </Button>
               ) : (
                 <Button
                   className="w-full bg-primary/90 hover:bg-primary font-bold"
