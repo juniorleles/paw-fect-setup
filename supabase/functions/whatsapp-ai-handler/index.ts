@@ -533,6 +533,39 @@ function inferServiceFromText(text: string, services: any[]): string | null {
   return found?.original || null;
 }
 
+// Sanitize leaked system instructions from AI reply
+function sanitizeLeakedInstructions(reply: string): string {
+  if (!reply) return reply;
+  // Remove lines that look like leaked system instructions
+  const leakedPatterns = [
+    /^leia o hist[oó]rico.*$/gim,
+    /^lembrete:?\s.*$/gim,
+    /^regra:?\s.*$/gim,
+    /^instru[cç][aãõ]o:?\s.*$/gim,
+    /^n[aã]o (cumprim|repita|pe[cç]a).*$/gim,
+    /^responda\s+diretamente.*$/gim,
+    /^obrigad[ao]\.?\s*$/gim,
+    /^use\s+(este|esse|essas)\s+(resumo|informa[cç][oõ]es).*$/gim,
+    /^continue\s+o\s+fluxo.*$/gim,
+  ];
+
+  let cleaned = reply;
+  for (const pattern of leakedPatterns) {
+    cleaned = cleaned.replace(pattern, "");
+  }
+
+  // Clean up multiple blank lines left by removals
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+
+  if (cleaned.length < 5 && reply.length > 5) {
+    // If sanitization removed almost everything, return original minus first leaked line
+    const lines = reply.split("\n").filter(l => !/^(leia|lembrete|regra|instru)/i.test(l.trim()));
+    return lines.join("\n").trim() || reply;
+  }
+
+  return cleaned;
+}
+
 function cleanPhoneNumber(phone: string): string {
   return phone.replace("@s.whatsapp.net", "").replace(/\D/g, "");
 }
@@ -2611,19 +2644,11 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       ...conversationHistory,
     ];
 
-    // CRITICAL: If there's conversation history (not first message), inject a reminder
-    // to prevent the AI from re-greeting or ignoring the current message
+    // CRITICAL: If there's conversation history (not first message), append reminder
+    // directly to the system prompt to prevent leaking as a separate message
     const hasAssistantInHistory = conversationHistory.some(m => m.role === "assistant");
     if (hasAssistantInHistory) {
-      // Add a system-level reminder right before the last user message to anchor the AI
-      const lastUserMsg = aiMessages[aiMessages.length - 1];
-      if (lastUserMsg?.role === "user") {
-        // Insert reminder BEFORE the last user message
-        aiMessages.splice(aiMessages.length - 1, 0, {
-          role: "system",
-          content: "LEMBRETE: Você já se apresentou nesta conversa. NÃO cumprimente novamente. NÃO diga 'Boa tarde', 'Bom dia', 'Olá' novamente. Responda DIRETAMENTE ao que o cliente está pedindo na próxima mensagem. Se ele quer agendar, aborde o agendamento imediatamente."
-        });
-      }
+      aiMessages[0].content += "\n\nLEMBRETE INTERNO (NUNCA inclua isto na resposta): Você já se apresentou nesta conversa. NÃO cumprimente novamente. Responda DIRETAMENTE ao que o cliente está pedindo.";
     }
 
     // --- DETERMINISTIC BOOKING SHORTCUT ---
@@ -2989,6 +3014,9 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       console.log("Suppressing race-condition consecutive question in AI reply");
       reply = removeRepeatedQuestion(reply);
     }
+
+    // Sanitize any leaked system instructions before saving/sending
+    reply = sanitizeLeakedInstructions(reply);
 
     // Save assistant reply to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
