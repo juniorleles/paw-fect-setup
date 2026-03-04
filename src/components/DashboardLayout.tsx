@@ -40,7 +40,6 @@ const DashboardSidebarContent = () => {
 
   const userRank = PLAN_RANK[plan] ?? 0;
   const navItems = allNavItems.filter((item) => userRank >= (PLAN_RANK[item.minPlan] ?? 0));
-  const { setOpenMobile, isMobile } = useSidebar();
 
   const handleSignOut = async () => {
     if (isMobile) setOpenMobile(false);
