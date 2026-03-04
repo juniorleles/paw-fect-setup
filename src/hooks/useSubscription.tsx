@@ -75,6 +75,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setTrialMessagesUsed((latest as any)?.trial_messages_used ?? 0);
       setTrialAppointmentsLimit((latest as any)?.trial_appointments_limit ?? 30);
       setTrialMessagesLimit((latest as any)?.trial_messages_limit ?? 150);
+      setNextPlan((latest as any)?.next_plan ?? null);
+      setNextPlanEffectiveAt((latest as any)?.next_plan_effective_at ?? null);
     } catch (error) {
       console.error("fetchSubscription failed:", error);
       setStatus("none");
