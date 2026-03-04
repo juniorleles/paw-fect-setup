@@ -2289,11 +2289,32 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
 
     const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlotsForContext, maxConcurrent) + longTermMemory + recoveryContext;
 
+    // Log conversation history for debugging context loss
+    console.log(`[CONTEXT] Conversation history for ${cleanPhone}: ${conversationHistory.length} messages`);
+    if (conversationHistory.length > 0) {
+      console.log(`[CONTEXT] History preview: ${JSON.stringify(conversationHistory.map(m => ({ role: m.role, content: m.content.substring(0, 60) })))}`);
+    }
+
     // Build messages array with history
     const aiMessages: { role: string; content: string }[] = [
       { role: "system", content: systemPrompt },
       ...conversationHistory,
     ];
+
+    // CRITICAL: If there's conversation history (not first message), inject a reminder
+    // to prevent the AI from re-greeting or ignoring the current message
+    const hasAssistantInHistory = conversationHistory.some(m => m.role === "assistant");
+    if (hasAssistantInHistory) {
+      // Add a system-level reminder right before the last user message to anchor the AI
+      const lastUserMsg = aiMessages[aiMessages.length - 1];
+      if (lastUserMsg?.role === "user") {
+        // Insert reminder BEFORE the last user message
+        aiMessages.splice(aiMessages.length - 1, 0, {
+          role: "system",
+          content: "LEMBRETE: Você já se apresentou nesta conversa. NÃO cumprimente novamente. NÃO diga 'Boa tarde', 'Bom dia', 'Olá' novamente. Responda DIRETAMENTE ao que o cliente está pedindo na próxima mensagem. Se ele quer agendar, aborde o agendamento imediatamente."
+        });
+      }
+    }
 
     // --- DETERMINISTIC BOOKING SHORTCUT ---
     // When user selects a time from a list the AI just presented, bypass the AI entirely
