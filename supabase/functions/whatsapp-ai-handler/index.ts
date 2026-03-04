@@ -330,25 +330,36 @@ function inferStateFromUserMessage(
   userMessage: string,
   currentState: ConversationState,
   services: any[],
-  ownerName: string | null
+  ownerName: string | null,
+  conversationHistory: { role: string; content: string }[] = [],
+  lastMentionedService: string | null = null,
 ): Partial<ConversationState> {
   const updates: Partial<ConversationState> = {};
   const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-  // Detect service
-  const normalizeForMatch = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-  const normalizeConnectors = (text: string) => normalizeForMatch(text).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+  // Detect service directly from user message
+  let matchedService = inferServiceFromText(userMessage || "", services);
 
-  const serviceList = (services || [])
-    .map((s: any) => ({ original: s?.name || "", normalized: normalizeForMatch(s?.name || ""), withConnectors: normalizeConnectors(s?.name || "") }))
-    .filter((s: any) => s.normalized.length > 1)
-    .sort((a: any, b: any) => b.normalized.length - a.normalized.length);
+  // Fallback 1: explicit service already remembered by guardrail logic
+  if (!matchedService && lastMentionedService) {
+    matchedService = lastMentionedService;
+  }
 
-  const userForMatch = normalizeForMatch(userMessage || "");
-  const userConnectors = normalizeConnectors(userMessage || "");
-  const matchedService = serviceList.find((s: any) => userForMatch.includes(s.normalized) || userConnectors.includes(s.withConnectors));
+  // Fallback 2: recover service from recent assistant context (e.g. "seu serviço de Corte + Barba")
+  if (!matchedService && conversationHistory.length > 0) {
+    const lastAssistant = [...conversationHistory].reverse().find((m) => m.role === "assistant");
+    if (lastAssistant?.content) {
+      matchedService = inferServiceFromText(lastAssistant.content, services);
+    }
+  }
+
+  // Fallback 3: keep previously known state service
+  if (!matchedService && currentState.service) {
+    matchedService = currentState.service;
+  }
+
   if (matchedService) {
-    updates.service = matchedService.original;
+    updates.service = matchedService;
     if (currentState.step === "greeting" || currentState.step === "service_selection") {
       updates.step = "date_selection";
     }
@@ -358,11 +369,11 @@ function inferStateFromUserMessage(
   if (/\bamanha\b/i.test(userNorm)) {
     const tomorrow = new Date(Date.now() - 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000);
     updates.date = tomorrow.toISOString().split("T")[0];
-    if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+    if (!updates.step) updates.step = (currentState.service || updates.service) ? "time_selection" : currentState.step;
   } else if (/\bhoje\b/i.test(userNorm)) {
     const today = new Date(Date.now() - 3 * 60 * 60 * 1000);
     updates.date = today.toISOString().split("T")[0];
-    if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+    if (!updates.step) updates.step = (currentState.service || updates.service) ? "time_selection" : currentState.step;
   } else {
     const weekdays: Record<string, number> = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
     for (const [name, dayNum] of Object.entries(weekdays)) {
@@ -371,27 +382,17 @@ function inferStateFromUserMessage(
         const diff = ((dayNum - brNow.getUTCDay()) + 7) % 7 || 7;
         const target = new Date(brNow.getTime() + diff * 24 * 60 * 60 * 1000);
         updates.date = target.toISOString().split("T")[0];
-        if (!updates.step) updates.step = currentState.service || updates.service ? "time_selection" : currentState.step;
+        if (!updates.step) updates.step = (currentState.service || updates.service) ? "time_selection" : currentState.step;
         break;
       }
     }
   }
 
-  // Detect time
-  const exactTimeMatch = userNorm.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-  if (exactTimeMatch) {
-    updates.time = `${exactTimeMatch[1].padStart(2, "0")}:${exactTimeMatch[2]}`;
+  // Detect time (supports flexible formats like 8:0, 8h, às 8)
+  const parsedTime = parseFlexibleTimeFromMessage(userMessage || "");
+  if (parsedTime) {
+    updates.time = parsedTime;
     updates.step = "name_collection";
-  } else {
-    const hourWithAs = userNorm.match(/(?:as\s*)([01]?\d|2[0-3])\b/);
-    const hourWithH = userNorm.match(/\b([01]?\d|2[0-3])h\b/);
-    if (hourWithAs) {
-      updates.time = `${hourWithAs[1].padStart(2, "0")}:00`;
-      updates.step = "name_collection";
-    } else if (hourWithH) {
-      updates.time = `${hourWithH[1].padStart(2, "0")}:00`;
-      updates.step = "name_collection";
-    }
   }
 
   // Detect name (simple heuristic: short message after AI asked for name)
@@ -480,6 +481,56 @@ function buildConversationSummary(history: { role: string; content: string }[]):
   summaryLines.push("REGRA: Use este resumo para manter o contexto. NÃO repita perguntas que já foram respondidas acima. Continue o fluxo de onde parou.");
 
   return summaryLines.join("\n");
+}
+
+function parseFlexibleTimeFromMessage(text: string): string | null {
+  const normalized = (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const exact = normalized.match(/\b([01]?\d|2[0-3]):([0-5]?\d)\b/);
+  if (exact) {
+    const hh = exact[1].padStart(2, "0");
+    const mm = exact[2].padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  const hourWithAs = normalized.match(/(?:\bas\s*)([01]?\d|2[0-3])\b/);
+  if (hourWithAs) return `${hourWithAs[1].padStart(2, "0")}:00`;
+
+  const hourWithH = normalized.match(/\b([01]?\d|2[0-3])h\b/);
+  if (hourWithH) return `${hourWithH[1].padStart(2, "0")}:00`;
+
+  return null;
+}
+
+function inferServiceFromText(text: string, services: any[]): string | null {
+  const normalize = (value: string) => (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const normalizeConnectors = (value: string) =>
+    normalize(value).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+
+  const normalizedText = normalize(text || "");
+  const connectorText = normalizeConnectors(text || "");
+
+  const serviceList = (services || [])
+    .map((s: any) => ({
+      original: s?.name || "",
+      normalized: normalize(s?.name || ""),
+      withConnectors: normalizeConnectors(s?.name || ""),
+    }))
+    .filter((s: any) => s.normalized.length > 1)
+    .sort((a: any, b: any) => b.normalized.length - a.normalized.length);
+
+  const found = serviceList.find((s: any) =>
+    normalizedText.includes(s.normalized) || connectorText.includes(s.withConnectors)
+  );
+
+  return found?.original || null;
 }
 
 function cleanPhoneNumber(phone: string): string {
@@ -1952,6 +2003,7 @@ async function tryDeterministicBooking(
   conversationHistory: { role: string; content: string }[],
   ownerName: string | null,
   lastMentionedService: string | null,
+  convStateService: string | null,
   isPetNiche: boolean,
   instanceName: string,
   senderPhone: string,
@@ -1969,23 +2021,8 @@ async function tryDeterministicBooking(
   // Detect cancel/reschedule intents — let AI handle
   if (/(cancelar|remarcar|reagendar|desmarcar)/i.test(userNorm)) return null;
 
-  // Detect time intent in user message
-  let chosenTime: string | null = null;
-  const exactMatch = userNorm.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-  if (exactMatch) {
-    chosenTime = `${exactMatch[1].padStart(2, "0")}:${exactMatch[2]}`;
-  } else {
-    const hourWithAs = userNorm.match(/(?:as\s*)([01]?\d|2[0-3])\b/);
-    if (hourWithAs) {
-      chosenTime = `${hourWithAs[1].padStart(2, "0")}:00`;
-    } else {
-      const hourWithH = userNorm.match(/\b([01]?\d|2[0-3])h\b/);
-      if (hourWithH) {
-        chosenTime = `${hourWithH[1].padStart(2, "0")}:00`;
-      }
-    }
-  }
-
+  // Detect time intent in user message (supports 8:0, 8h, às 8)
+  const chosenTime = parseFlexibleTimeFromMessage(userMessage || "");
   if (!chosenTime) return null;
 
   // Check: does the last assistant message contain a list of available times?
@@ -2012,8 +2049,12 @@ async function tryDeterministicBooking(
   }
 
   // We have a valid time selection. Now gather remaining data.
-  let serviceName = lastMentionedService;
-  if (!serviceName) return null;
+  const inferredServiceFromAssistant = inferServiceFromText(lastAssistant.content || "", shopConfig.services || []);
+  let serviceName = lastMentionedService || convStateService || inferredServiceFromAssistant;
+  if (!serviceName) {
+    console.log(`[DeterministicBooking] Aborted: no service resolved for ${cleanPhone}`);
+    return null;
+  }
 
   // Verify service exists in config
   const serviceConfig = (shopConfig.services as any[]).find((s: any) =>
@@ -2498,7 +2539,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     }
 
     // Infer state updates from the user message
-    const stateUpdates = inferStateFromUserMessage(message, convState, shopConfig.services || [], ownerName);
+    const stateUpdates = inferStateFromUserMessage(message, convState, shopConfig.services || [], ownerName, conversationHistory, lastMentionedService);
     if (Object.keys(stateUpdates).length > 0) {
       // Merge updates into current state
       Object.assign(convState, stateUpdates);
@@ -2590,7 +2631,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     // to prevent context loss, hallucinations, and re-asking for information.
     const deterministicBookingResult = await tryDeterministicBooking(
       serviceClient, shopConfig, cleanPhone, message, conversationHistory,
-      ownerName, lastMentionedService, isPetNiche, instanceName, senderPhone,
+      ownerName, lastMentionedService, convState.service, isPetNiche, instanceName, senderPhone,
       availableSlots, appointments || [], isFarewell
     );
     if (deterministicBookingResult) {
