@@ -2003,6 +2003,7 @@ async function tryDeterministicBooking(
   conversationHistory: { role: string; content: string }[],
   ownerName: string | null,
   lastMentionedService: string | null,
+  convStateService: string | null,
   isPetNiche: boolean,
   instanceName: string,
   senderPhone: string,
