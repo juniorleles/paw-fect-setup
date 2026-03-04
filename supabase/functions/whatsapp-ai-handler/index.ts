@@ -1811,7 +1811,13 @@ async function tryDeterministicBooking(
     }
   }
 
-  if (!clientName) return null; // Can't determine name — let AI handle
+  if (!clientName) {
+    const askNameMsg = `Perfeito! Para confirmar ${serviceName} às ${finalTime}, me diz seu nome, por favor.`;
+    console.log(`[DeterministicBooking] Missing client name for ${cleanPhone} — asking name before confirmation`);
+    await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", askNameMsg);
+    await sendWhatsAppMessage(instanceName, senderPhone, askNameMsg);
+    return askNameMsg;
+  }
 
   // Determine date from last assistant message or available slots
   let chosenDate: string | null = null;
