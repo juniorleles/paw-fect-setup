@@ -195,7 +195,7 @@ const MyAccount = () => {
           );
         }
 
-        setSub((subRes.data as unknown as SubscriptionData) ?? null);
+        setSub((subRes.data?.[0] as unknown as SubscriptionData) ?? null);
         setMessagesUsed(messagesRes.count ?? 0);
         setPayments((payRes.data as unknown as PaymentRecord[]) ?? []);
 
