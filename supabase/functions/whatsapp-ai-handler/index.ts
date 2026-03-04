@@ -2044,6 +2044,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     reply = enforceBookingDateTimeQuestion(message, reply);
     reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory, lastMentionedService);
     reply = enforceBookingDateTimeQuestion(message, reply);
+    reply = enforceNoRedundantTimeQuestion(message, reply, conversationHistory);
 
     // Track AI usage with latency
     const tokensUsed = aiData.usage?.total_tokens || 0;
