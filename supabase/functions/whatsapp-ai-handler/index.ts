@@ -712,6 +712,42 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
 
+function buildSuggestedTimeOptionsFromAvailability(availableSlots: string, maxSuggestions = 6): { dayLabel: string; times: string[] } | null {
+  if (!availableSlots) return null;
+
+  const lines = availableSlots
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    if (/EXPEDIENTE ENCERRADO|LOTADO/i.test(line)) continue;
+
+    const dayPrefixMatch = line.match(/^([^:]+):/);
+    if (!dayPrefixMatch) continue;
+
+    const timesWithMeta = [...line.matchAll(/(\d{2}:\d{2})\s*\([^)]+\)/g)].map((m) => m[1]);
+    const plainTimes = [...line.matchAll(/\b(\d{2}:\d{2})\b/g)].map((m) => m[1]);
+    const times = [...new Set((timesWithMeta.length > 0 ? timesWithMeta : plainTimes))].slice(0, maxSuggestions);
+
+    if (times.length === 0) continue;
+
+    const dayLabelRaw = dayPrefixMatch[1].trim();
+    const dateIsoMatch = dayLabelRaw.match(/(\d{4}-\d{2}-\d{2})/);
+    const dayName = dayLabelRaw.replace(/\d{4}-\d{2}-\d{2}/, "").trim();
+
+    let dayLabel = dayLabelRaw;
+    if (dateIsoMatch) {
+      const [y, m, d] = dateIsoMatch[1].split("-");
+      dayLabel = `${dayName} (${d}/${m}/${y})`.trim();
+    }
+
+    return { dayLabel, times };
+  }
+
+  return null;
+}
+
 // Guardrail: if user explicitly wants to book but AI deflects to a generic question,
 // force continuation of booking flow deterministically.
 function enforceBookingIntentContinuation(
@@ -719,6 +755,7 @@ function enforceBookingIntentContinuation(
   reply: string,
   services: any[],
   knownService: string | null,
+  availableSlots: string,
 ): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
 
@@ -728,12 +765,21 @@ function enforceBookingIntentContinuation(
   const userHasBookingIntent = /(quero|gostaria|preciso|pode).*(agendar|marcar)|\bagendar\b|\bmarcar\b/.test(userNorm);
   if (!userHasBookingIntent) return reply;
 
-  const isGenericDeflection = /(o\s+que\s+.*deseja\s+fazer|como\s+posso\s+ajudar|em\s+que\s+posso\s+ajudar|como\s+gostaria\s+de\s+prosseguir|estou\s+a\s+disposicao)/.test(replyNorm);
+  const isGenericDeflection = /(o\s+que\s+.*deseja\s+fazer|como\s+posso\s+ajudar|em\s+que\s+posso\s+ajudar|como\s+(?:o\s+senhor\s+|a\s+senhora\s+|voce\s+|vc\s+)?(?:gostaria|deseja)\s+de?\s*prosseguir|estou\s+a\s+disposicao)/.test(replyNorm);
   if (!isGenericDeflection) return reply;
 
   const inferredService = inferServiceFromText(userMessage, services) || knownService;
+  const suggestions = buildSuggestedTimeOptionsFromAvailability(availableSlots, 6);
 
-  console.log(`[BookingContinuationGuard] Overriding generic deflection. inferredService=${inferredService || "none"}`);
+  console.log(`[BookingContinuationGuard] Overriding generic deflection. inferredService=${inferredService || "none"}, hasSuggestions=${!!suggestions}`);
+
+  if (suggestions) {
+    const intro = inferredService
+      ? `Perfeito! Vamos agendar ${inferredService} ✅`
+      : "Perfeito! Vamos agendar ✅";
+    const slotsText = suggestions.times.map((t) => `• ${t}`).join("\n");
+    return `${intro}\nSeguem algumas sugestões de horários para ${suggestions.dayLabel}:\n${slotsText}\nQual horário você prefere?`;
+  }
 
   if (inferredService) {
     return `Perfeito! Vamos agendar ${inferredService} ✅ Me diz o melhor dia e horário pra você.`;
