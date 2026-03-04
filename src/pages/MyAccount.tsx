@@ -944,6 +944,52 @@ const MyAccount = () => {
         onSelectPlan={(plan) => handleCheckout(plan)}
         checkoutLoading={checkoutLoading}
       />
+
+      {/* Plan Change Confirmation Dialog */}
+      <AlertDialog open={planChangeDialogOpen} onOpenChange={setPlanChangeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {planChangePreview?.type === "upgrade" ? "Confirmar upgrade" : "Confirmar downgrade"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {planChangePreview?.type === "upgrade" ? (
+                  <>
+                    <p>
+                      Você pagará <strong className="text-foreground">R$ {planChangePreview?.prorationAmount?.toFixed(2)}</strong> hoje para atualizar seu plano.
+                    </p>
+                    <p>
+                      O plano <strong className="text-foreground">{planChangePreview?.targetPlan === "professional" ? "Pro" : "Essencial"}</strong> será ativado imediatamente com todos os recursos desbloqueados.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Na próxima renovação, você será cobrado normalmente R$ {planChangePreview?.nextBillingAmount}/mês.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Seu plano será alterado para <strong className="text-foreground">{planChangePreview?.targetPlan === "starter" ? "Essencial" : "Pro"}</strong> na próxima data de cobrança.
+                    </p>
+                    <p>
+                      Os recursos do plano atual continuarão disponíveis até <strong className="text-foreground">{planChangePreview?.effectiveAt ? format(new Date(planChangePreview.effectiveAt), "dd/MM/yyyy") : ""}</strong>.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Não haverá cobrança ou reembolso proporcional.
+                    </p>
+                  </>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPlanChange}>
+              {planChangePreview?.type === "upgrade" ? "Confirmar e pagar" : "Confirmar downgrade"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
