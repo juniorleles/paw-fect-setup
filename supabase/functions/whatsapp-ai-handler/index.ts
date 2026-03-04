@@ -2549,7 +2549,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
     }
 
     // Infer state updates from the user message
-    const stateUpdates = inferStateFromUserMessage(message, convState, shopConfig.services || [], ownerName);
+    const stateUpdates = inferStateFromUserMessage(message, convState, shopConfig.services || [], ownerName, conversationHistory, lastMentionedService);
     if (Object.keys(stateUpdates).length > 0) {
       // Merge updates into current state
       Object.assign(convState, stateUpdates);
