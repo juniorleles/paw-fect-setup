@@ -149,7 +149,7 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
               ))}
             </select>
           </div>
-          <Button onClick={addService} disabled={!name} size="sm" className="w-full">
+          <Button onClick={addService} disabled={!name || !price || !duration} size="sm" className="w-full">
             <Plus className="w-4 h-4 mr-1" /> Adicionar serviço
           </Button>
         </div>
