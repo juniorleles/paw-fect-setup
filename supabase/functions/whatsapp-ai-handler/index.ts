@@ -570,6 +570,8 @@ function sanitizeLeakedInstructions(reply: string): string {
     /^obrigad[ao]\.?\s*$/gim,
     /^use\s+(este|esse|essas)\s+(resumo|informa[cç][oõ]es).*$/gim,
     /^continue\s+o\s+fluxo.*$/gim,
+    /^apresente[\s-]*(os|estas?|esses?)?\s*(sugest[oõ]es|hor[aá]rios).*$/gim,
+    /^liste\s+(cada|os)\s+hor[aá]rios?.*$/gim,
   ];
 
   let cleaned = reply;
