@@ -2513,14 +2513,29 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     }
 
     // Guardrail: ReGreetingGuard — if AI replied with a generic greeting but conversation already has history, retry and force a direct reply
-    const genericGreetingReplyPattern = /^(?:senhor[,\s]+)?(?:boa\s+(tarde|noite)|bom\s+dia|ol[aá]|oi)[!.,\s]*(?:me\s+diga[,\s]*)?(?:como\s+posso|em\s+que\s+posso|como\s+(te\s+)?ajud|estou\s+[àa]\s+disposi[çc][ãa]o|me\s+diga|diga|fale)/i;
+    const genericGreetingReplyPattern = /^(?:\s*(?:senhor|senhora)[,\s]+)?(?:boa\s+(?:tarde|noite)|bom\s+dia|ol[aá]|oi)(?:[,\s]+(?:senhor|senhora))?[!.,\s]*(?:me\s+diga[,\s]*)?(?:como\s+posso|em\s+que\s+posso|como\s+(te\s+)?ajud|estou\s+[àa]\s+disposi[çc][ãa]o|me\s+diga|diga|fale)/i;
     const stripGreetingPrefix = (text: string) =>
       text
-        .replace(/^(?:senhor[,\s]+)?(?:boa\s+(?:tarde|noite)|bom\s+dia|ol[aá]|oi)[!.,\s]*/i, "")
+        .replace(/^(?:\s*(?:senhor|senhora)[,\s]+)?(?:boa\s+(?:tarde|noite)|bom\s+dia|ol[aá]|oi)(?:[,\s]+(?:senhor|senhora))?[!.,\s]*/i, "")
         .replace(/^(?:me\s+diga[,\s]*)?(?:como\s+posso|em\s+que\s+posso|como\s+(?:te\s+)?ajud[aeo]?|diga|fale)[^\n]*\??\s*/i, "")
         .trim();
 
-    const aiGaveGenericGreeting = genericGreetingReplyPattern.test(reply.trim());
+    const isGenericGreetingOnlyReply = (text: string) => {
+      const normalized = (text || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+
+      if (!normalized) return false;
+      const startsWithGreeting = /^(?:senhor[,\s]+|senhora[,\s]+)?(?:bom dia|boa tarde|boa noite|ola|oi)(?:[,\s]+(?:senhor|senhora))?/.test(normalized);
+      const hasGenericHelpPrompt = /(em que posso ajudar|como posso ajudar|como posso te ajudar|me diga|diga|fale)/.test(normalized);
+      const hasBookingContent = /(agend|horario|data|servico|disponiv|sexta|segunda|terca|quarta|quinta|sabado|domingo)/.test(normalized);
+
+      return startsWithGreeting && hasGenericHelpPrompt && !hasBookingContent;
+    };
+
+    const aiGaveGenericGreeting = isGenericGreetingOnlyReply(reply) || genericGreetingReplyPattern.test(reply.trim());
 
     if (aiGaveGenericGreeting && hasAssistantInHistory) {
       console.log(`[ReGreetingGuard] AI re-greeted despite existing conversation history. User msg: "${message}", AI reply: "${reply.substring(0, 80)}..." — retrying`);
@@ -2548,7 +2563,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
         if (retryResponse.ok) {
           const retryData = await retryResponse.json();
           const retryReply = retryData.choices?.[0]?.message?.content;
-          if (retryReply && retryReply.trim().length > 5 && !genericGreetingReplyPattern.test(retryReply.trim())) {
+          if (retryReply && retryReply.trim().length > 5 && !isGenericGreetingOnlyReply(retryReply) && !genericGreetingReplyPattern.test(retryReply.trim())) {
             console.log(`[ReGreetingGuard] Retry succeeded: "${retryReply.substring(0, 80)}..."`);
             reply = retryReply;
             aiData = retryData;
@@ -2566,11 +2581,13 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
 
       // Last fallback: if greeting survived and user is clearly choosing a time, keep booking context instead of re-greeting
-      if (genericGreetingReplyPattern.test(reply.trim())) {
+      if (isGenericGreetingOnlyReply(reply) || genericGreetingReplyPattern.test(reply.trim())) {
         const normalizedMsg = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const userIsChoosingTime = /\b([01]?\d|2[0-3])(:[0-5]\d)?\b|\bas\s+([01]?\d|2[0-3])\b|\b([01]?\d|2[0-3])h\b/.test(normalizedMsg);
         if (userIsChoosingTime) {
-          reply = "Perfeito! Para confirmar esse horário, me diz seu nome, por favor.";
+          reply = lastMentionedService
+            ? "Perfeito! Para confirmar esse horário, me diz seu nome, por favor."
+            : "Perfeito, esse horário está disponível ✅ Me confirma qual serviço você quer nesse horário para eu finalizar o agendamento.";
           console.log("[ReGreetingGuard] Applied deterministic fallback for time-selection message");
         }
       }
