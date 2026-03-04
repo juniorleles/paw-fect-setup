@@ -37,6 +37,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [trialMessagesUsed, setTrialMessagesUsed] = useState(0);
   const [trialAppointmentsLimit, setTrialAppointmentsLimit] = useState(50);
   const [trialMessagesLimit, setTrialMessagesLimit] = useState(250);
+  const [nextPlan, setNextPlan] = useState<string | null>(null);
+  const [nextPlanEffectiveAt, setNextPlanEffectiveAt] = useState<string | null>(null);
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
       setStatus("none");
