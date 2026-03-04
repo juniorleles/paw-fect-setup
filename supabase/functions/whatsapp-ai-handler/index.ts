@@ -2292,8 +2292,8 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     }
 
     // Guardrail 0: GreetingGuard — simple greetings/farewells must NEVER trigger booking actions
-    const greetingGuardNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-    const isSimpleGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai|obrigad[oa]|valeu|brigad[oa]|tchau|ate\s+(mais|logo|breve)|flw|falou|bye|adeus|bjs|beijos|xau)$/i.test(greetingGuardNorm);
+    // Reuse the multiline-aware detection from above
+    const isSimpleGreeting = allLinesAreGreetingOrFarewell;
     if (isSimpleGreeting && /<action>.*?<\/action>/s.test(reply)) {
       console.log(`[GreetingGuard] Simple greeting "${message}" triggered an action block — stripping action to prevent false booking`);
       reply = reply.replace(/<action>.*?<\/action>/gs, "").trim();
