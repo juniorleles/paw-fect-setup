@@ -1590,6 +1590,239 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
   return reply.replace(/<action>.*?<\/action>/s, "").trim();
 }
 
+// --- Deterministic Booking Shortcut ---
+// Bypasses AI entirely when the user selects a time from a previously listed set of options.
+// This prevents context loss, hallucinations, and repeated questions.
+
+async function tryDeterministicBooking(
+  serviceClient: any,
+  shopConfig: PetShopConfig,
+  cleanPhone: string,
+  userMessage: string,
+  conversationHistory: { role: string; content: string }[],
+  ownerName: string | null,
+  lastMentionedService: string | null,
+  isPetNiche: boolean,
+  instanceName: string,
+  senderPhone: string,
+  availableSlots: string,
+  appointments: any[],
+  isFarewell: boolean,
+): Promise<string | null> {
+  if (isFarewell) return null;
+
+  const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+  // Only trigger for short time-selection messages (not complex multi-intent messages)
+  if (userNorm.length > 80) return null;
+
+  // Detect cancel/reschedule intents — let AI handle
+  if (/(cancelar|remarcar|reagendar|desmarcar)/i.test(userNorm)) return null;
+
+  // Detect time intent in user message
+  let chosenTime: string | null = null;
+  const exactMatch = userNorm.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if (exactMatch) {
+    chosenTime = `${exactMatch[1].padStart(2, "0")}:${exactMatch[2]}`;
+  } else {
+    const hourWithAs = userNorm.match(/(?:as\s*)([01]?\d|2[0-3])\b/);
+    if (hourWithAs) {
+      chosenTime = `${hourWithAs[1].padStart(2, "0")}:00`;
+    } else {
+      const hourWithH = userNorm.match(/\b([01]?\d|2[0-3])h\b/);
+      if (hourWithH) {
+        chosenTime = `${hourWithH[1].padStart(2, "0")}:00`;
+      }
+    }
+  }
+
+  if (!chosenTime) return null;
+
+  // Check: does the last assistant message contain a list of available times?
+  const lastAssistant = [...conversationHistory].reverse().find(m => m.role === "assistant");
+  if (!lastAssistant) return null;
+
+  const assistantSlots = (lastAssistant.content || "").match(/\b([01]\d|2[0-3]):[0-5]\d\b/g) || [];
+  if (assistantSlots.length < 2) return null; // Not a time listing
+
+  // Verify the chosen time is in the listed options
+  let finalTime = chosenTime;
+  if (!assistantSlots.includes(chosenTime)) {
+    // Check partial hour match (user said "às 14" → "14:00")
+    const hourPrefix = chosenTime.split(":")[0];
+    const hourMatches = assistantSlots.filter(s => s.startsWith(`${hourPrefix}:`));
+    if (hourMatches.length > 1) {
+      return null; // Ambiguous — let AI handle
+    }
+    if (hourMatches.length === 1) {
+      finalTime = hourMatches[0];
+    } else {
+      return null; // Time not in list
+    }
+  }
+
+  // We have a valid time selection. Now gather remaining data.
+  let serviceName = lastMentionedService;
+  if (!serviceName) return null;
+
+  // Verify service exists in config
+  const serviceConfig = (shopConfig.services as any[]).find((s: any) =>
+    (s.name || "").toLowerCase() === serviceName!.toLowerCase()
+  );
+  if (!serviceConfig) return null;
+
+  // Owner name: from memory or conversation
+  let clientName = ownerName;
+  if (!clientName) {
+    // Try to extract from conversation history
+    for (let i = conversationHistory.length - 1; i >= 0; i--) {
+      const msg = conversationHistory[i];
+      if (msg.role !== "user") continue;
+      const nameMatch = msg.content?.match(/(?:meu nome [eé]|me chamo|sou o|sou a|pode me chamar de)\s+(\w+)/i);
+      if (nameMatch) {
+        clientName = nameMatch[1];
+        break;
+      }
+      // If previous message was AI asking for name, this msg is the name
+      if (i > 0) {
+        const prevMsg = conversationHistory[i - 1];
+        if (prevMsg.role === "assistant" && /qual\s+(seu|o\s+seu)\s+nome/i.test(prevMsg.content || "")) {
+          const potentialName = msg.content?.trim();
+          if (potentialName && potentialName.length >= 2 && potentialName.length <= 30) {
+            clientName = potentialName.split(/\s/)[0];
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (!clientName) return null; // Can't determine name — let AI handle
+
+  // Determine date from last assistant message or available slots
+  let chosenDate: string | null = null;
+  const assistantContent = lastAssistant.content || "";
+
+  // Extract date from assistant's message (DD/MM pattern)
+  const dateInAssistant = assistantContent.match(/(\d{2}\/\d{2})/);
+  if (dateInAssistant) {
+    const [dd, mm] = dateInAssistant[1].split("/");
+    const brNow = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    const year = brNow.getUTCFullYear();
+    chosenDate = `${year}-${mm}-${dd}`;
+  }
+
+  // Check if user message mentions "amanhã"
+  if (/\bamanha\b/i.test(userNorm)) {
+    const tomorrow = new Date(Date.now() - 3 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000);
+    chosenDate = tomorrow.toISOString().split("T")[0];
+  }
+
+  if (!chosenDate) {
+    // Find from available slots
+    const slotLines = availableSlots.split("\n");
+    for (const line of slotLines) {
+      const dm = line.match(/(\d{4}-\d{2}-\d{2})/);
+      if (dm && line.includes(finalTime)) {
+        chosenDate = dm[1];
+        break;
+      }
+    }
+  }
+
+  if (!chosenDate) return null;
+
+  // Validate the slot is available
+  if (!availableSlots.includes(chosenDate) || !availableSlots.includes(finalTime)) return null;
+
+  console.log(`[DeterministicBooking] Bypassing AI — service: ${serviceName}, date: ${chosenDate}, time: ${finalTime}, client: ${clientName}`);
+
+  // Get pet name for pet niches
+  let petName = "—";
+  if (isPetNiche) {
+    const pastPetAppts = appointments.filter((a: any) => phoneMatches(a.owner_phone || "", cleanPhone));
+    if (pastPetAppts.length > 0 && pastPetAppts[0].pet_name && pastPetAppts[0].pet_name !== "—") {
+      petName = pastPetAppts[0].pet_name;
+    } else {
+      return null; // Pet niche needs pet name — let AI ask
+    }
+  }
+
+  // Insert appointment
+  const { error: insertErr } = await serviceClient
+    .from("appointments")
+    .insert({
+      user_id: shopConfig.user_id,
+      pet_name: petName,
+      owner_name: clientName,
+      owner_phone: cleanPhone,
+      service: serviceName,
+      date: chosenDate,
+      time: finalTime,
+      notes: "",
+      status: "pending",
+    });
+
+  if (insertErr) {
+    console.error("[DeterministicBooking] Insert error:", insertErr);
+    if (/lot(ado|ação)|conflita/i.test(insertErr.message || "")) {
+      const reply = `Poxa, o horário ${finalTime} não está mais disponível 😕\nMe diz outro horário que fica melhor pra você!`;
+      await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
+      await sendWhatsAppMessage(instanceName, senderPhone, reply);
+      return reply;
+    }
+    return null; // Let AI handle
+  }
+
+  // Increment counters
+  try {
+    const { data: subData } = await serviceClient
+      .from("subscriptions")
+      .select("current_period_end, trial_end_at")
+      .eq("user_id", shopConfig.user_id)
+      .maybeSingle();
+    if (subData) {
+      const hasPaid = subData.current_period_end && subData.trial_end_at &&
+        new Date(subData.current_period_end) > new Date(subData.trial_end_at);
+      if (!hasPaid) {
+        await serviceClient.rpc("increment_trial_appointments", { p_user_id: shopConfig.user_id });
+      }
+    }
+  } catch { /* ignore */ }
+  await serviceClient.rpc("increment_trial_messages", { p_user_id: shopConfig.user_id });
+
+  // Format confirmation
+  const [y, m, d] = chosenDate.split("-");
+  const dateBR = `${d}/${m}`;
+  const dayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+  const dateObj = new Date(`${chosenDate}T12:00:00-03:00`);
+  const weekday = dayNames[dateObj.getDay()] || "";
+
+  let confirmMsg = `Agendamento confirmado ✅\n\n`;
+  confirmMsg += `• Serviço: ${serviceName}\n`;
+  confirmMsg += `• Data: ${weekday}, ${dateBR}\n`;
+  confirmMsg += `• Horário: ${finalTime}\n`;
+  if (serviceConfig.price != null) {
+    confirmMsg += `• Valor: R$${Number(serviceConfig.price).toFixed(2)}\n`;
+  }
+  confirmMsg += `\nTe esperamos na ${shopConfig.address}, ${shopConfig.neighborhood}!`;
+  confirmMsg += `\nSe precisar remarcar, é só avisar! 😊`;
+
+  await serviceClient.from("ai_usage").insert({
+    user_id: shopConfig.user_id,
+    tokens_used: 0,
+    request_type: "deterministic_booking",
+    model: "deterministic",
+    response_time_ms: 0,
+  });
+
+  await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", confirmMsg);
+  await sendWhatsAppMessage(instanceName, senderPhone, confirmMsg);
+
+  console.log(`[DeterministicBooking] Success — ${serviceName} for ${clientName} at ${chosenDate} ${finalTime}`);
+  return confirmMsg;
+}
+
 // --- Main Handler ---
 
 Deno.serve(async (req) => {
