@@ -327,6 +327,16 @@ const Index = () => {
     toast({ title: "Secretária ativada!", description: "Sua instância WhatsApp foi criada com sucesso." });
   };
 
+  if (activatingAfterCheckout) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-lg font-semibold text-foreground">Ativando sua secretária...</p>
+        <p className="text-sm text-muted-foreground">Aguarde enquanto configuramos tudo para você.</p>
+      </div>
+    );
+  }
+
   if (loadingConfig) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
