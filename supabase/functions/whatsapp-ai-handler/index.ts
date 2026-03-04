@@ -1946,8 +1946,20 @@ Deno.serve(async (req) => {
 
     // --- New Conversation Detection & Farewell Cleanup ---
     const msgNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-    const isGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai)$/i.test(msgNorm);
-    const isFarewell = /^(tchau|ate\s+(mais|logo|breve)|flw|falou|valeu|obrigad[oa]|brigad[oa]|bye|adeus|bjs|beijos|xau)$/i.test(msgNorm);
+    
+    // Helper: check if ALL lines of a (possibly multiline) message match a pattern
+    const greetingPattern = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai)$/i;
+    const farewellPattern = /^(tchau|ate\s+(mais|logo|breve)|flw|falou|valeu|obrigad[oa]|brigad[oa]|bye|adeus|bjs|beijos|xau)$/i;
+    const greetingOrFarewellPattern = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai|tchau|ate\s+(mais|logo|breve)|flw|falou|valeu|obrigad[oa]|brigad[oa]|bye|adeus|bjs|beijos|xau)$/i;
+    
+    // Split by newlines and check each line — supports concatenated messages like "Obrigado\nAté mais"
+    const msgLines = msgNorm.split(/\s*\n\s*/).map(l => l.trim()).filter(Boolean);
+    const allLinesAreGreetingOrFarewell = msgLines.length > 0 && msgLines.every(line => greetingOrFarewellPattern.test(line));
+    const hasAnyFarewell = msgLines.some(line => farewellPattern.test(line));
+    const hasAnyGreeting = msgLines.some(line => greetingPattern.test(line));
+    
+    const isGreeting = allLinesAreGreetingOrFarewell && hasAnyGreeting;
+    const isFarewell = allLinesAreGreetingOrFarewell && hasAnyFarewell;
 
     if (isGreeting) {
       // Clear history if greeting arrives after 30+ min of inactivity
