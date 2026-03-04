@@ -43,7 +43,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     if (!userId) {
       setStatus("none");
       setTrialEndAt(null);
-      setPlan("starter");
+      setPlan("free");
       setTrialAppointmentsUsed(0);
       setTrialMessagesUsed(0);
       setTrialAppointmentsLimit(30);
