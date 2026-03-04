@@ -127,22 +127,54 @@ function computeAvailableSlots(
     // Build occupancy map considering service durations
     const occupancy = buildOccupancyMap(dateStr, appointments, services, slotInterval);
 
+    // Generate all slot times for this day
+    const allDaySlots: string[] = [];
+    {
+      let sh = openH, sm = openM;
+      while (sh < closeH || (sh === closeH && sm < closeM)) {
+        allDaySlots.push(`${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}`);
+        sm += slotInterval;
+        if (sm >= 60) { sh += Math.floor(sm / 60); sm = sm % 60; }
+      }
+    }
+
+    // Get minimum service duration (in slots) to filter out slots that can't fit any service
+    const minServiceDuration = Math.min(...(services as any[]).map((s: any) => s.duration || 30));
+    const minServiceSlots = Math.max(1, Math.ceil(minServiceDuration / slotInterval));
+
     const freeSlots: string[] = [];
-    let h = openH, m = openM;
-    while (h < closeH || (h === closeH && m < closeM)) {
-      const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    for (let idx = 0; idx < allDaySlots.length; idx++) {
+      const timeStr = allDaySlots[idx];
+      const [h, m] = timeStr.split(":").map(Number);
 
       const isPast = d === 0 && (h < currentHour || (h === currentHour && m <= currentMin));
-      if (!isPast) {
-        const booked = occupancy.get(timeStr) || 0;
-        const available = maxConcurrent - booked;
-        if (available > 0) {
-          freeSlots.push(maxConcurrent > 1 ? `${timeStr} (${available}/${maxConcurrent} vagas)` : timeStr);
+      if (isPast) continue;
+
+      const booked = occupancy.get(timeStr) || 0;
+      const available = maxConcurrent - booked;
+      if (available <= 0) continue;
+
+      // Check consecutive free slots from this position to determine max bookable duration
+      let consecutiveFree = 0;
+      for (let j = idx; j < allDaySlots.length; j++) {
+        const slotBooked = occupancy.get(allDaySlots[j]) || 0;
+        if (slotBooked < maxConcurrent) {
+          consecutiveFree++;
+        } else {
+          break;
         }
       }
 
-      m += slotInterval;
-      if (m >= 60) { h += Math.floor(m / 60); m = m % 60; }
+      // Only offer this slot if at least the minimum service duration fits
+      if (consecutiveFree < minServiceSlots) continue;
+
+      const maxFreeMin = consecutiveFree * slotInterval;
+      if (maxConcurrent > 1) {
+        freeSlots.push(`${timeStr} (${available}/${maxConcurrent} vagas, até ${maxFreeMin}min livre)`);
+      } else {
+        // Annotate with max free time so AI knows which services fit
+        freeSlots.push(`${timeStr} (até ${maxFreeMin}min livre)`);
+      }
     }
 
     console.log(`[AVAILABILITY] ${weekday} ${dateStr}: freeSlots=${freeSlots.length}, first=${freeSlots[0] || 'none'}, last=${freeSlots[freeSlots.length-1] || 'none'}`);
