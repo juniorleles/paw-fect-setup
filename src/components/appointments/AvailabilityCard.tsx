@@ -100,21 +100,19 @@ const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1, serv
       return acc + Math.max(0, maxConcurrent - booked);
     }, 0);
 
-    // Calculate occupancy based on actual slot usage (only count valid slots)
-    const validSlotSet = new Set(allSlots);
-    let totalBooked = 0;
-    for (const [slot, count] of bookingsPerSlot) {
-      if (validSlotSet.has(slot)) {
-        totalBooked += count;
-      }
+    // Calculate occupancy based on remaining slots (from now onward)
+    const futureCapacity = futureSlots.length * maxConcurrent;
+    let futureBooked = 0;
+    for (const s of futureSlots) {
+      futureBooked += Math.min(bookingsPerSlot.get(s) || 0, maxConcurrent);
     }
-    const occupancy = totalCapacity > 0
-      ? Math.round((totalBooked / totalCapacity) * 100)
+    const occupancy = futureCapacity > 0
+      ? Math.round((futureBooked / futureCapacity) * 100)
       : 100;
 
     const lastFree = [...futureSlots].reverse().find((s) => (bookingsPerSlot.get(s) || 0) < maxConcurrent) || null;
 
-    return { closed: false, dayEnded, totalSlots: totalCapacity, freeSlots, occupancy: Math.min(occupancy, 100), lastFree };
+    return { closed: false, dayEnded, totalSlots: futureCapacity, freeSlots, occupancy: Math.min(occupancy, 100), lastFree };
   }, [appointments, businessHours, todayStr, todayDayName]);
 
   if (availability.closed) {
