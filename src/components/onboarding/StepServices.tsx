@@ -28,12 +28,12 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
   const suggestions = NICHE_SUGGESTIONS[data.niche] ?? NICHE_SUGGESTIONS.barbearia;
 
   const addService = () => {
-    if (!name) return;
+    if (!name || !price || !duration) return;
     const service: Service = {
       id: crypto.randomUUID(),
       name,
-      price: price ? parseFloat(price) : undefined,
-      duration: duration ? parseInt(duration) : undefined,
+      price: parseFloat(price),
+      duration: parseInt(duration),
       category: category || undefined,
       active: true,
     };
@@ -70,15 +70,15 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
   };
 
   const saveEdit = () => {
-    if (!editingId || !editName) return;
+    if (!editingId || !editName || !editPrice || !editDuration) return;
     onChange({
       services: data.services.map((s) =>
         s.id === editingId
           ? {
               ...s,
               name: editName,
-              price: editPrice ? parseFloat(editPrice) : undefined,
-              duration: editDuration ? parseInt(editDuration) : undefined,
+              price: parseFloat(editPrice),
+              duration: parseInt(editDuration),
               category: editCategory || undefined,
             }
           : s
@@ -101,7 +101,7 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
         </CardDescription>
         {showTip && (
           <p className="text-xs text-muted-foreground mt-2 bg-accent/10 rounded-lg px-3 py-2">
-            💡 Relaxa! Preços e duração podem ser adicionados depois em <strong>Configurações</strong>. Aqui só precisa dos nomes dos serviços pra gente começar 😉
+            💡 Preencha o <strong>nome</strong>, <strong>valor</strong> e <strong>duração</strong> de cada serviço. A duração deve ser em múltiplos de 30 minutos para o agendamento funcionar corretamente.
           </p>
         )}
       </CardHeader>
@@ -137,19 +137,19 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Input placeholder="Nome do serviço" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Categoria (opcional)" value={category} onChange={(e) => setCategory(e.target.value)} />
-            <Input placeholder="Preço R$ (opcional)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <Input placeholder="Preço R$ *" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
             <select
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               className="h-9 rounded-md border border-input bg-background px-2 text-sm w-full"
             >
-              <option value="">Duração (min)</option>
+              <option value="">Duração (min) *</option>
               {[30, 60, 90, 120, 150, 180].map((m) => (
                 <option key={m} value={String(m)}>{m} min</option>
               ))}
             </select>
           </div>
-          <Button onClick={addService} disabled={!name} size="sm" className="w-full">
+          <Button onClick={addService} disabled={!name || !price || !duration} size="sm" className="w-full">
             <Plus className="w-4 h-4 mr-1" /> Adicionar serviço
           </Button>
         </div>
@@ -181,7 +181,7 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
                       <Button variant="ghost" size="sm" onClick={cancelEdit}>
                         <X className="w-4 h-4 mr-1" /> Cancelar
                       </Button>
-                      <Button size="sm" onClick={saveEdit} disabled={!editName}>
+                      <Button size="sm" onClick={saveEdit} disabled={!editName || !editPrice || !editDuration}>
                         <Check className="w-4 h-4 mr-1" /> Salvar
                       </Button>
                     </div>
@@ -201,8 +201,8 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
                       <div className="min-w-0">
                         <p className="font-semibold text-sm truncate">{s.name}</p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {s.price != null ? `R$ ${Number(s.price).toFixed(2)}` : "Sem preço"}
-                          {s.duration != null ? ` · ${s.duration} min` : ""}
+                          {s.price != null ? `R$ ${Number(s.price).toFixed(2)}` : <span className="text-destructive font-medium">Sem preço ⚠️</span>}
+                          {s.duration != null ? ` · ${s.duration} min` : <span className="text-destructive font-medium"> · Sem duração ⚠️</span>}
                           {s.category ? ` · ${s.category}` : ""}
                         </p>
                       </div>

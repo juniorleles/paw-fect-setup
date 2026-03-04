@@ -76,11 +76,11 @@ export const BRAZILIAN_STATES = [
 
 export const NICHE_SUGGESTIONS: Record<BusinessNiche, Omit<Service, "id">[]> = {
   barbearia: [
-    { name: "Corte Masculino", category: "Corte" },
-    { name: "Barba", category: "Barba" },
-    { name: "Corte + Barba", category: "Combo" },
-    { name: "Sobrancelha", category: "Acabamento" },
-    { name: "Hidratação", category: "Tratamento" },
+    { name: "Corte Masculino", price: 50, duration: 30, category: "Corte" },
+    { name: "Barba", price: 35, duration: 30, category: "Barba" },
+    { name: "Corte + Barba", price: 75, duration: 60, category: "Combo" },
+    { name: "Sobrancelha", price: 20, duration: 30, category: "Acabamento" },
+    { name: "Hidratação", price: 40, duration: 30, category: "Tratamento" },
   ],
 };
 
