@@ -139,6 +139,7 @@ const Index = () => {
           return;
         }
       }
+      setConfigLoaded(true);
       setLoadingConfig(false);
     };
     loadConfig();
