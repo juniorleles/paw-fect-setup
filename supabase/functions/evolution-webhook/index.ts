@@ -157,15 +157,16 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Deduplication: skip if same content was already buffered recently
-        const twoMinAgo = new Date(Date.now() - 120_000).toISOString();
+        // Deduplication: skip if same content is already PENDING (unprocessed) recently
+        const thirtySecAgo = new Date(Date.now() - 30_000).toISOString();
         const { data: existing } = await serviceClient
           .from("message_buffer")
           .select("id")
           .eq("instance_name", instanceName)
           .eq("sender_phone", senderPhone)
           .eq("content", textContent)
-          .gte("created_at", twoMinAgo)
+          .eq("processed", false)
+          .gte("created_at", thirtySecAgo)
           .limit(1);
 
         if (existing && existing.length > 0) {
