@@ -92,6 +92,9 @@ const MyAccount = () => {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [planChangeLoading, setPlanChangeLoading] = useState<string | null>(null);
+  const [planChangePreview, setPlanChangePreview] = useState<any>(null);
+  const [planChangeDialogOpen, setPlanChangeDialogOpen] = useState(false);
 
   const syncInFlightRef = useRef(false);
   const lastSyncedUserIdRef = useRef<string | null>(null);
