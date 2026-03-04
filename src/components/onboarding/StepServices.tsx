@@ -101,7 +101,7 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
         </CardDescription>
         {showTip && (
           <p className="text-xs text-muted-foreground mt-2 bg-accent/10 rounded-lg px-3 py-2">
-            💡 Relaxa! Preços e duração podem ser adicionados depois em <strong>Configurações</strong>. Aqui só precisa dos nomes dos serviços pra gente começar 😉
+            💡 Preencha o <strong>nome</strong>, <strong>valor</strong> e <strong>duração</strong> de cada serviço. A duração deve ser em múltiplos de 30 minutos para o agendamento funcionar corretamente.
           </p>
         )}
       </CardHeader>
