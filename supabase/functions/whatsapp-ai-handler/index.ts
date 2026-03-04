@@ -2611,19 +2611,11 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       ...conversationHistory,
     ];
 
-    // CRITICAL: If there's conversation history (not first message), inject a reminder
-    // to prevent the AI from re-greeting or ignoring the current message
+    // CRITICAL: If there's conversation history (not first message), append reminder
+    // directly to the system prompt to prevent leaking as a separate message
     const hasAssistantInHistory = conversationHistory.some(m => m.role === "assistant");
     if (hasAssistantInHistory) {
-      // Add a system-level reminder right before the last user message to anchor the AI
-      const lastUserMsg = aiMessages[aiMessages.length - 1];
-      if (lastUserMsg?.role === "user") {
-        // Insert reminder BEFORE the last user message
-        aiMessages.splice(aiMessages.length - 1, 0, {
-          role: "system",
-          content: "LEMBRETE: Você já se apresentou nesta conversa. NÃO cumprimente novamente. NÃO diga 'Boa tarde', 'Bom dia', 'Olá' novamente. Responda DIRETAMENTE ao que o cliente está pedindo na próxima mensagem. Se ele quer agendar, aborde o agendamento imediatamente."
-        });
-      }
+      aiMessages[0].content += "\n\nLEMBRETE INTERNO (NUNCA inclua isto na resposta): Você já se apresentou nesta conversa. NÃO cumprimente novamente. Responda DIRETAMENTE ao que o cliente está pedindo.";
     }
 
     // --- DETERMINISTIC BOOKING SHORTCUT ---
