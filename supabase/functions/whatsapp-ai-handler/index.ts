@@ -533,6 +533,39 @@ function inferServiceFromText(text: string, services: any[]): string | null {
   return found?.original || null;
 }
 
+// Sanitize leaked system instructions from AI reply
+function sanitizeLeakedInstructions(reply: string): string {
+  if (!reply) return reply;
+  // Remove lines that look like leaked system instructions
+  const leakedPatterns = [
+    /^leia o hist[oó]rico.*$/gim,
+    /^lembrete:?\s.*$/gim,
+    /^regra:?\s.*$/gim,
+    /^instru[cç][aãõ]o:?\s.*$/gim,
+    /^n[aã]o (cumprim|repita|pe[cç]a).*$/gim,
+    /^responda\s+diretamente.*$/gim,
+    /^obrigad[ao]\.?\s*$/gim,
+    /^use\s+(este|esse|essas)\s+(resumo|informa[cç][oõ]es).*$/gim,
+    /^continue\s+o\s+fluxo.*$/gim,
+  ];
+
+  let cleaned = reply;
+  for (const pattern of leakedPatterns) {
+    cleaned = cleaned.replace(pattern, "");
+  }
+
+  // Clean up multiple blank lines left by removals
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+
+  if (cleaned.length < 5 && reply.length > 5) {
+    // If sanitization removed almost everything, return original minus first leaked line
+    const lines = reply.split("\n").filter(l => !/^(leia|lembrete|regra|instru)/i.test(l.trim()));
+    return lines.join("\n").trim() || reply;
+  }
+
+  return cleaned;
+}
+
 function cleanPhoneNumber(phone: string): string {
   return phone.replace("@s.whatsapp.net", "").replace(/\D/g, "");
 }
