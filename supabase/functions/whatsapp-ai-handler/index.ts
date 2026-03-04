@@ -1109,11 +1109,35 @@ async function handleConfirmationResponse(
 ): Promise<string | null> {
   const normalized = message.trim().toUpperCase();
 
-  const isConfirm = normalized === "CONFIRMO" || normalized === "CONFIRMAR";
-  const isReschedule = normalized === "REMARCAR" || normalized === "PRECISO REMARCAR" || normalized === "REAGENDAR";
-  const isCancel = normalized === "CANCELAR" || normalized === "CANCELA";
+  const isConfirm = normalized === "CONFIRMO" || normalized === "CONFIRMAR" || normalized === "1";
+  const isReschedule = normalized === "REMARCAR" || normalized === "PRECISO REMARCAR" || normalized === "REAGENDAR" || normalized === "2";
+  const isCancel = normalized === "CANCELAR" || normalized === "CANCELA" || normalized === "3";
 
   if (!isConfirm && !isReschedule && !isCancel) return null;
+
+  // For numeric replies (1, 2, 3), only handle if the customer has a recent reminder
+  if (normalized === "1" || normalized === "2" || normalized === "3") {
+    const brNowMs = new Date().getTime() - 3 * 60 * 60 * 1000;
+    const today = new Date(brNowMs).toISOString().split("T")[0];
+    const { data: reminderCheck } = await serviceClient
+      .from("appointments")
+      .select("id, confirmation_message_sent_at")
+      .eq("user_id", shopConfig.user_id)
+      .gte("date", today)
+      .in("status", ["pending", "confirmed"])
+      .not("confirmation_message_sent_at", "is", null)
+      .limit(1);
+
+    // Only intercept numeric replies if there's a recent reminder context
+    const hasRecentReminder = (reminderCheck || []).some((a: any) => {
+      if (!a.confirmation_message_sent_at) return false;
+      const sentAt = new Date(a.confirmation_message_sent_at).getTime();
+      const hoursSince = (Date.now() - sentAt) / (1000 * 60 * 60);
+      return hoursSince < 48; // Within 48 hours of reminder
+    });
+
+    if (!hasRecentReminder) return null; // Let AI handle "1" normally
+  }
 
   const brNowMs = new Date().getTime() - 3 * 60 * 60 * 1000;
   const today = new Date(brNowMs).toISOString().split("T")[0];
