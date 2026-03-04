@@ -705,6 +705,16 @@ const MyAccount = () => {
               </ul>
               {currentPlan === "starter" && isActive ? (
                 <Button disabled className="w-full">Plano atual</Button>
+              ) : currentPlan === "professional" && isActive ? (
+                <Button
+                  variant="outline"
+                  className="w-full border-primary/30 font-bold"
+                  onClick={() => handlePlanChange("starter")}
+                  disabled={planChangeLoading === "starter"}
+                >
+                  {planChangeLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
+                  {sub?.next_plan === "starter" ? "Downgrade agendado" : "Fazer downgrade"}
+                </Button>
               ) : (
                 <Button
                   className="w-full shadow-lg shadow-primary/20 font-bold"
@@ -712,7 +722,7 @@ const MyAccount = () => {
                   disabled={checkoutLoading === "starter"}
                 >
                   {checkoutLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
-                  {currentPlan === "professional" && isActive ? "Fazer downgrade" : "Fazer upgrade"}
+                  Fazer upgrade
                 </Button>
               )}
             </CardContent>
