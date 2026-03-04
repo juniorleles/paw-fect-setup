@@ -540,6 +540,18 @@ function inferServiceFromText(text: string, services: any[]): string | null {
     if (combined?.original) return combined.original;
   }
 
+  // Heuristic: "corte de cabelo" should resolve to a haircut-only service (not combo with barba)
+  if (mentionsHair && !mentionsBarba) {
+    const hairOnly = serviceList.find((s: any) => /\b(corte|cabelo)\b/.test(s.normalized) && !/\bbarba\b/.test(s.normalized));
+    if (hairOnly?.original) return hairOnly.original;
+  }
+
+  // Heuristic: "barba" should prefer beard-only service (not combo with corte)
+  if (mentionsBarba && !mentionsHair) {
+    const beardOnly = serviceList.find((s: any) => /\bbarba\b/.test(s.normalized) && !/\b(corte|cabelo)\b/.test(s.normalized));
+    if (beardOnly?.original) return beardOnly.original;
+  }
+
   return null;
 }
 
