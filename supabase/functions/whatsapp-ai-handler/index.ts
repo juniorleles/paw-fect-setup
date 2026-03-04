@@ -3011,7 +3011,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     // Deterministic safeguards for booking flow
     reply = enforceBookingDateTimeQuestion(message, reply);
     reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory, lastMentionedService || convState.service);
-    reply = enforceBookingIntentContinuation(message, reply, shopConfig.services || [], lastMentionedService || convState.service);
+    reply = enforceBookingIntentContinuation(message, reply, shopConfig.services || [], lastMentionedService || convState.service, availableSlotsForContext);
     reply = enforceBookingDateTimeQuestion(message, reply);
     reply = enforceNoRedundantTimeQuestion(message, reply, conversationHistory);
 
