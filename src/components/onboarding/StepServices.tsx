@@ -137,7 +137,7 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Input placeholder="Nome do serviço" value={name} onChange={(e) => setName(e.target.value)} />
             <Input placeholder="Categoria (opcional)" value={category} onChange={(e) => setCategory(e.target.value)} />
-            <Input placeholder="Preço R$ (opcional)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <Input placeholder="Preço R$ *" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
             <select
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
