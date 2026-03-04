@@ -655,7 +655,7 @@ function enforceSingleQuestionPerReply(reply: string): string {
 
   const sanitized = compact.join("\n").trim();
   if (sanitized) return sanitized;
-  return "Perfeito, informação anotada. Vou seguir com o seu atendimento.";
+  return "Como posso te ajudar hoje? 😊";
 }
 
 function removeRepeatedQuestion(reply: string): string {
