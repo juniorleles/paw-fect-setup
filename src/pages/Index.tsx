@@ -205,8 +205,15 @@ const Index = () => {
       if (!data.city.trim()) errs.city = "Campo obrigatório";
       if (!data.state) errs.state = "Selecione o estado";
     }
-    if (step === 4 && data.services.length === 0) {
-      errs.services = "Adicione pelo menos 1 serviço";
+    if (step === 4) {
+      if (data.services.length === 0) {
+        errs.services = "Adicione pelo menos 1 serviço";
+      } else {
+        const incomplete = data.services.filter(s => !s.price || !s.duration);
+        if (incomplete.length > 0) {
+          errs.services = `Preencha o valor e a duração de todos os serviços: ${incomplete.map(s => s.name).join(", ")}`;
+        }
+      }
     }
     if (step === 5 && !data.assistantName.trim()) {
       errs.assistantName = "Dê um nome à sua secretária";

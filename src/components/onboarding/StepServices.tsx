@@ -201,8 +201,8 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
                       <div className="min-w-0">
                         <p className="font-semibold text-sm truncate">{s.name}</p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {s.price != null ? `R$ ${Number(s.price).toFixed(2)}` : "Sem preço"}
-                          {s.duration != null ? ` · ${s.duration} min` : ""}
+                          {s.price != null ? `R$ ${Number(s.price).toFixed(2)}` : <span className="text-destructive font-medium">Sem preço ⚠️</span>}
+                          {s.duration != null ? ` · ${s.duration} min` : <span className="text-destructive font-medium"> · Sem duração ⚠️</span>}
                           {s.category ? ` · ${s.category}` : ""}
                         </p>
                       </div>
