@@ -57,7 +57,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase
         .from("subscriptions")
-        .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit, updated_at")
+        .select("status, trial_end_at, plan, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit, updated_at, next_plan, next_plan_effective_at")
         .eq("user_id", userId)
         .order("updated_at", { ascending: false })
         .limit(1);
