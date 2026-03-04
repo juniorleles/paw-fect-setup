@@ -2971,14 +2971,11 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     }
 
     // Guardrail 0: GreetingGuard — simple greetings/farewells must NEVER trigger booking actions
-    // Reuse the multiline-aware detection from above
     const isSimpleGreeting = allLinesAreGreetingOrFarewell;
     if (isSimpleGreeting && /<action>.*?<\/action>/s.test(reply)) {
-      console.log(`[GreetingGuard] Simple greeting/farewell "${message}" triggered an action block — stripping action to prevent false booking`);
+      const originalReply = reply;
       reply = reply.replace(/<action>.*?<\/action>/gs, "").trim();
-      // If stripping the action leaves a "confirmation" text, clean it up
       if (!reply || reply.length < 5 || /agendamento\s+confirmado/i.test(reply)) {
-        // Generate appropriate farewell or greeting response
         if (isFarewell) {
           const nicheEmojiMap3: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
           const emoji = nicheEmojiMap3[shopConfig.niche] || "😊";
@@ -2987,17 +2984,21 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
           reply = "";
         }
       }
+      guardLog("GreetingGuard", `Greeting/farewell "${message}" triggered action block — stripped`, originalReply, reply);
+    } else if (isSimpleGreeting) {
+      guardLog("GreetingGuard", "No action block on greeting", reply, reply);
     }
     
     // Extra safety: even without action blocks, farewell messages should never get booking confirmations
     if (isSimpleGreeting && /agendamento\s+confirmado/i.test(reply)) {
-      console.log(`[GreetingGuard] Farewell/greeting got a booking confirmation text — replacing with proper response`);
+      const originalReply = reply;
       if (isFarewell) {
         const nicheEmojiMap4: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
         reply = `Por nada! Qualquer coisa é só chamar ${nicheEmojiMap4[shopConfig.niche] || "😊"}`;
       } else {
         reply = reply.replace(/agendamento\s+confirmado.*$/gis, "").trim();
       }
+      guardLog("GreetingGuard", "Booking confirmation text on greeting/farewell — replaced", originalReply, reply);
     }
 
     // Guardrail: ReGreetingGuard — if AI replied with a generic greeting but conversation already has history, retry and force a direct reply
