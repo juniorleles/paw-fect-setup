@@ -211,7 +211,14 @@ const Index = () => {
   const goBack = () => step > 1 && setStep(step - 1);
 
   const redirectToExternalUrl = useCallback((url: string) => {
-    window.location.href = url;
+    const inIframe = window.self !== window.top;
+
+    if (inIframe) {
+      const opened = window.open(url, "_top");
+      if (opened) return;
+    }
+
+    window.location.assign(url);
   }, []);
 
   const handleCheckout = async () => {
