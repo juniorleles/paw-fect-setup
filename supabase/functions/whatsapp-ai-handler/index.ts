@@ -2642,7 +2642,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     // to prevent context loss, hallucinations, and re-asking for information.
     const deterministicBookingResult = await tryDeterministicBooking(
       serviceClient, shopConfig, cleanPhone, message, conversationHistory,
-      ownerName, lastMentionedService, isPetNiche, instanceName, senderPhone,
+      ownerName, lastMentionedService, convState.service, isPetNiche, instanceName, senderPhone,
       availableSlots, appointments || [], isFarewell
     );
     if (deterministicBookingResult) {
