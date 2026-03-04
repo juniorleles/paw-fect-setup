@@ -181,7 +181,7 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
                       <Button variant="ghost" size="sm" onClick={cancelEdit}>
                         <X className="w-4 h-4 mr-1" /> Cancelar
                       </Button>
-                      <Button size="sm" onClick={saveEdit} disabled={!editName}>
+                      <Button size="sm" onClick={saveEdit} disabled={!editName || !editPrice || !editDuration}>
                         <Check className="w-4 h-4 mr-1" /> Salvar
                       </Button>
                     </div>
