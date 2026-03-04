@@ -788,6 +788,24 @@ const MyAccount = () => {
           * <strong>Atendente</strong> refere-se à quantidade de agendamentos simultâneos permitidos no mesmo horário. 
           No Free, 1 agendamento por horário. No Essencial, até 3 ao mesmo tempo. A IA responde a todos os clientes sem limite.
         </p>
+
+        {/* Scheduled downgrade banner */}
+        {sub?.next_plan && sub?.next_plan_effective_at && (
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 flex items-center gap-3 flex-wrap">
+            <Zap className="w-5 h-5 text-accent flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">
+                Downgrade agendado para {sub.next_plan === "starter" ? "Essencial" : "Pro"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Seu plano atual continua ativo até {format(new Date(sub.next_plan_effective_at), "dd/MM/yyyy")}. Após essa data, o plano será alterado automaticamente.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={cancelScheduledDowngrade}>
+              Cancelar downgrade
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* 5. Forma de pagamento */}
