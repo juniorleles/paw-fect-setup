@@ -207,7 +207,8 @@ const MyAccount = () => {
             .from("subscriptions")
             .select("*")
             .eq("user_id", userId)
-            .maybeSingle();
+            .order("updated_at", { ascending: false })
+            .limit(1);
 
         if (!refreshedSubError && data) {
           setSub(data as unknown as SubscriptionData);
