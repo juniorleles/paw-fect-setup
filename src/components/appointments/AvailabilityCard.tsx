@@ -100,8 +100,14 @@ const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1, serv
       return acc + Math.max(0, maxConcurrent - booked);
     }, 0);
 
-    // Calculate occupancy based on actual slot usage (considering durations)
-    const totalBooked = Array.from(bookingsPerSlot.values()).reduce((sum, count) => sum + count, 0);
+    // Calculate occupancy based on actual slot usage (only count valid slots)
+    const validSlotSet = new Set(allSlots);
+    let totalBooked = 0;
+    for (const [slot, count] of bookingsPerSlot) {
+      if (validSlotSet.has(slot)) {
+        totalBooked += count;
+      }
+    }
     const occupancy = totalCapacity > 0
       ? Math.round((totalBooked / totalCapacity) * 100)
       : 100;
