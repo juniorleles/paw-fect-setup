@@ -1,0 +1,1 @@
+ALTER TABLE public.subscriptions ALTER COLUMN plan SET DEFAULT 'free';

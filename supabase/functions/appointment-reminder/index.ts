@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
         .select("plan")
         .eq("user_id", userId)
         .maybeSingle();
-      const plan = data?.plan || "starter";
+      const plan = data?.plan || "free";
       planCache.set(userId, plan);
       return plan;
     }
