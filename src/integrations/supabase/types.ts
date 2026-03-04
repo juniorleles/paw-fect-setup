@@ -386,6 +386,9 @@ export type Database = {
           evolution_instance_name: string
           id: string
           max_concurrent_appointments: number
+          meta_access_token: string | null
+          meta_phone_number_id: string | null
+          meta_waba_id: string | null
           neighborhood: string
           niche: string
           phone: string
@@ -409,6 +412,9 @@ export type Database = {
           evolution_instance_name?: string
           id?: string
           max_concurrent_appointments?: number
+          meta_access_token?: string | null
+          meta_phone_number_id?: string | null
+          meta_waba_id?: string | null
           neighborhood?: string
           niche?: string
           phone?: string
@@ -432,6 +438,9 @@ export type Database = {
           evolution_instance_name?: string
           id?: string
           max_concurrent_appointments?: number
+          meta_access_token?: string | null
+          meta_phone_number_id?: string | null
+          meta_waba_id?: string | null
           neighborhood?: string
           niche?: string
           phone?: string

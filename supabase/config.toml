@@ -35,3 +35,7 @@ project_id = "kxcqizfxfqzmnhxeaepc"
     verify_jwt = false
   [functions.change-plan]
     verify_jwt = false
+  [functions.whatsapp-cloud-webhook]
+    verify_jwt = false
+  [functions.whatsapp-embedded-signup]
+    verify_jwt = false
