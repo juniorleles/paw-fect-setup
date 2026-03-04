@@ -2928,14 +2928,21 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     // Send reply via WhatsApp
     await sendWhatsAppMessage(instanceName, senderPhone, reply);
 
-    // --- Farewell Cleanup: clear conversation history after responding to farewell ---
+    // --- Post-reply state update: detect if a booking was completed ---
+    if (/agendamento\s+confirmado/i.test(reply) || /<action>.*?"type"\s*:\s*"create".*?<\/action>/s.test(reply)) {
+      await updateConversationState(serviceClient, shopConfig.user_id, cleanPhone, stateAfterBooking());
+      console.log(`[STATE] Booking completed — state reset to post_booking`);
+    }
+
+    // --- Farewell Cleanup: clear conversation history AND state after responding to farewell ---
     if (isFarewell) {
-      console.log(`[FarewellCleanup] Clearing conversation history for ${cleanPhone} after farewell`);
+      console.log(`[FarewellCleanup] Clearing conversation history and state for ${cleanPhone} after farewell`);
       await serviceClient
         .from("conversation_messages")
         .delete()
         .eq("user_id", shopConfig.user_id)
         .eq("phone", cleanPhone);
+      await clearConversationState(serviceClient, shopConfig.user_id, cleanPhone);
     }
 
     return new Response(JSON.stringify({ success: true, reply }), {
