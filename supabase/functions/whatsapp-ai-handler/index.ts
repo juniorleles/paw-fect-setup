@@ -2347,13 +2347,14 @@ Deno.serve(async (req) => {
         const gapMinutes = (currentMsgTime - lastMsgTime) / (1000 * 60);
 
         if (gapMinutes >= 30) {
-          console.log(`[NewConversation] Greeting "${message}" after ${Math.round(gapMinutes)}min gap — clearing old history`);
+          console.log(`[NewConversation] Greeting "${message}" after ${Math.round(gapMinutes)}min gap — clearing old history and state`);
           await serviceClient
             .from("conversation_messages")
             .delete()
             .eq("user_id", shopConfig.user_id)
             .eq("phone", cleanPhone)
             .lt("created_at", recentMsgs[0].created_at);
+          await clearConversationState(serviceClient, shopConfig.user_id, cleanPhone);
         }
       }
     }
