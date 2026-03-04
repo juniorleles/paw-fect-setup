@@ -28,12 +28,12 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
   const suggestions = NICHE_SUGGESTIONS[data.niche] ?? NICHE_SUGGESTIONS.barbearia;
 
   const addService = () => {
-    if (!name) return;
+    if (!name || !price || !duration) return;
     const service: Service = {
       id: crypto.randomUUID(),
       name,
-      price: price ? parseFloat(price) : undefined,
-      duration: duration ? parseInt(duration) : undefined,
+      price: parseFloat(price),
+      duration: parseInt(duration),
       category: category || undefined,
       active: true,
     };
