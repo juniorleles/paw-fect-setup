@@ -1,22 +1,7 @@
-export type BusinessNiche =
-  | "petshop"
-  | "clinica"
-  | "salao"
-  | "barbearia"
-  | "estetica"
-  | "escritorio"
-  | "veterinaria"
-  | "outros";
+export type BusinessNiche = "barbearia";
 
 export const NICHE_LABELS: Record<BusinessNiche, string> = {
-  petshop: "Pet Shop",
-  clinica: "Clínica",
-  salao: "Salão de Beleza",
   barbearia: "Barbearia",
-  estetica: "Estética",
-  escritorio: "Escritório / Consultório",
-  veterinaria: "Veterinária",
-  outros: "Outros Serviços",
 };
 
 export interface OnboardingData {
