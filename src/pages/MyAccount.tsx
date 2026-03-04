@@ -368,7 +368,9 @@ const MyAccount = () => {
   const currentPlan = (sub?.plan as keyof typeof PLANS) ?? "free";
   const planInfo = PLANS[currentPlan] ?? PLANS.free;
   const messagesLimit = planInfo.limit;
-  const usagePercent = messagesLimit > 0 ? (messagesUsed / messagesLimit) * 100 : 0;
+  // Use subscription counter (resets on plan change) instead of raw conversation_messages count
+  const paidMessagesUsed = trialMsgsUsed;
+  const usagePercent = messagesLimit > 0 ? (paidMessagesUsed / messagesLimit) * 100 : 0;
 
   const nextBillingDate = sub?.current_period_end
     ? format(new Date(sub.current_period_end), "dd/MM/yyyy")
@@ -588,7 +590,7 @@ const MyAccount = () => {
           <CardContent className="space-y-2 sm:space-y-3">
             <div className="flex justify-between text-xs sm:text-sm">
               <span>Conversas respondidas</span>
-              <span className="font-bold">{messagesUsed} / {messagesLimit}</span>
+              <span className="font-bold">{paidMessagesUsed} / {messagesLimit}</span>
             </div>
             <Progress value={Math.min(usagePercent, 100)} className={`h-2.5 sm:h-3 ${usagePercent >= 100 ? "[&>div]:bg-destructive" : usagePercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
             <p className="text-[11px] sm:text-xs text-muted-foreground">
