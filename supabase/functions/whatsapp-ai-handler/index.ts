@@ -2485,6 +2485,49 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
+    // Guardrail: BookingIntentGuard — if user has booking intent but AI replied with a generic greeting, retry
+    const bookingIntentPattern = /\b(agend|marc|reserv|hor[aá]rio|quero.*corte|quero.*barba|quero.*banho|quero.*servi[cç]o|quero.*manicure|quero.*pedicure|quero.*escova|preciso.*marcar|preciso.*agendar)\b/i;
+    const genericGreetingReplyPattern = /^(boa\s+(tarde|noite)|bom\s+dia|ol[aá])[!.,]?\s*(como\s+posso|em\s+que\s+posso|como\s+(te\s+)?ajud|estou\s+[àa]\s+disposi[çc][ãa]o)/i;
+    const userHasBookingIntent = bookingIntentPattern.test(message);
+    const aiGaveGenericGreeting = genericGreetingReplyPattern.test(reply.trim());
+    
+    if (userHasBookingIntent && aiGaveGenericGreeting) {
+      console.log(`[BookingIntentGuard] User asked "${message}" but AI replied with generic greeting "${reply.substring(0, 80)}..." — retrying with reinforced context`);
+      
+      const retryMessages = [
+        ...aiMessages,
+        { role: "assistant", content: reply },
+        { role: "user", content: `INSTRUÇÃO DO SISTEMA: O cliente acabou de pedir "${message}". Responda DIRETAMENTE ao pedido de agendamento. NÃO cumprimente novamente. NÃO se apresente. Aborde o serviço e horários disponíveis imediatamente.` },
+      ];
+      
+      try {
+        const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: retryMessages,
+            max_completion_tokens: 4096,
+          }),
+        });
+        
+        if (retryResponse.ok) {
+          const retryData = await retryResponse.json();
+          const retryReply = retryData.choices?.[0]?.message?.content;
+          if (retryReply && retryReply.trim().length > 5) {
+            console.log(`[BookingIntentGuard] Retry succeeded: "${retryReply.substring(0, 80)}..."`);
+            reply = retryReply;
+            aiData = retryData;
+          }
+        }
+      } catch (retryErr) {
+        console.error("[BookingIntentGuard] Retry failed:", retryErr);
+      }
+    }
+
     // Deterministic safeguards for booking flow
     reply = enforceBookingDateTimeQuestion(message, reply);
     reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory, lastMentionedService);
