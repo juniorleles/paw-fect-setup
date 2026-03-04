@@ -2717,10 +2717,6 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       shopConfig.services
     );
 
-    const serviceDurationForContext = lastMentionedService
-      ? getServiceDuration(shopConfig.services || [], lastMentionedService)
-      : null;
-
     // --- Load and update structured conversation state ---
     const convState = await getConversationState(serviceClient, shopConfig.user_id, cleanPhone);
     console.log(`[STATE] Loaded state for ${cleanPhone}: step=${convState.step}, service=${convState.service}, date=${convState.date}, time=${convState.time}, name=${convState.client_name}`);
@@ -2739,12 +2735,18 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       console.log(`[STATE] Updated: step=${convState.step}, service=${convState.service}, date=${convState.date}, time=${convState.time}, name=${convState.client_name}`);
     }
 
+    // Determine service for slot filtering — use lastMentionedService OR convState.service (which includes first-message detection)
+    const resolvedServiceForFiltering = lastMentionedService || convState.service;
+    const serviceDurationForContext = resolvedServiceForFiltering
+      ? getServiceDuration(shopConfig.services || [], resolvedServiceForFiltering)
+      : null;
+
     const availableSlotsForContext = serviceDurationForContext
       ? filterAvailableSlotsForService(availableSlots, serviceDurationForContext)
       : availableSlots;
 
     if (serviceDurationForContext) {
-      console.log(`[AVAILABILITY_CONTEXT] Service "${lastMentionedService}" (${serviceDurationForContext}min) filtered for AI context`);
+      console.log(`[AVAILABILITY_CONTEXT] Service "${resolvedServiceForFiltering}" (${serviceDurationForContext}min) filtered for AI context`);
     }
 
     // --- Inject no-show recovery context if this phone has a pending recovery ---
