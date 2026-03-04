@@ -347,7 +347,7 @@ Deno.serve(async (req) => {
       console.log(`Found ${appts3h.length} candidates for 3h reminder`);
       for (const appt of appts3h) {
         const plan = await getPlan(appt.user_id);
-        if (plan === "starter") {
+        if (plan === "free") {
           console.log(`Skipping 3h reminder for appt ${appt.id} (Free plan)`);
           continue;
         }
