@@ -15,6 +15,8 @@ interface SubscriptionContextValue {
   trialMessagesUsed: number;
   trialAppointmentsLimit: number;
   trialMessagesLimit: number;
+  nextPlan: string | null;
+  nextPlanEffectiveAt: string | null;
   cancel: () => Promise<{ error?: string }>;
   reactivate: () => Promise<{ error?: string; qr_code?: string }>;
   refetch: () => Promise<void>;
