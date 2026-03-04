@@ -512,6 +512,8 @@ export type Database = {
           current_period_start: string | null
           id: string
           last_payment_status: string | null
+          next_plan: string | null
+          next_plan_effective_at: string | null
           payment_method: string | null
           plan: string
           status: string
@@ -533,6 +535,8 @@ export type Database = {
           current_period_start?: string | null
           id?: string
           last_payment_status?: string | null
+          next_plan?: string | null
+          next_plan_effective_at?: string | null
           payment_method?: string | null
           plan?: string
           status?: string
@@ -554,6 +558,8 @@ export type Database = {
           current_period_start?: string | null
           id?: string
           last_payment_status?: string | null
+          next_plan?: string | null
+          next_plan_effective_at?: string | null
           payment_method?: string | null
           plan?: string
           status?: string
