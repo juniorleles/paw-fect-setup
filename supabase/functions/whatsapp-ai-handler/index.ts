@@ -2932,7 +2932,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     await sendWhatsAppMessage(instanceName, senderPhone, reply);
 
     // --- Post-reply state update: detect if a booking was completed ---
-    if (/agendamento\s+confirmado/i.test(reply) || /<action>.*?"type"\s*:\s*"create".*?<\/action>/s.test(reply)) {
+    if (/agendamento\s+confirmado/i.test(reply) || (reply.includes('<action>') && reply.includes('"type"') && reply.includes('"create"'))) {
       await updateConversationState(serviceClient, shopConfig.user_id, cleanPhone, stateAfterBooking());
       console.log(`[STATE] Booking completed — state reset to post_booking`);
     }
