@@ -951,6 +951,40 @@ function detectDateOrTimeSignal(userMessage: string): boolean {
     || /[àa]s\s+\d{1,2}/i.test(userNorm);
 }
 
+function enforceServiceCompatibleSlotSuggestion(
+  userMessage: string,
+  reply: string,
+  knownService: string | null,
+  availableSlots: string,
+): string {
+  if (!reply || !knownService) return reply;
+  if (!availableSlots || /<action>.*?<\/action>/s.test(reply)) return reply;
+
+  const userNorm = normalizeGuardText(userMessage);
+  const isSchedulingContext = /\b(agendar|marcar|horario|amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/.test(userNorm);
+  if (!isSchedulingContext) return reply;
+
+  const allowedTimes = [...new Set([
+    ...availableSlots.matchAll(/(\d{2}:\d{2})\s*\([^)]+\)/g),
+  ].map((m) => m[1]))];
+
+  if (allowedTimes.length === 0) return reply;
+
+  const timesInReply = [...new Set((reply.match(/\b([01]\d|2[0-3]):[0-5]\d\b/g) || []))];
+  if (timesInReply.length === 0) return reply;
+
+  const invalidTimes = timesInReply.filter((t) => !allowedTimes.includes(t));
+  if (invalidTimes.length === 0) return reply;
+
+  const suggestions = allowedTimes.slice(0, 6);
+  if (suggestions.length === 0) {
+    return `Para ${knownService}, não há horários compatíveis no momento. Me diz outro dia que eu te mostro opções.`;
+  }
+
+  const slotsText = suggestions.map((t) => `• ${t}`).join("\n");
+  return `Perfeito! Para ${knownService}, tenho estas sugestões que comportam a duração do serviço:\n${slotsText}\nQual horário você prefere?`;
+}
+
 // Deterministic date correction: if user says "amanhã" but AI used today's date, fix it
 function enforceDateCorrectionGuard(userMessage: string, reply: string): string {
   if (!reply) return reply;
