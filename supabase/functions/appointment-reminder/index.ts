@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
       );
       for (const appt of rescheduled3h) {
         const plan = await getPlan(appt.user_id);
-        if (plan === "starter") continue;
+        if (plan === "free") continue;
         const config = await getConfig(appt.user_id);
         if (!config || config.whatsapp_status !== "connected" || !appt.owner_phone) continue;
         const message = buildReminder3hMessage(config, appt);
