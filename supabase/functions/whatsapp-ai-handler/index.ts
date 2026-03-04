@@ -1813,8 +1813,36 @@ async function tryDeterministicBooking(
 
   if (!chosenDate) return null;
 
-  // Validate the slot is available
+  // Validate the slot is available (slots now have annotations like "15:00 (até 60min livre)")
   if (!availableSlots.includes(chosenDate) || !availableSlots.includes(finalTime)) return null;
+
+  // Check that the service duration fits in the consecutive free time at this slot
+  const serviceDuration = serviceConfig.duration || 30;
+  const slotLine = availableSlots.split("\n").find((l: string) => l.includes(chosenDate) && l.includes(finalTime));
+  if (slotLine) {
+    const freeMinMatch = slotLine.match(new RegExp(`${finalTime.replace(":", ":")}\\s*\\(até (\\d+)min`));
+    if (freeMinMatch) {
+      const freeMin = parseInt(freeMinMatch[1]);
+      if (serviceDuration > freeMin) {
+        console.log(`[DeterministicBooking] Slot ${finalTime} has ${freeMin}min free but service needs ${serviceDuration}min`);
+        // Find alternative slots on the same date that have enough free time
+        const altSlots: string[] = [];
+        const slotMatches = slotLine.matchAll(/(\d{2}:\d{2})\s*\(até (\d+)min/g);
+        for (const sm of slotMatches) {
+          if (parseInt(sm[2]) >= serviceDuration && sm[1] !== finalTime) {
+            altSlots.push(sm[1]);
+          }
+        }
+        const altText = altSlots.length > 0
+          ? `\nHorários disponíveis para ${serviceName}: ${altSlots.slice(0, 5).join(", ")}`
+          : "\nMe diz outro horário que fica melhor pra você!";
+        const reply = `Poxa, o horário ${finalTime} não comporta o ${serviceName} (${serviceDuration}min) 😕${altText}`;
+        await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
+        await sendWhatsAppMessage(instanceName, senderPhone, reply);
+        return reply;
+      }
+    }
+  }
 
   console.log(`[DeterministicBooking] Bypassing AI — service: ${serviceName}, date: ${chosenDate}, time: ${finalTime}, client: ${clientName}`);
 
