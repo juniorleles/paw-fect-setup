@@ -32,7 +32,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [reactivating, setReactivating] = useState(false);
-  const [plan, setPlan] = useState<string>("starter");
+  const [plan, setPlan] = useState<string>("free");
   const [trialAppointmentsUsed, setTrialAppointmentsUsed] = useState(0);
   const [trialMessagesUsed, setTrialMessagesUsed] = useState(0);
   const [trialAppointmentsLimit, setTrialAppointmentsLimit] = useState(50);
@@ -43,7 +43,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     if (!userId) {
       setStatus("none");
       setTrialEndAt(null);
-      setPlan("starter");
+      setPlan("free");
       setTrialAppointmentsUsed(0);
       setTrialMessagesUsed(0);
       setTrialAppointmentsLimit(30);
@@ -70,7 +70,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
       setStatus((latest?.status as SubscriptionStatus) ?? "none");
       setTrialEndAt(latest?.trial_end_at ?? null);
-      setPlan(latest?.plan ?? "starter");
+      setPlan(latest?.plan ?? "free");
       setTrialAppointmentsUsed((latest as any)?.trial_appointments_used ?? 0);
       setTrialMessagesUsed((latest as any)?.trial_messages_used ?? 0);
       setTrialAppointmentsLimit((latest as any)?.trial_appointments_limit ?? 30);
@@ -81,7 +81,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       console.error("fetchSubscription failed:", error);
       setStatus("none");
       setTrialEndAt(null);
-      setPlan("starter");
+      setPlan("free");
       setTrialAppointmentsUsed(0);
       setTrialMessagesUsed(0);
       setTrialAppointmentsLimit(30);

@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!existingSub) {
-      await supabase.from("subscriptions").insert({ user_id: user.id, status: "active" });
+      await supabase.from("subscriptions").insert({ user_id: user.id, status: "active", plan: "free" });
     } else if (existingSub.status !== "active") {
       await supabase
         .from("subscriptions")

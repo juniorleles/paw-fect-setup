@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
         .select("plan")
         .eq("user_id", userId)
         .maybeSingle();
-      const plan = data?.plan || "starter";
+      const plan = data?.plan || "free";
       planCache.set(userId, plan);
       return plan;
     }
@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
       );
       for (const appt of rescheduled3h) {
         const plan = await getPlan(appt.user_id);
-        if (plan === "starter") continue;
+        if (plan === "free") continue;
         const config = await getConfig(appt.user_id);
         if (!config || config.whatsapp_status !== "connected" || !appt.owner_phone) continue;
         const message = buildReminder3hMessage(config, appt);
@@ -347,7 +347,7 @@ Deno.serve(async (req) => {
       console.log(`Found ${appts3h.length} candidates for 3h reminder`);
       for (const appt of appts3h) {
         const plan = await getPlan(appt.user_id);
-        if (plan === "starter") {
+        if (plan === "free") {
           console.log(`Skipping 3h reminder for appt ${appt.id} (Free plan)`);
           continue;
         }

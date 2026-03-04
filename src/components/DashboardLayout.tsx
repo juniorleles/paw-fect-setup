@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAppointmentNotifications } from "@/hooks/useAppointmentNotifications";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Sidebar,
   SidebarContent,
@@ -19,20 +20,26 @@ import { LayoutDashboard, CalendarDays, Settings, LogOut, Briefcase, UserCircle,
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const navItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Agendamentos", url: "/appointments", icon: CalendarDays },
-  { title: "Clientes Inativos", url: "/inactive-clients", icon: UserX },
-  { title: "Profissionais", url: "/professionals", icon: Users },
-  { title: "Configurações", url: "/settings", icon: Settings },
-  { title: "Minha Conta", url: "/my-account", icon: UserCircle },
-  { title: "Suporte", url: "/support", icon: Headphones },
+const allNavItems = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, minPlan: "free" },
+  { title: "Agendamentos", url: "/appointments", icon: CalendarDays, minPlan: "free" },
+  { title: "Clientes Inativos", url: "/inactive-clients", icon: UserX, minPlan: "starter" },
+  { title: "Profissionais", url: "/professionals", icon: Users, minPlan: "free" },
+  { title: "Configurações", url: "/settings", icon: Settings, minPlan: "free" },
+  { title: "Minha Conta", url: "/my-account", icon: UserCircle, minPlan: "free" },
+  { title: "Suporte", url: "/support", icon: Headphones, minPlan: "free" },
 ];
+
+const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, professional: 2 };
 
 const DashboardSidebarContent = () => {
   const { signOut } = useAuth();
+  const { plan } = useSubscription();
   const navigate = useNavigate();
   const { setOpenMobile, isMobile } = useSidebar();
+
+  const userRank = PLAN_RANK[plan] ?? 0;
+  const navItems = allNavItems.filter((item) => userRank >= (PLAN_RANK[item.minPlan] ?? 0));
 
   const handleSignOut = async () => {
     if (isMobile) setOpenMobile(false);

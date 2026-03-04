@@ -111,7 +111,7 @@ serve(async (req) => {
       "prod_U2X5te6HQ2va2l": "professional",   // Pro live
       "prod_U2ZxFgQ7HaugUf": "professional",   // Pro test
     };
-    const resolvedPlan = PRODUCT_TO_PLAN[productId] || "starter";
+    const resolvedPlan = PRODUCT_TO_PLAN[productId] || "free";
 
     logStep("Active subscription found", {
       subscriptionId: activeSub.id,
