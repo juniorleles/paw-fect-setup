@@ -2295,12 +2295,29 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     // Reuse the multiline-aware detection from above
     const isSimpleGreeting = allLinesAreGreetingOrFarewell;
     if (isSimpleGreeting && /<action>.*?<\/action>/s.test(reply)) {
-      console.log(`[GreetingGuard] Simple greeting "${message}" triggered an action block — stripping action to prevent false booking`);
+      console.log(`[GreetingGuard] Simple greeting/farewell "${message}" triggered an action block — stripping action to prevent false booking`);
       reply = reply.replace(/<action>.*?<\/action>/gs, "").trim();
       // If stripping the action leaves a "confirmation" text, clean it up
       if (!reply || reply.length < 5 || /agendamento\s+confirmado/i.test(reply)) {
-        // Let the AI text through only if it's a proper greeting response
-        reply = "";
+        // Generate appropriate farewell or greeting response
+        if (isFarewell) {
+          const nicheEmojiMap3: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+          const emoji = nicheEmojiMap3[shopConfig.niche] || "😊";
+          reply = `Por nada! Qualquer coisa é só chamar ${emoji}`;
+        } else {
+          reply = "";
+        }
+      }
+    }
+    
+    // Extra safety: even without action blocks, farewell messages should never get booking confirmations
+    if (isSimpleGreeting && /agendamento\s+confirmado/i.test(reply)) {
+      console.log(`[GreetingGuard] Farewell/greeting got a booking confirmation text — replacing with proper response`);
+      if (isFarewell) {
+        const nicheEmojiMap4: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+        reply = `Por nada! Qualquer coisa é só chamar ${nicheEmojiMap4[shopConfig.niche] || "😊"}`;
+      } else {
+        reply = reply.replace(/agendamento\s+confirmado.*$/gis, "").trim();
       }
     }
 
