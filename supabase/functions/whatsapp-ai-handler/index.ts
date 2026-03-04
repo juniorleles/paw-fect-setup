@@ -2563,7 +2563,11 @@ Deno.serve(async (req) => {
     const isFarewell = (allLinesAreGreetingOrFarewell && hasAnyFarewell) || singleLineIsFarewell;
 
     if (isGreeting) {
-      // Clear history if greeting arrives after 30+ min of inactivity
+      // ALWAYS reset conversation state on greeting — user wants a fresh start
+      console.log(`[NewConversation] Greeting "${message}" detected — resetting conversation state unconditionally`);
+      await clearConversationState(serviceClient, shopConfig.user_id, cleanPhone);
+
+      // Additionally clear old history if greeting arrives after 30+ min of inactivity
       const { data: recentMsgs } = await serviceClient
         .from("conversation_messages")
         .select("created_at")
@@ -2578,14 +2582,13 @@ Deno.serve(async (req) => {
         const gapMinutes = (currentMsgTime - lastMsgTime) / (1000 * 60);
 
         if (gapMinutes >= 30) {
-          console.log(`[NewConversation] Greeting "${message}" after ${Math.round(gapMinutes)}min gap — clearing old history and state`);
+          console.log(`[NewConversation] ${Math.round(gapMinutes)}min gap — also clearing old conversation history`);
           await serviceClient
             .from("conversation_messages")
             .delete()
             .eq("user_id", shopConfig.user_id)
             .eq("phone", cleanPhone)
             .lt("created_at", recentMsgs[0].created_at);
-          await clearConversationState(serviceClient, shopConfig.user_id, cleanPhone);
         }
       }
     }
