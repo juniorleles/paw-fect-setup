@@ -1817,13 +1817,16 @@ async function tryDeterministicBooking(
   let chosenDate: string | null = null;
   const assistantContent = lastAssistant.content || "";
 
-  // Extract date from assistant's message (DD/MM pattern)
-  const dateInAssistant = assistantContent.match(/(\d{2}\/\d{2})/);
-  if (dateInAssistant) {
-    const [dd, mm] = dateInAssistant[1].split("/");
+  // Extract date from assistant's message (DD/MM pattern) — use the LAST date mentioned
+  // because the AI often says "day X is full" then "suggestions for day Y"
+  const allDatesInAssistant = [...assistantContent.matchAll(/(\d{2}\/\d{2})/g)];
+  if (allDatesInAssistant.length > 0) {
+    const lastDate = allDatesInAssistant[allDatesInAssistant.length - 1][1];
+    const [dd, mm] = lastDate.split("/");
     const brNow = new Date(Date.now() - 3 * 60 * 60 * 1000);
     const year = brNow.getUTCFullYear();
     chosenDate = `${year}-${mm}-${dd}`;
+    console.log(`[DeterministicBooking] Extracted date ${chosenDate} (last of ${allDatesInAssistant.length} dates in assistant msg)`);
   }
 
   // Check if user message mentions "amanhã"
