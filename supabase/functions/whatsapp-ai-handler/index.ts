@@ -530,7 +530,17 @@ function inferServiceFromText(text: string, services: any[]): string | null {
     normalizedText.includes(s.normalized) || connectorText.includes(s.withConnectors)
   );
 
-  return found?.original || null;
+  if (found?.original) return found.original;
+
+  // Heuristic for barbershop combined requests like "barba e cabelo"
+  const mentionsBarba = /\bbarba\b/.test(normalizedText);
+  const mentionsHair = /\b(cabelo|corte)\b/.test(normalizedText);
+  if (mentionsBarba && mentionsHair) {
+    const combined = serviceList.find((s: any) => /barba/.test(s.normalized) && /corte|cabelo/.test(s.normalized));
+    if (combined?.original) return combined.original;
+  }
+
+  return null;
 }
 
 // Sanitize leaked system instructions from AI reply
