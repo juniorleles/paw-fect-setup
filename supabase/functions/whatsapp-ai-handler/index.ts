@@ -1811,7 +1811,13 @@ async function tryDeterministicBooking(
     }
   }
 
-  if (!clientName) return null; // Can't determine name — let AI handle
+  if (!clientName) {
+    const askNameMsg = `Perfeito! Para confirmar ${serviceName} às ${finalTime}, me diz seu nome, por favor.`;
+    console.log(`[DeterministicBooking] Missing client name for ${cleanPhone} — asking name before confirmation`);
+    await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", askNameMsg);
+    await sendWhatsAppMessage(instanceName, senderPhone, askNameMsg);
+    return askNameMsg;
+  }
 
   // Determine date from last assistant message or available slots
   let chosenDate: string | null = null;
@@ -2506,19 +2512,25 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
-    // Guardrail: ReGreetingGuard — if AI replied with a generic greeting but conversation already has history, strip greeting prefix or retry
-    const genericGreetingReplyPattern = /^(boa\s+(tarde|noite)|bom\s+dia|ol[aá])[!.,]?\s*(como\s+posso|em\s+que\s+posso|como\s+(te\s+)?ajud|estou\s+[àa]\s+disposi[çc][ãa]o)/i;
+    // Guardrail: ReGreetingGuard — if AI replied with a generic greeting but conversation already has history, retry and force a direct reply
+    const genericGreetingReplyPattern = /^(?:senhor[,\s]+)?(?:boa\s+(tarde|noite)|bom\s+dia|ol[aá]|oi)[!.,\s]*(?:me\s+diga[,\s]*)?(?:como\s+posso|em\s+que\s+posso|como\s+(te\s+)?ajud|estou\s+[àa]\s+disposi[çc][ãa]o|me\s+diga|diga|fale)/i;
+    const stripGreetingPrefix = (text: string) =>
+      text
+        .replace(/^(?:senhor[,\s]+)?(?:boa\s+(?:tarde|noite)|bom\s+dia|ol[aá]|oi)[!.,\s]*/i, "")
+        .replace(/^(?:me\s+diga[,\s]*)?(?:como\s+posso|em\s+que\s+posso|como\s+(?:te\s+)?ajud[aeo]?|diga|fale)[^\n]*\??\s*/i, "")
+        .trim();
+
     const aiGaveGenericGreeting = genericGreetingReplyPattern.test(reply.trim());
-    
+
     if (aiGaveGenericGreeting && hasAssistantInHistory) {
       console.log(`[ReGreetingGuard] AI re-greeted despite existing conversation history. User msg: "${message}", AI reply: "${reply.substring(0, 80)}..." — retrying`);
-      
+
       const retryMessages = [
         ...aiMessages,
         { role: "assistant", content: reply },
         { role: "user", content: `INSTRUÇÃO URGENTE DO SISTEMA: Sua resposta anterior foi uma saudação genérica, mas esta conversa JÁ ESTÁ EM ANDAMENTO. O cliente disse: "${message}". Responda DIRETAMENTE ao que ele pediu. NÃO cumprimente. NÃO se apresente. Se ele quer agendar, informe os horários disponíveis. Se ele fez uma pergunta, responda.` },
       ];
-      
+
       try {
         const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -2532,7 +2544,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
             max_completion_tokens: 4096,
           }),
         });
-        
+
         if (retryResponse.ok) {
           const retryData = await retryResponse.json();
           const retryReply = retryData.choices?.[0]?.message?.content;
@@ -2540,12 +2552,27 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
             console.log(`[ReGreetingGuard] Retry succeeded: "${retryReply.substring(0, 80)}..."`);
             reply = retryReply;
             aiData = retryData;
-          } else {
-            console.log(`[ReGreetingGuard] Retry also gave greeting — stripping greeting prefix`);
+          } else if (retryReply) {
+            const strippedRetry = stripGreetingPrefix(retryReply);
+            if (strippedRetry.length > 5) {
+              console.log("[ReGreetingGuard] Retry still greeted — greeting prefix stripped deterministically");
+              reply = strippedRetry;
+              aiData = retryData;
+            }
           }
         }
       } catch (retryErr) {
         console.error("[ReGreetingGuard] Retry failed:", retryErr);
+      }
+
+      // Last fallback: if greeting survived and user is clearly choosing a time, keep booking context instead of re-greeting
+      if (genericGreetingReplyPattern.test(reply.trim())) {
+        const normalizedMsg = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const userIsChoosingTime = /\b([01]?\d|2[0-3])(:[0-5]\d)?\b|\bas\s+([01]?\d|2[0-3])\b|\b([01]?\d|2[0-3])h\b/.test(normalizedMsg);
+        if (userIsChoosingTime) {
+          reply = "Perfeito! Para confirmar esse horário, me diz seu nome, por favor.";
+          console.log("[ReGreetingGuard] Applied deterministic fallback for time-selection message");
+        }
       }
     }
 
