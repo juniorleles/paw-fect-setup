@@ -25,7 +25,7 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
   const [editDuration, setEditDuration] = useState("");
   const [editCategory, setEditCategory] = useState("");
 
-  const suggestions = NICHE_SUGGESTIONS[data.niche] ?? NICHE_SUGGESTIONS.outros;
+  const suggestions = NICHE_SUGGESTIONS[data.niche] ?? NICHE_SUGGESTIONS.barbearia;
 
   const addService = () => {
     if (!name) return;
