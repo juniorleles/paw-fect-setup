@@ -2289,11 +2289,32 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
 
     const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlotsForContext, maxConcurrent) + longTermMemory + recoveryContext;
 
+    // Log conversation history for debugging context loss
+    console.log(`[CONTEXT] Conversation history for ${cleanPhone}: ${conversationHistory.length} messages`);
+    if (conversationHistory.length > 0) {
+      console.log(`[CONTEXT] History preview: ${JSON.stringify(conversationHistory.map(m => ({ role: m.role, content: m.content.substring(0, 60) })))}`);
+    }
+
     // Build messages array with history
     const aiMessages: { role: string; content: string }[] = [
       { role: "system", content: systemPrompt },
       ...conversationHistory,
     ];
+
+    // CRITICAL: If there's conversation history (not first message), inject a reminder
+    // to prevent the AI from re-greeting or ignoring the current message
+    const hasAssistantInHistory = conversationHistory.some(m => m.role === "assistant");
+    if (hasAssistantInHistory) {
+      // Add a system-level reminder right before the last user message to anchor the AI
+      const lastUserMsg = aiMessages[aiMessages.length - 1];
+      if (lastUserMsg?.role === "user") {
+        // Insert reminder BEFORE the last user message
+        aiMessages.splice(aiMessages.length - 1, 0, {
+          role: "system",
+          content: "LEMBRETE: Você já se apresentou nesta conversa. NÃO cumprimente novamente. NÃO diga 'Boa tarde', 'Bom dia', 'Olá' novamente. Responda DIRETAMENTE ao que o cliente está pedindo na próxima mensagem. Se ele quer agendar, aborde o agendamento imediatamente."
+        });
+      }
+    }
 
     // --- DETERMINISTIC BOOKING SHORTCUT ---
     // When user selects a time from a list the AI just presented, bypass the AI entirely
@@ -2485,19 +2506,17 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
-    // Guardrail: BookingIntentGuard — if user has booking intent but AI replied with a generic greeting, retry
-    const bookingIntentPattern = /\b(agend|marc|reserv|hor[aá]rio|quero.*corte|quero.*barba|quero.*banho|quero.*servi[cç]o|quero.*manicure|quero.*pedicure|quero.*escova|preciso.*marcar|preciso.*agendar)\b/i;
+    // Guardrail: ReGreetingGuard — if AI replied with a generic greeting but conversation already has history, strip greeting prefix or retry
     const genericGreetingReplyPattern = /^(boa\s+(tarde|noite)|bom\s+dia|ol[aá])[!.,]?\s*(como\s+posso|em\s+que\s+posso|como\s+(te\s+)?ajud|estou\s+[àa]\s+disposi[çc][ãa]o)/i;
-    const userHasBookingIntent = bookingIntentPattern.test(message);
     const aiGaveGenericGreeting = genericGreetingReplyPattern.test(reply.trim());
     
-    if (userHasBookingIntent && aiGaveGenericGreeting) {
-      console.log(`[BookingIntentGuard] User asked "${message}" but AI replied with generic greeting "${reply.substring(0, 80)}..." — retrying with reinforced context`);
+    if (aiGaveGenericGreeting && hasAssistantInHistory) {
+      console.log(`[ReGreetingGuard] AI re-greeted despite existing conversation history. User msg: "${message}", AI reply: "${reply.substring(0, 80)}..." — retrying`);
       
       const retryMessages = [
         ...aiMessages,
         { role: "assistant", content: reply },
-        { role: "user", content: `INSTRUÇÃO DO SISTEMA: O cliente acabou de pedir "${message}". Responda DIRETAMENTE ao pedido de agendamento. NÃO cumprimente novamente. NÃO se apresente. Aborde o serviço e horários disponíveis imediatamente.` },
+        { role: "user", content: `INSTRUÇÃO URGENTE DO SISTEMA: Sua resposta anterior foi uma saudação genérica, mas esta conversa JÁ ESTÁ EM ANDAMENTO. O cliente disse: "${message}". Responda DIRETAMENTE ao que ele pediu. NÃO cumprimente. NÃO se apresente. Se ele quer agendar, informe os horários disponíveis. Se ele fez uma pergunta, responda.` },
       ];
       
       try {
@@ -2517,14 +2536,16 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
         if (retryResponse.ok) {
           const retryData = await retryResponse.json();
           const retryReply = retryData.choices?.[0]?.message?.content;
-          if (retryReply && retryReply.trim().length > 5) {
-            console.log(`[BookingIntentGuard] Retry succeeded: "${retryReply.substring(0, 80)}..."`);
+          if (retryReply && retryReply.trim().length > 5 && !genericGreetingReplyPattern.test(retryReply.trim())) {
+            console.log(`[ReGreetingGuard] Retry succeeded: "${retryReply.substring(0, 80)}..."`);
             reply = retryReply;
             aiData = retryData;
+          } else {
+            console.log(`[ReGreetingGuard] Retry also gave greeting — stripping greeting prefix`);
           }
         }
       } catch (retryErr) {
-        console.error("[BookingIntentGuard] Retry failed:", retryErr);
+        console.error("[ReGreetingGuard] Retry failed:", retryErr);
       }
     }
 
