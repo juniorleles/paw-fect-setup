@@ -3301,6 +3301,11 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     }
     {
       const before = reply;
+      reply = enforceWeekdayCorrection(message, reply, availableSlotsForContext, convState);
+      if (reply !== before) guardLog("WeekdayGuard", "Corrected AI response that mentioned wrong weekday", before, reply);
+    }
+    {
+      const before = reply;
       reply = enforceServiceCompatibleSlotSuggestion(message, reply, lastMentionedService || convState.service, availableSlotsForContext);
       if (reply !== before) guardLog("ServiceCompatibleSlotGuard", "Removed invalid slot suggestions that do not fit service duration", before, reply);
     }
