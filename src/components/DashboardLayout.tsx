@@ -30,9 +30,16 @@ const allNavItems = [
   { title: "Suporte", url: "/support", icon: Headphones, minPlan: "free" },
 ];
 
+const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, professional: 2 };
+
 const DashboardSidebarContent = () => {
   const { signOut } = useAuth();
+  const { plan } = useSubscription();
   const navigate = useNavigate();
+  const { setOpenMobile, isMobile } = useSidebar();
+
+  const userRank = PLAN_RANK[plan] ?? 0;
+  const navItems = allNavItems.filter((item) => userRank >= (PLAN_RANK[item.minPlan] ?? 0));
   const { setOpenMobile, isMobile } = useSidebar();
 
   const handleSignOut = async () => {

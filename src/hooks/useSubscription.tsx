@@ -81,7 +81,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       console.error("fetchSubscription failed:", error);
       setStatus("none");
       setTrialEndAt(null);
-      setPlan("starter");
+      setPlan("free");
       setTrialAppointmentsUsed(0);
       setTrialMessagesUsed(0);
       setTrialAppointmentsLimit(30);

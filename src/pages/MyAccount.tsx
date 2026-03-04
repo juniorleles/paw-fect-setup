@@ -638,7 +638,7 @@ const MyAccount = () => {
         <h2 className="text-lg font-display font-bold">Planos disponíveis</h2>
         <div className="grid sm:grid-cols-3 gap-4 items-stretch">
           {/* Free / Starter */}
-          <Card className={`border-2 transition-all ${currentPlan === "starter" && !isCancelled && !isActive ? "border-primary shadow-lg" : "border-border/60"} bg-muted/30`}>
+          <Card className={`border-2 transition-all ${currentPlan === "free" && !isCancelled && !isActive ? "border-primary shadow-lg" : "border-border/60"} bg-muted/30`}>
             <CardContent className="p-5 flex flex-col h-full">
               <Badge variant="secondary" className="w-fit mb-2 text-[11px]">🔥 Comece Grátis</Badge>
               <h3 className="font-display font-bold text-lg">Free</h3>
@@ -663,11 +663,17 @@ const MyAccount = () => {
                   </li>
                 ))}
               </ul>
-              {currentPlan === "starter" && !isCancelled && !isActive ? (
+              {currentPlan === "free" ? (
                 <Button variant="outline" disabled className="w-full">Plano atual</Button>
               ) : isActive ? (
-                <Button variant="outline" className="w-full" disabled>
-                  <Lock className="w-4 h-4 mr-1" /> Free
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => handlePlanChange("free")}
+                  disabled={planChangeLoading === "free"}
+                >
+                  {planChangeLoading === "free" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Fazer downgrade
                 </Button>
               ) : (
                 <Button variant="outline" className="w-full" disabled>Free</Button>
