@@ -458,6 +458,30 @@ function buildStateContext(state: ConversationState): string {
   return lines.join("\n");
 }
 
+// Build a concise summary of the last 3 conversation turns to prevent context loss
+function buildConversationSummary(history: { role: string; content: string }[]): string {
+  if (!history || history.length < 2) return "";
+
+  // Get last 6 messages (3 turns = 3 user + 3 assistant max)
+  const recent = history.slice(-6);
+
+  const summaryLines: string[] = [];
+  summaryLines.push("\n\n=== RESUMO DOS ÚLTIMOS TURNOS DA CONVERSA ===");
+
+  for (const msg of recent) {
+    const label = msg.role === "user" ? "CLIENTE" : "VOCÊ (IA)";
+    // Truncate long messages to 150 chars for the summary
+    const content = (msg.content || "").replace(/<action>.*?<\/action>/gs, "[AÇÃO DE AGENDAMENTO]").trim();
+    const truncated = content.length > 150 ? content.substring(0, 150) + "..." : content;
+    summaryLines.push(`${label}: ${truncated}`);
+  }
+
+  summaryLines.push("=== FIM DO RESUMO ===");
+  summaryLines.push("REGRA: Use este resumo para manter o contexto. NÃO repita perguntas que já foram respondidas acima. Continue o fluxo de onde parou.");
+
+  return summaryLines.join("\n");
+}
+
 function cleanPhoneNumber(phone: string): string {
   return phone.replace("@s.whatsapp.net", "").replace(/\D/g, "");
 }
@@ -2528,7 +2552,11 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
 
     // Inject structured conversation state into prompt
     const stateContext = buildStateContext(convState);
-    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlotsForContext, maxConcurrent) + longTermMemory + recoveryContext + stateContext;
+
+    // Build automatic conversation summary from last 3 turns
+    const conversationSummary = buildConversationSummary(conversationHistory);
+
+    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlotsForContext, maxConcurrent) + longTermMemory + recoveryContext + stateContext + conversationSummary;
 
     // Log conversation history for debugging context loss
     console.log(`[CONTEXT] Conversation history for ${cleanPhone}: ${conversationHistory.length} messages`);
