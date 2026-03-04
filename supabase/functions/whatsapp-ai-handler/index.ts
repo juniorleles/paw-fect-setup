@@ -2236,6 +2236,18 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       shopConfig.services
     );
 
+    const serviceDurationForContext = lastMentionedService
+      ? getServiceDuration(shopConfig.services || [], lastMentionedService)
+      : null;
+
+    const availableSlotsForContext = serviceDurationForContext
+      ? filterAvailableSlotsForService(availableSlots, serviceDurationForContext)
+      : availableSlots;
+
+    if (serviceDurationForContext) {
+      console.log(`[AVAILABILITY_CONTEXT] Service "${lastMentionedService}" (${serviceDurationForContext}min) filtered for AI context`);
+    }
+
     // --- Inject no-show recovery context if this phone has a pending recovery ---
     let recoveryContext = "";
     {
@@ -2272,7 +2284,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
-    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlots, maxConcurrent) + longTermMemory + recoveryContext;
+    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlotsForContext, maxConcurrent) + longTermMemory + recoveryContext;
 
     // Build messages array with history
     const aiMessages: { role: string; content: string }[] = [
