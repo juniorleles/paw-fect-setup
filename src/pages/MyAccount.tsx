@@ -171,7 +171,8 @@ const MyAccount = () => {
             .from("subscriptions")
             .select("*")
             .eq("user_id", userId)
-            .maybeSingle(),
+            .order("updated_at", { ascending: false })
+            .limit(1),
           supabase
             .from("conversation_messages")
             .select("id", { count: "exact", head: true })
