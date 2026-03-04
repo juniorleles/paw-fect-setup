@@ -546,6 +546,7 @@ function inferServiceFromText(text: string, services: any[]): string | null {
 // Sanitize leaked system instructions from AI reply
 function sanitizeLeakedInstructions(reply: string): string {
   if (!reply) return reply;
+  const original = reply;
   // Remove lines that look like leaked system instructions
   const leakedPatterns = [
     /^leia o hist[oó]rico.*$/gim,
@@ -570,10 +571,34 @@ function sanitizeLeakedInstructions(reply: string): string {
   if (cleaned.length < 5 && reply.length > 5) {
     // If sanitization removed almost everything, return original minus first leaked line
     const lines = reply.split("\n").filter(l => !/^(leia|lembrete|regra|instru)/i.test(l.trim()));
-    return lines.join("\n").trim() || reply;
+    const result = lines.join("\n").trim() || reply;
+    if (result !== original) {
+      guardLog("LeakedInstructionsGuard", "Leaked system instructions detected and removed (partial)", original, result);
+    }
+    return result;
   }
 
+  if (cleaned !== original) {
+    guardLog("LeakedInstructionsGuard", "Leaked system instructions detected and removed", original, cleaned);
+  }
   return cleaned;
+}
+
+// --- Structured Guardrail Observability ---
+function guardLog(guardName: string, reason: string, original: string, corrected: string): void {
+  const changed = original !== corrected;
+  const logEntry = {
+    guard: guardName,
+    triggered: changed,
+    reason,
+    original_preview: (original || "").substring(0, 120),
+    corrected_preview: changed ? (corrected || "").substring(0, 120) : undefined,
+  };
+  if (changed) {
+    console.log(`[GUARD:${guardName}] ⚡ TRIGGERED | reason="${reason}" | original="${(original || "").substring(0, 80)}" → corrected="${(corrected || "").substring(0, 80)}"`);
+  } else {
+    console.log(`[GUARD:${guardName}] ✓ passed | reason="${reason}"`);
+  }
 }
 
 function cleanPhoneNumber(phone: string): string {
