@@ -70,15 +70,15 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
   };
 
   const saveEdit = () => {
-    if (!editingId || !editName) return;
+    if (!editingId || !editName || !editPrice || !editDuration) return;
     onChange({
       services: data.services.map((s) =>
         s.id === editingId
           ? {
               ...s,
               name: editName,
-              price: editPrice ? parseFloat(editPrice) : undefined,
-              duration: editDuration ? parseInt(editDuration) : undefined,
+              price: parseFloat(editPrice),
+              duration: parseInt(editDuration),
               category: editCategory || undefined,
             }
           : s
