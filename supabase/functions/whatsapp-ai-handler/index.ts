@@ -3151,6 +3151,11 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     }
     {
       const before = reply;
+      reply = enforceServiceCompatibleSlotSuggestion(message, reply, lastMentionedService || convState.service, availableSlotsForContext);
+      if (reply !== before) guardLog("ServiceCompatibleSlotGuard", "Removed invalid slot suggestions that do not fit service duration", before, reply);
+    }
+    {
+      const before = reply;
       reply = enforceBookingDateTimeQuestion(message, reply);
       if (reply !== before) guardLog("BookingDateTimeGuard(2nd)", "Added missing date/time question (post-continuation)", before, reply);
     }
