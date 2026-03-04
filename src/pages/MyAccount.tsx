@@ -368,7 +368,9 @@ const MyAccount = () => {
   const currentPlan = (sub?.plan as keyof typeof PLANS) ?? "free";
   const planInfo = PLANS[currentPlan] ?? PLANS.free;
   const messagesLimit = planInfo.limit;
-  const usagePercent = messagesLimit > 0 ? (messagesUsed / messagesLimit) * 100 : 0;
+  // Use subscription counter (resets on plan change) instead of raw conversation_messages count
+  const paidMessagesUsed = trialMsgsUsed;
+  const usagePercent = messagesLimit > 0 ? (paidMessagesUsed / messagesLimit) * 100 : 0;
 
   const nextBillingDate = sub?.current_period_end
     ? format(new Date(sub.current_period_end), "dd/MM/yyyy")
