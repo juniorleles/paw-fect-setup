@@ -2182,7 +2182,9 @@ async function tryDeterministicBooking(
   await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", confirmMsg);
   await sendWhatsAppMessage(instanceName, senderPhone, confirmMsg);
 
-  console.log(`[DeterministicBooking] Success — ${serviceName} for ${clientName} at ${chosenDate} ${finalTime}`);
+  // Update structured state after successful deterministic booking
+  await updateConversationState(serviceClient, shopConfig.user_id, cleanPhone, stateAfterBooking());
+  console.log(`[DeterministicBooking] Success — ${serviceName} for ${clientName} at ${chosenDate} ${finalTime} — state reset`);
   return confirmMsg;
 }
 
