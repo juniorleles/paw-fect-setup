@@ -495,15 +495,32 @@ function enforceKnownServiceNoRedundantQuestion(
     .replace(/\s+/g, " ")
     .trim();
 
+  // Normalize connectors so "corte e barba" matches "Corte + Barba"
+  const normalizeConnectors = (text: string) =>
+    normalize(text).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+
   const normalizedUserMessage = normalize(userMessage || "");
+  const connectorUserMessage = normalizeConnectors(userMessage || "");
   const normalizedReply = normalize(reply || "");
 
   const serviceList = (services || [])
-    .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
-    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1);
+    .map((s: any) => ({
+      original: s?.name || "",
+      normalized: normalize(s?.name || ""),
+      withConnectors: normalizeConnectors(s?.name || ""),
+    }))
+    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1)
+    .sort((a: { normalized: string }, b: { normalized: string }) => b.normalized.length - a.normalized.length);
 
-  let matchedService = serviceList
-    .find((s: { original: string; normalized: string }) => normalizedUserMessage.includes(s.normalized))?.original;
+  const findServiceIn = (text: string) => {
+    const norm = normalize(text);
+    const conn = normalizeConnectors(text);
+    return serviceList.find((s: { original: string; normalized: string; withConnectors: string }) =>
+      norm.includes(s.normalized) || conn.includes(s.withConnectors)
+    )?.original;
+  };
+
+  let matchedService = findServiceIn(userMessage || "");
 
   if (!matchedService && knownServiceHint) {
     const normalizedKnownService = normalize(knownServiceHint);
@@ -511,21 +528,17 @@ function enforceKnownServiceNoRedundantQuestion(
   }
 
   if (!matchedService && conversationHistory) {
-    const allNormalized = conversationHistory
-      .slice(-12)
-      .map((m) => ({ role: m.role, normalized: normalize(m.content || "") }));
+    const recentMessages = conversationHistory.slice(-12);
 
-    for (const msg of [...allNormalized].reverse()) {
+    for (const msg of [...recentMessages].reverse()) {
       if (msg.role !== "user") continue;
-      matchedService = serviceList
-        .find((s: { original: string; normalized: string }) => msg.normalized.includes(s.normalized))?.original;
+      matchedService = findServiceIn(msg.content || "");
       if (matchedService) break;
     }
 
     if (!matchedService) {
-      for (const msg of [...allNormalized].reverse()) {
-        matchedService = serviceList
-          .find((s: { original: string; normalized: string }) => msg.normalized.includes(s.normalized))?.original;
+      for (const msg of [...recentMessages].reverse()) {
+        matchedService = findServiceIn(msg.content || "");
         if (matchedService) break;
       }
     }
@@ -887,9 +900,18 @@ async function findLastMentionedService(
     .replace(/\s+/g, " ")
     .trim();
 
+  // Normalize connectors: "+" "e" "&" all become a single canonical separator
+  const normalizeConnectors = (text: string) =>
+    normalize(text).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+
   const serviceList = (services || [])
-    .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
-    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1);
+    .map((s: any) => ({
+      original: s?.name || "",
+      normalized: normalize(s?.name || ""),
+      withConnectors: normalizeConnectors(s?.name || ""),
+    }))
+    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1)
+    .sort((a: { normalized: string }, b: { normalized: string }) => b.normalized.length - a.normalized.length);
 
   if (serviceList.length === 0) return null;
 
@@ -904,7 +926,10 @@ async function findLastMentionedService(
   const messages = data || [];
   for (const msg of messages) {
     const normalizedMessage = normalize(msg.content || "");
-    const found = serviceList.find((s: { original: string; normalized: string }) => normalizedMessage.includes(s.normalized));
+    const connectorMessage = normalizeConnectors(msg.content || "");
+    const found = serviceList.find((s: { original: string; normalized: string; withConnectors: string }) =>
+      normalizedMessage.includes(s.normalized) || connectorMessage.includes(s.withConnectors)
+    );
     if (found) return found.original;
   }
 
