@@ -889,7 +889,8 @@ async function findLastMentionedService(
 
   const serviceList = (services || [])
     .map((s: any) => ({ original: s?.name || "", normalized: normalize(s?.name || "") }))
-    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1);
+    .filter((s: { original: string; normalized: string }) => s.normalized.length > 1)
+    .sort((a: { normalized: string }, b: { normalized: string }) => b.normalized.length - a.normalized.length);
 
   if (serviceList.length === 0) return null;
 
