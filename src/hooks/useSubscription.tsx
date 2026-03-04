@@ -32,7 +32,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [reactivating, setReactivating] = useState(false);
-  const [plan, setPlan] = useState<string>("starter");
+  const [plan, setPlan] = useState<string>("free");
   const [trialAppointmentsUsed, setTrialAppointmentsUsed] = useState(0);
   const [trialMessagesUsed, setTrialMessagesUsed] = useState(0);
   const [trialAppointmentsLimit, setTrialAppointmentsLimit] = useState(50);
