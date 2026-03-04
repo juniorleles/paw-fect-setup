@@ -3427,6 +3427,20 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       // guardLog is already called inside sanitizeLeakedInstructions if triggered
     }
 
+    // Guardrail: Deduplicate repeated slot blocks (AI sometimes repeats the same list multiple times)
+    {
+      const before = reply;
+      reply = deduplicateRepeatedSlotBlocks(reply);
+      if (reply !== before) guardLog("SlotDeduplicationGuard", "Removed duplicated slot list blocks from AI response", before, reply);
+    }
+
+    // Guardrail: Cap total time mentions to prevent runaway slot lists
+    {
+      const before = reply;
+      reply = capMaxTimeMentions(reply, 8);
+      if (reply !== before) guardLog("MaxTimeMentionsGuard", "Capped excessive time mentions in response", before, reply);
+    }
+
     // Final pipeline summary
     const pipelineChanged = reply !== aiRawReply;
     console.log(`[GUARD_PIPELINE] Complete | changed=${pipelineChanged} | final_length=${reply.length} | original_length=${aiRawReply.length}`);
