@@ -206,6 +206,39 @@ function computeAvailableSlots(
   return lines.join("\n");
 }
 
+function filterAvailableSlotsForService(availableSlots: string, serviceDuration: number): string {
+  if (!availableSlots || serviceDuration <= 30) return availableSlots;
+
+  const lines = availableSlots
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const filteredLines = lines.map((line) => {
+    if (/EXPEDIENTE ENCERRADO|LOTADO/i.test(line)) return line;
+
+    const prefixMatch = line.match(/^([^:]+\s\d{4}-\d{2}-\d{2}):\s*/);
+    if (!prefixMatch) return line;
+
+    const dayPrefix = prefixMatch[1];
+    const slotMatches = [...line.matchAll(/(\d{2}:\d{2}\s*\([^)]+\))/g)].map((m) => m[1]);
+
+    const validSlots = slotMatches.filter((slot) => {
+      const freeMinMatch = slot.match(/até\s*(\d+)min/i);
+      if (!freeMinMatch) return true;
+      return Number(freeMinMatch[1]) >= serviceDuration;
+    });
+
+    if (validSlots.length === 0) {
+      return `${dayPrefix}: LOTADO`;
+    }
+
+    return `${dayPrefix}: ${validSlots.join(", ")}`;
+  });
+
+  return filteredLines.join("\n");
+}
+
 function getServiceClient() {
   return createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -2203,6 +2236,18 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       shopConfig.services
     );
 
+    const serviceDurationForContext = lastMentionedService
+      ? getServiceDuration(shopConfig.services || [], lastMentionedService)
+      : null;
+
+    const availableSlotsForContext = serviceDurationForContext
+      ? filterAvailableSlotsForService(availableSlots, serviceDurationForContext)
+      : availableSlots;
+
+    if (serviceDurationForContext) {
+      console.log(`[AVAILABILITY_CONTEXT] Service "${lastMentionedService}" (${serviceDurationForContext}min) filtered for AI context`);
+    }
+
     // --- Inject no-show recovery context if this phone has a pending recovery ---
     let recoveryContext = "";
     {
@@ -2239,7 +2284,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
-    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlots, maxConcurrent) + longTermMemory + recoveryContext;
+    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlotsForContext, maxConcurrent) + longTermMemory + recoveryContext;
 
     // Build messages array with history
     const aiMessages: { role: string; content: string }[] = [
