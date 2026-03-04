@@ -2049,8 +2049,12 @@ async function tryDeterministicBooking(
   }
 
   // We have a valid time selection. Now gather remaining data.
-  let serviceName = lastMentionedService;
-  if (!serviceName) return null;
+  const inferredServiceFromAssistant = inferServiceFromText(lastAssistant.content || "", shopConfig.services || []);
+  let serviceName = lastMentionedService || convStateService || inferredServiceFromAssistant;
+  if (!serviceName) {
+    console.log(`[DeterministicBooking] Aborted: no service resolved for ${cleanPhone}`);
+    return null;
+  }
 
   // Verify service exists in config
   const serviceConfig = (shopConfig.services as any[]).find((s: any) =>
