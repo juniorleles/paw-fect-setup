@@ -306,7 +306,60 @@ const MyAccount = () => {
     }
   };
 
-  if (loading) {
+  const handlePlanChange = async (targetPlan: string) => {
+    setPlanChangeLoading(targetPlan);
+    try {
+      const { data, error } = await supabase.functions.invoke("change-plan", {
+        body: { targetPlan, action: "preview" },
+      });
+      if (error) throw new Error(String(error.message || error));
+      if (data?.error) throw new Error(data.error);
+      setPlanChangePreview({ ...data, targetPlan });
+      setPlanChangeDialogOpen(true);
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally {
+      setPlanChangeLoading(null);
+    }
+  };
+
+  const confirmPlanChange = async () => {
+    if (!planChangePreview) return;
+    setPlanChangeLoading(planChangePreview.targetPlan);
+    setPlanChangeDialogOpen(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("change-plan", {
+        body: { targetPlan: planChangePreview.targetPlan, action: "confirm" },
+      });
+      if (error) throw new Error(String(error.message || error));
+      if (data?.error) throw new Error(data.error);
+      toast({
+        title: data.type === "upgrade" ? "Upgrade realizado! 🎉" : "Downgrade agendado",
+        description: data.message,
+      });
+      setPlanChangePreview(null);
+      window.location.reload();
+    } catch (e: any) {
+      toast({ title: "Erro ao alterar plano", description: e.message, variant: "destructive" });
+    } finally {
+      setPlanChangeLoading(null);
+    }
+  };
+
+  const cancelScheduledDowngrade = async () => {
+    try {
+      await supabase
+        .from("subscriptions")
+        .update({ next_plan: null, next_plan_effective_at: null })
+        .eq("user_id", userId!);
+      toast({ title: "Downgrade cancelado", description: "Seu plano atual será mantido." });
+      window.location.reload();
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    }
+  };
+
+
     return (
       <div className="flex-1 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
