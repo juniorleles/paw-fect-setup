@@ -95,12 +95,13 @@ const AvailabilityCard = ({ appointments, businessHours, maxConcurrent = 1, serv
 
     // A slot is free if bookings < maxConcurrent
     const totalCapacity = allSlots.length * maxConcurrent;
-    const totalBooked = todayApts.length;
     const freeSlots = futureSlots.reduce((acc, s) => {
       const booked = bookingsPerSlot.get(s) || 0;
       return acc + Math.max(0, maxConcurrent - booked);
     }, 0);
 
+    // Calculate occupancy based on actual slot usage (considering durations)
+    const totalBooked = Array.from(bookingsPerSlot.values()).reduce((sum, count) => sum + count, 0);
     const occupancy = totalCapacity > 0
       ? Math.round((totalBooked / totalCapacity) * 100)
       : 100;
