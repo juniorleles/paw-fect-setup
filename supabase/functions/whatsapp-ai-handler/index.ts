@@ -3015,6 +3015,9 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       reply = removeRepeatedQuestion(reply);
     }
 
+    // Sanitize any leaked system instructions before saving/sending
+    reply = sanitizeLeakedInstructions(reply);
+
     // Save assistant reply to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
 
