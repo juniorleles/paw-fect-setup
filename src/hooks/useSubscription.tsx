@@ -138,6 +138,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       value={{
         status, loading, cancelling, reactivating, trialEndAt, plan,
         trialAppointmentsUsed, trialMessagesUsed, trialAppointmentsLimit, trialMessagesLimit,
+        nextPlan, nextPlanEffectiveAt,
         cancel, reactivate, refetch,
       }}
     >
