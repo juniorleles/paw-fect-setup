@@ -702,6 +702,36 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
 
+// Guardrail: if user explicitly wants to book but AI deflects to a generic question,
+// force continuation of booking flow deterministically.
+function enforceBookingIntentContinuation(
+  userMessage: string,
+  reply: string,
+  services: any[],
+  knownService: string | null,
+): string {
+  if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
+
+  const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const replyNorm = (reply || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const userHasBookingIntent = /(quero|gostaria|preciso|pode).*(agendar|marcar)|\bagendar\b|\bmarcar\b/.test(userNorm);
+  if (!userHasBookingIntent) return reply;
+
+  const isGenericDeflection = /(o\s+que\s+.*deseja\s+fazer|como\s+posso\s+ajudar|em\s+que\s+posso\s+ajudar|como\s+gostaria\s+de\s+prosseguir|estou\s+a\s+disposicao)/.test(replyNorm);
+  if (!isGenericDeflection) return reply;
+
+  const inferredService = inferServiceFromText(userMessage, services) || knownService;
+
+  console.log(`[BookingContinuationGuard] Overriding generic deflection. inferredService=${inferredService || "none"}`);
+
+  if (inferredService) {
+    return `Perfeito! Vamos agendar ${inferredService} ✅ Me diz o melhor dia e horário pra você.`;
+  }
+
+  return "Perfeito! Vamos agendar ✅ Me confirma qual serviço e o melhor dia/horário pra você.";
+}
+
 // Guardrail: If user already provided a specific time but AI reply re-asks for time, strip the redundant question
 function enforceNoRedundantTimeQuestion(userMessage: string, reply: string, conversationHistory?: { role: string; content: string }[]): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
@@ -715,7 +745,7 @@ function enforceNoRedundantTimeQuestion(userMessage: string, reply: string, conv
   // Check if the AI reply asks for time again
   const replyNorm = (reply || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const asksForTimeAgain = /(qual\s+hor[aá]rio\s+(voce|o\s+senhor|a\s+senhora|vc)\s+prefere|qual\s+hor[aá]rio\s+prefere|qual\s+hor[aá]rio\s+deseja|que\s+horas\s+(voce|vc)\s+(quer|prefere|deseja)|qual\s+hor[aá]rio\s+gostaria)/i.test(replyNorm);
-  
+
   if (!asksForTimeAgain) return reply;
 
   console.log(`[TimeQuestionGuard] User already provided time in "${userMessage}" but AI re-asked for time. Stripping redundant question.`);
@@ -734,13 +764,13 @@ function enforceNoRedundantTimeQuestion(userMessage: string, reply: string, conv
 
   // Check if the chosen time appears in the last assistant message's available slots
   if (chosenTime && conversationHistory) {
-    const lastAssistant = [...conversationHistory].reverse().find(m => m.role === "assistant");
+    const lastAssistant = [...conversationHistory].reverse().find((m) => m.role === "assistant");
     if (lastAssistant) {
       const availableSlots = (lastAssistant.content || "").match(/\b([01]\d|2[0-3]):[0-5]\d\b/g) || [];
       if (availableSlots.includes(chosenTime)) {
         // Time is valid — remove the redundant question lines and let the AI process the booking
         const lines = reply.split("\n");
-        const cleaned = lines.filter(line => {
+        const cleaned = lines.filter((line) => {
           const lineNorm = line.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
           return !/(qual\s+hor[aá]rio|que\s+horas|temos\s+disponibilidade)/i.test(lineNorm);
         });
@@ -757,7 +787,7 @@ function enforceNoRedundantTimeQuestion(userMessage: string, reply: string, conv
 
   // Fallback: just strip the time question
   const lines = reply.split("\n");
-  const cleaned = lines.filter(line => {
+  const cleaned = lines.filter((line) => {
     const lineNorm = line.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     return !/(qual\s+hor[aá]rio|que\s+horas)/i.test(lineNorm);
   });
@@ -2924,7 +2954,8 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
 
     // Deterministic safeguards for booking flow
     reply = enforceBookingDateTimeQuestion(message, reply);
-    reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory, lastMentionedService);
+    reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory, lastMentionedService || convState.service);
+    reply = enforceBookingIntentContinuation(message, reply, shopConfig.services || [], lastMentionedService || convState.service);
     reply = enforceBookingDateTimeQuestion(message, reply);
     reply = enforceNoRedundantTimeQuestion(message, reply, conversationHistory);
 
