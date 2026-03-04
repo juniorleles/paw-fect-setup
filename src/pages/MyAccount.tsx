@@ -58,6 +58,8 @@ interface SubscriptionData {
   payment_method: string | null;
   last_payment_status: string | null;
   created_at: string;
+  next_plan: string | null;
+  next_plan_effective_at: string | null;
 }
 
 interface PaymentRecord {
