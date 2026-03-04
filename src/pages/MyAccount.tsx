@@ -650,7 +650,7 @@ const MyAccount = () => {
                   disabled={checkoutLoading === "starter"}
                 >
                   {checkoutLoading === "starter" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-1" />}
-                  Fazer upgrade
+                  {currentPlan === "professional" && isActive ? "Fazer downgrade" : "Fazer upgrade"}
                 </Button>
               )}
             </CardContent>
