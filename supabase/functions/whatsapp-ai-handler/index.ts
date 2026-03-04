@@ -598,6 +598,84 @@ function sanitizeLeakedInstructions(reply: string): string {
   return cleaned;
 }
 
+// Guardrail: Detect and remove repeated slot blocks in the response
+function deduplicateRepeatedSlotBlocks(reply: string): string {
+  if (!reply) return reply;
+
+  const lines = reply.split("\n");
+  const timeLinePattern = /^[\s·•\-\*]*\d{2}:\d{2}\s*$/;
+
+  // Find blocks of consecutive time lines
+  const blocks: { start: number; end: number; content: string }[] = [];
+  let blockStart = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (timeLinePattern.test(lines[i].trim())) {
+      if (blockStart === -1) blockStart = i;
+    } else {
+      if (blockStart !== -1) {
+        const blockContent = lines.slice(blockStart, i).map(l => l.trim()).join("|");
+        blocks.push({ start: blockStart, end: i - 1, content: blockContent });
+        blockStart = -1;
+      }
+    }
+  }
+  if (blockStart !== -1) {
+    const blockContent = lines.slice(blockStart).map(l => l.trim()).join("|");
+    blocks.push({ start: blockStart, end: lines.length - 1, content: blockContent });
+  }
+
+  if (blocks.length <= 1) return reply;
+
+  // Keep only the first occurrence of each unique block
+  const seen = new Set<string>();
+  const linesToRemove = new Set<number>();
+  for (const block of blocks) {
+    if (seen.has(block.content)) {
+      for (let i = block.start; i <= block.end; i++) linesToRemove.add(i);
+      // Also remove header line before duplicate if it's a slot intro
+      if (block.start > 0 && /sugest[oõ]es|hor[aá]rio|prefere/i.test(lines[block.start - 1])) {
+        linesToRemove.add(block.start - 1);
+      }
+    } else {
+      seen.add(block.content);
+    }
+  }
+
+  if (linesToRemove.size === 0) return reply;
+
+  const cleaned = lines.filter((_, i) => !linesToRemove.has(i)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  console.log(`[SlotDeduplicationGuard] Removed ${linesToRemove.size} duplicate lines from ${blocks.length} slot blocks`);
+  return cleaned || reply;
+}
+
+// Guardrail: Cap the maximum number of time mentions in a response
+function capMaxTimeMentions(reply: string, maxTimes: number): string {
+  if (!reply) return reply;
+
+  const timePattern = /\b([01]\d|2[0-3]):[0-5]\d\b/g;
+  const allTimes = reply.match(timePattern);
+  if (!allTimes || allTimes.length <= maxTimes) return reply;
+
+  console.log(`[MaxTimeMentionsGuard] Found ${allTimes.length} time mentions, capping to ${maxTimes}`);
+
+  const uniqueTimes = [...new Set(allTimes)].slice(0, maxTimes);
+
+  const lines = reply.split("\n");
+  let timeCount = 0;
+  const filteredLines = lines.filter(line => {
+    const lineTimes = line.match(timePattern);
+    if (!lineTimes) return true;
+    const lineTime = lineTimes[0];
+    if (uniqueTimes.includes(lineTime) && timeCount < maxTimes) {
+      timeCount++;
+      return true;
+    }
+    return timeCount < maxTimes;
+  });
+
+  return filteredLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 // --- Structured Guardrail Observability ---
 function guardLog(guardName: string, reason: string, original: string, corrected: string): void {
   const changed = original !== corrected;
