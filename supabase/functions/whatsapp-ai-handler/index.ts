@@ -2525,7 +2525,9 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
-    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlotsForContext, maxConcurrent) + longTermMemory + recoveryContext;
+    // Inject structured conversation state into prompt
+    const stateContext = buildStateContext(convState);
+    const systemPrompt = buildSystemPrompt(shopConfig, cleanPhone, existingAppointments, customerApptsText, availableSlotsForContext, maxConcurrent) + longTermMemory + recoveryContext + stateContext;
 
     // Log conversation history for debugging context loss
     console.log(`[CONTEXT] Conversation history for ${cleanPhone}: ${conversationHistory.length} messages`);
