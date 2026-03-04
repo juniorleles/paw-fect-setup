@@ -482,6 +482,56 @@ function buildConversationSummary(history: { role: string; content: string }[]):
   return summaryLines.join("\n");
 }
 
+function parseFlexibleTimeFromMessage(text: string): string | null {
+  const normalized = (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const exact = normalized.match(/\b([01]?\d|2[0-3]):([0-5]?\d)\b/);
+  if (exact) {
+    const hh = exact[1].padStart(2, "0");
+    const mm = exact[2].padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  const hourWithAs = normalized.match(/(?:\bas\s*)([01]?\d|2[0-3])\b/);
+  if (hourWithAs) return `${hourWithAs[1].padStart(2, "0")}:00`;
+
+  const hourWithH = normalized.match(/\b([01]?\d|2[0-3])h\b/);
+  if (hourWithH) return `${hourWithH[1].padStart(2, "0")}:00`;
+
+  return null;
+}
+
+function inferServiceFromText(text: string, services: any[]): string | null {
+  const normalize = (value: string) => (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const normalizeConnectors = (value: string) =>
+    normalize(value).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+
+  const normalizedText = normalize(text || "");
+  const connectorText = normalizeConnectors(text || "");
+
+  const serviceList = (services || [])
+    .map((s: any) => ({
+      original: s?.name || "",
+      normalized: normalize(s?.name || ""),
+      withConnectors: normalizeConnectors(s?.name || ""),
+    }))
+    .filter((s: any) => s.normalized.length > 1)
+    .sort((a: any, b: any) => b.normalized.length - a.normalized.length);
+
+  const found = serviceList.find((s: any) =>
+    normalizedText.includes(s.normalized) || connectorText.includes(s.withConnectors)
+  );
+
+  return found?.original || null;
+}
+
 function cleanPhoneNumber(phone: string): string {
   return phone.replace("@s.whatsapp.net", "").replace(/\D/g, "");
 }
