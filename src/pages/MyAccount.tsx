@@ -590,7 +590,7 @@ const MyAccount = () => {
           <CardContent className="space-y-2 sm:space-y-3">
             <div className="flex justify-between text-xs sm:text-sm">
               <span>Conversas respondidas</span>
-              <span className="font-bold">{messagesUsed} / {messagesLimit}</span>
+              <span className="font-bold">{paidMessagesUsed} / {messagesLimit}</span>
             </div>
             <Progress value={Math.min(usagePercent, 100)} className={`h-2.5 sm:h-3 ${usagePercent >= 100 ? "[&>div]:bg-destructive" : usagePercent >= 80 ? "[&>div]:bg-accent" : ""}`} />
             <p className="text-[11px] sm:text-xs text-muted-foreground">
