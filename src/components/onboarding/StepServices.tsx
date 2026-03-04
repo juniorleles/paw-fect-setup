@@ -143,7 +143,7 @@ const StepServices = ({ data, onChange, errors, showTip = true }: Props) => {
               onChange={(e) => setDuration(e.target.value)}
               className="h-9 rounded-md border border-input bg-background px-2 text-sm w-full"
             >
-              <option value="">Duração (min)</option>
+              <option value="">Duração (min) *</option>
               {[30, 60, 90, 120, 150, 180].map((m) => (
                 <option key={m} value={String(m)}>{m} min</option>
               ))}
