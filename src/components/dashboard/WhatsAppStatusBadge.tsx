@@ -209,6 +209,16 @@ const WhatsAppStatusBadge = () => {
           </DialogHeader>
 
           <div className="flex flex-col items-center gap-4 py-2">
+            {/* Security notices - always visible at top */}
+            <div className="w-full space-y-2">
+              <div className="text-xs text-muted-foreground bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-center">
+                <span className="font-medium">⚠️ Importante:</span> O WhatsApp pode exibir um alerta de <strong>"Suspeita de golpe"</strong> com uma localização estrangeira (ex: Finlândia). Isso é <strong>normal e seguro</strong> — é o servidor da nossa plataforma. Clique em <strong>"Conectar dispositivo"</strong> para continuar.
+              </div>
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 text-center">
+                <span className="font-medium">ℹ️ Aviso:</span> O dispositivo pode aparecer como <strong>"MacOS"</strong> ou <strong>"Windows"</strong> na lista de dispositivos conectados. Isso é normal e esperado.
+              </div>
+            </div>
+
             {expired ? (
               <div className="flex flex-col items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
@@ -343,18 +353,6 @@ const WhatsAppStatusBadge = () => {
                   )}
                 </TabsContent>
               </Tabs>
-            )}
-
-            {/* Security notices */}
-            {!expired && (qrCode || pairingCode) && (
-              <div className="w-full space-y-2">
-                <div className="text-xs text-muted-foreground bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-center">
-                  <span className="font-medium">⚠️ Importante:</span> O WhatsApp pode exibir um alerta de <strong>"Suspeita de golpe"</strong> com uma localização estrangeira (ex: Finlândia). Isso é <strong>normal e seguro</strong> — é o servidor da nossa plataforma. Clique em <strong>"Conectar dispositivo"</strong> para continuar.
-                </div>
-                <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 text-center">
-                  <span className="font-medium">ℹ️ Aviso:</span> O dispositivo pode aparecer como <strong>"MacOS"</strong> ou <strong>"Windows"</strong> na lista de dispositivos conectados. Isso é normal e esperado.
-                </div>
-              </div>
             )}
 
             {/* Timer bar */}
