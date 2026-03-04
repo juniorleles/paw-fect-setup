@@ -6,7 +6,7 @@ const PET_NICHES = ["petshop", "veterinaria"];
 
 export const useNiche = () => {
   const { user } = useAuth();
-  const [niche, setNiche] = useState<string>("petshop");
+  const [niche, setNiche] = useState<string>("barbearia");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export const useNiche = () => {
         .eq("user_id", user.id)
         .limit(1);
       if (data && data.length > 0) {
-        setNiche(data[0].niche || "petshop");
+        setNiche(data[0].niche || "barbearia");
       }
       setLoading(false);
     };

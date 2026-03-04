@@ -1,22 +1,7 @@
-export type BusinessNiche =
-  | "petshop"
-  | "clinica"
-  | "salao"
-  | "barbearia"
-  | "estetica"
-  | "escritorio"
-  | "veterinaria"
-  | "outros";
+export type BusinessNiche = "barbearia";
 
 export const NICHE_LABELS: Record<BusinessNiche, string> = {
-  petshop: "Pet Shop",
-  clinica: "Clínica",
-  salao: "Salão de Beleza",
   barbearia: "Barbearia",
-  estetica: "Estética",
-  escritorio: "Escritório / Consultório",
-  veterinaria: "Veterinária",
-  outros: "Outros Serviços",
 };
 
 export interface OnboardingData {
@@ -63,7 +48,7 @@ export interface Service {
 export const INITIAL_DATA: OnboardingData = {
   phone: "",
   phoneVerified: false,
-  niche: "petshop",
+  niche: "barbearia",
   shopName: "",
   address: "",
   neighborhood: "",
@@ -90,27 +75,6 @@ export const BRAZILIAN_STATES = [
 ];
 
 export const NICHE_SUGGESTIONS: Record<BusinessNiche, Omit<Service, "id">[]> = {
-  petshop: [
-    { name: "Banho", category: "Higiene" },
-    { name: "Tosa", category: "Higiene" },
-    { name: "Banho e Tosa", category: "Higiene" },
-    { name: "Consulta Veterinária", category: "Saúde" },
-    { name: "Vacinação", category: "Saúde" },
-  ],
-  clinica: [
-    { name: "Consulta", category: "Atendimento" },
-    { name: "Retorno", category: "Atendimento" },
-    { name: "Exame de Rotina", category: "Exames" },
-    { name: "Procedimento Simples", category: "Procedimentos" },
-    { name: "Avaliação", category: "Atendimento" },
-  ],
-  salao: [
-    { name: "Corte Feminino", category: "Corte" },
-    { name: "Escova", category: "Finalização" },
-    { name: "Coloração", category: "Química" },
-    { name: "Manicure", category: "Unhas" },
-    { name: "Pedicure", category: "Unhas" },
-  ],
   barbearia: [
     { name: "Corte Masculino", category: "Corte" },
     { name: "Barba", category: "Barba" },
@@ -118,35 +82,10 @@ export const NICHE_SUGGESTIONS: Record<BusinessNiche, Omit<Service, "id">[]> = {
     { name: "Sobrancelha", category: "Acabamento" },
     { name: "Hidratação", category: "Tratamento" },
   ],
-  estetica: [
-    { name: "Limpeza de Pele", category: "Facial" },
-    { name: "Peeling", category: "Facial" },
-    { name: "Drenagem Linfática", category: "Corporal" },
-    { name: "Massagem Relaxante", category: "Corporal" },
-    { name: "Design de Sobrancelha", category: "Acabamento" },
-  ],
-  escritorio: [
-    { name: "Consulta Inicial", category: "Atendimento" },
-    { name: "Reunião de Acompanhamento", category: "Atendimento" },
-    { name: "Avaliação", category: "Análise" },
-    { name: "Sessão", category: "Atendimento" },
-  ],
-  veterinaria: [
-    { name: "Consulta Veterinária", category: "Consultas" },
-    { name: "Vacinação", category: "Prevenção" },
-    { name: "Exame de Sangue", category: "Exames" },
-    { name: "Cirurgia Simples", category: "Cirurgias" },
-    { name: "Ultrassonografia", category: "Exames" },
-  ],
-  outros: [
-    { name: "Atendimento Padrão", category: "Geral" },
-    { name: "Serviço Completo", category: "Geral" },
-    { name: "Avaliação", category: "Geral" },
-  ],
 };
 
 // Keep backward compatibility
-export const SUGGESTED_SERVICES = NICHE_SUGGESTIONS.petshop;
+export const SUGGESTED_SERVICES = NICHE_SUGGESTIONS.barbearia;
 
 export const STEP_LABELS = [
   "WhatsApp",
