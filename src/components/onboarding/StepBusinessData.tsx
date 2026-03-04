@@ -29,19 +29,8 @@ const StepBusinessData = ({ data, onChange, errors, showEmail = false }: Props) 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
-        <div className="space-y-2">
-          <Label className="font-semibold">Tipo de negócio *</Label>
-          <Select value={data.niche} onValueChange={(v) => onChange({ niche: v as BusinessNiche })}>
-            <SelectTrigger className="h-11">
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              {nicheKeys.map((key) => (
-                <SelectItem key={key} value={key}>{NICHE_LABELS[key]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Nicho fixo: barbearia */}
+        <input type="hidden" value="barbearia" />
 
         {showEmail && user?.email && (
           <div className="space-y-2">
