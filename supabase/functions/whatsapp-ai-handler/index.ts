@@ -1946,8 +1946,27 @@ Deno.serve(async (req) => {
 
     // --- New Conversation Detection & Farewell Cleanup ---
     const msgNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-    const isGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai)$/i.test(msgNorm);
-    const isFarewell = /^(tchau|ate\s+(mais|logo|breve)|flw|falou|valeu|obrigad[oa]|brigad[oa]|bye|adeus|bjs|beijos|xau)$/i.test(msgNorm);
+    
+    // Helper: normalize a single line for greeting/farewell matching
+    const normalizeLine = (line: string) => line.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    
+    // Helper: check if ALL lines of a (possibly multiline) message match a pattern
+    const greetingPattern = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai)$/i;
+    const farewellPattern = /^(tchau|ate\s+(mais|logo|breve)|flw|falou|valeu|obrigad[oa]|brigad[oa]|bye|adeus|bjs|beijos|xau)$/i;
+    const greetingOrFarewellPattern = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai|tchau|ate\s+(mais|logo|breve)|flw|falou|valeu|obrigad[oa]|brigad[oa]|bye|adeus|bjs|beijos|xau)$/i;
+    
+    // Split ORIGINAL message by newlines BEFORE normalization — supports concatenated messages like "Obrigado\nAté mais"
+    const msgLines = (message || "").split(/\n/).map(l => normalizeLine(l)).filter(Boolean);
+    const allLinesAreGreetingOrFarewell = msgLines.length > 0 && msgLines.every(line => greetingOrFarewellPattern.test(line));
+    const hasAnyFarewell = msgLines.some(line => farewellPattern.test(line));
+    const hasAnyGreeting = msgLines.some(line => greetingPattern.test(line));
+    
+    // Also check the single-line normalized version (for messages without newlines)
+    const singleLineIsGreeting = greetingPattern.test(msgNorm);
+    const singleLineIsFarewell = farewellPattern.test(msgNorm);
+    
+    const isGreeting = (allLinesAreGreetingOrFarewell && hasAnyGreeting) || singleLineIsGreeting;
+    const isFarewell = (allLinesAreGreetingOrFarewell && hasAnyFarewell) || singleLineIsFarewell;
 
     if (isGreeting) {
       // Clear history if greeting arrives after 30+ min of inactivity
@@ -2280,15 +2299,32 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     }
 
     // Guardrail 0: GreetingGuard — simple greetings/farewells must NEVER trigger booking actions
-    const greetingGuardNorm = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-    const isSimpleGreeting = /^(boa\s+(noite|tarde)|bom\s+dia|oi|ola|hey|eai|e\s+ai|fala|salve|hello|hi|tudo\s+bem|como\s+vai|obrigad[oa]|valeu|brigad[oa]|tchau|ate\s+(mais|logo|breve)|flw|falou|bye|adeus|bjs|beijos|xau)$/i.test(greetingGuardNorm);
+    // Reuse the multiline-aware detection from above
+    const isSimpleGreeting = allLinesAreGreetingOrFarewell;
     if (isSimpleGreeting && /<action>.*?<\/action>/s.test(reply)) {
-      console.log(`[GreetingGuard] Simple greeting "${message}" triggered an action block — stripping action to prevent false booking`);
+      console.log(`[GreetingGuard] Simple greeting/farewell "${message}" triggered an action block — stripping action to prevent false booking`);
       reply = reply.replace(/<action>.*?<\/action>/gs, "").trim();
       // If stripping the action leaves a "confirmation" text, clean it up
       if (!reply || reply.length < 5 || /agendamento\s+confirmado/i.test(reply)) {
-        // Let the AI text through only if it's a proper greeting response
-        reply = "";
+        // Generate appropriate farewell or greeting response
+        if (isFarewell) {
+          const nicheEmojiMap3: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+          const emoji = nicheEmojiMap3[shopConfig.niche] || "😊";
+          reply = `Por nada! Qualquer coisa é só chamar ${emoji}`;
+        } else {
+          reply = "";
+        }
+      }
+    }
+    
+    // Extra safety: even without action blocks, farewell messages should never get booking confirmations
+    if (isSimpleGreeting && /agendamento\s+confirmado/i.test(reply)) {
+      console.log(`[GreetingGuard] Farewell/greeting got a booking confirmation text — replacing with proper response`);
+      if (isFarewell) {
+        const nicheEmojiMap4: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+        reply = `Por nada! Qualquer coisa é só chamar ${nicheEmojiMap4[shopConfig.niche] || "😊"}`;
+      } else {
+        reply = reply.replace(/agendamento\s+confirmado.*$/gis, "").trim();
       }
     }
 
