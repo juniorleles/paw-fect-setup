@@ -712,13 +712,26 @@ function enforceBookingDateTimeQuestion(userMessage: string, reply: string): str
   return `${reply.trim()}\nPra qual dia e horário você quer agendar?`;
 }
 
-function buildSuggestedTimeOptionsFromAvailability(availableSlots: string, maxSuggestions = 6): { dayLabel: string; times: string[] } | null {
+function buildSuggestedTimeOptionsFromAvailability(
+  availableSlots: string,
+  maxSuggestions = 6,
+  preferredDayKeyword?: string,
+): { dayLabel: string; times: string[] } | null {
   if (!availableSlots) return null;
+
+  const normalize = (text: string) =>
+    (text || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
 
   const lines = availableSlots
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
+
+  const parsedOptions: { dayLabel: string; dayLabelNormalized: string; times: string[] }[] = [];
 
   for (const line of lines) {
     if (/EXPEDIENTE ENCERRADO|LOTADO/i.test(line)) continue;
@@ -742,10 +755,25 @@ function buildSuggestedTimeOptionsFromAvailability(availableSlots: string, maxSu
       dayLabel = `${dayName} (${d}/${m}/${y})`.trim();
     }
 
-    return { dayLabel, times };
+    parsedOptions.push({
+      dayLabel,
+      dayLabelNormalized: normalize(dayLabel),
+      times,
+    });
   }
 
-  return null;
+  if (parsedOptions.length === 0) return null;
+
+  if (preferredDayKeyword) {
+    const preferredNormalized = normalize(preferredDayKeyword);
+    const preferred = parsedOptions.find((opt) => opt.dayLabelNormalized.includes(preferredNormalized));
+    if (preferred) {
+      return { dayLabel: preferred.dayLabel, times: preferred.times };
+    }
+  }
+
+  const first = parsedOptions[0];
+  return { dayLabel: first.dayLabel, times: first.times };
 }
 
 // Guardrail: if user explicitly wants to book but AI deflects to a generic question,
@@ -762,16 +790,33 @@ function enforceBookingIntentContinuation(
   const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const replyNorm = (reply || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-  const userHasBookingIntent = /(quero|gostaria|preciso|pode).*(agendar|marcar)|\bagendar\b|\bmarcar\b/.test(userNorm);
-  if (!userHasBookingIntent) return reply;
+  const userHasBookingIntent = /(quero|gostaria|preciso|pode|vamos).*(agendar|marcar)|\bagendar\b|\bmarcar\b/.test(userNorm);
+  const userHasDateOrTimeSignal = /\b(amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}\/\d{1,2}|\d{4}-\d{2}-\d{2}|([01]?\d|2[0-3])[:h]([0-5]\d)?)\b/.test(userNorm)
+    || /[àa]s\s+\d{1,2}/i.test(userNorm);
+  const hasKnownBookingContext = !!knownService;
 
-  const isGenericDeflection = /(o\s+que\s+.*deseja\s+fazer|como\s+posso\s+ajudar|em\s+que\s+posso\s+ajudar|como\s+(?:o\s+senhor\s+|a\s+senhora\s+|voce\s+|vc\s+)?(?:gostaria|deseja)\s+de?\s*prosseguir|estou\s+a\s+disposicao)/.test(replyNorm);
+  const shouldContinueBooking = userHasBookingIntent || (hasKnownBookingContext && userHasDateOrTimeSignal);
+  if (!shouldContinueBooking) return reply;
+
+  const isGenericDeflection = /(o\s+que\s+.*deseja\s+fazer|como\s+posso\s+ajudar|em\s+que\s+posso\s+ajudar|como\s+posso\s+auxili(?:ar|a\-?lo|a\-?la|a\-?los|a\-?las)|como\s+(?:o\s+senhor\s+|a\s+senhora\s+|voce\s+|vc\s+)?(?:gostaria|deseja)\s+de?\s*prosseguir|estou\s+a\s+disposicao)/.test(replyNorm);
   if (!isGenericDeflection) return reply;
 
   const inferredService = inferServiceFromText(userMessage, services) || knownService;
-  const suggestions = buildSuggestedTimeOptionsFromAvailability(availableSlots, 6);
 
-  console.log(`[BookingContinuationGuard] Overriding generic deflection. inferredService=${inferredService || "none"}, hasSuggestions=${!!suggestions}`);
+  const preferredDayKeyword = (() => {
+    if (/\bsegunda\b/.test(userNorm)) return "segunda";
+    if (/\bterca\b/.test(userNorm)) return "terça";
+    if (/\bquarta\b/.test(userNorm)) return "quarta";
+    if (/\bquinta\b/.test(userNorm)) return "quinta";
+    if (/\bsexta\b/.test(userNorm)) return "sexta";
+    if (/\bsabado\b/.test(userNorm)) return "sábado";
+    if (/\bdomingo\b/.test(userNorm)) return "domingo";
+    return undefined;
+  })();
+
+  const suggestions = buildSuggestedTimeOptionsFromAvailability(availableSlots, 6, preferredDayKeyword);
+
+  console.log(`[BookingContinuationGuard] Overriding generic deflection. inferredService=${inferredService || "none"}, hasSuggestions=${!!suggestions}, preferredDay=${preferredDayKeyword || "none"}`);
 
   if (suggestions) {
     const intro = inferredService

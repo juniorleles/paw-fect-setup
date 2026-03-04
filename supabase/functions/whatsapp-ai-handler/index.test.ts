@@ -584,3 +584,112 @@ Deno.test("Additional booking guard: with explicit date/time should not override
 
   assertEquals(result, rawReply);
 });
+
+function buildSuggestedTimeOptionsFromAvailabilityForTest(
+  availableSlots: string,
+  maxSuggestions = 6,
+  preferredDayKeyword?: string,
+): { dayLabel: string; times: string[] } | null {
+  if (!availableSlots) return null;
+
+  const normalize = (text: string) =>
+    (text || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const lines = availableSlots.split("\n").map((l) => l.trim()).filter(Boolean);
+  const parsedOptions: { dayLabel: string; dayLabelNormalized: string; times: string[] }[] = [];
+
+  for (const line of lines) {
+    if (/EXPEDIENTE ENCERRADO|LOTADO/i.test(line)) continue;
+    const dayPrefixMatch = line.match(/^([^:]+):/);
+    if (!dayPrefixMatch) continue;
+
+    const timesWithMeta = [...line.matchAll(/(\d{2}:\d{2})\s*\([^)]+\)/g)].map((m) => m[1]);
+    const plainTimes = [...line.matchAll(/\b(\d{2}:\d{2})\b/g)].map((m) => m[1]);
+    const times = [...new Set((timesWithMeta.length > 0 ? timesWithMeta : plainTimes))].slice(0, maxSuggestions);
+    if (times.length === 0) continue;
+
+    const dayLabelRaw = dayPrefixMatch[1].trim();
+    const dateIsoMatch = dayLabelRaw.match(/(\d{4}-\d{2}-\d{2})/);
+    const dayName = dayLabelRaw.replace(/\d{4}-\d{2}-\d{2}/, "").trim();
+    let dayLabel = dayLabelRaw;
+
+    if (dateIsoMatch) {
+      const [y, m, d] = dateIsoMatch[1].split("-");
+      dayLabel = `${dayName} (${d}/${m}/${y})`.trim();
+    }
+
+    parsedOptions.push({ dayLabel, dayLabelNormalized: normalize(dayLabel), times });
+  }
+
+  if (parsedOptions.length === 0) return null;
+
+  if (preferredDayKeyword) {
+    const preferredNormalized = normalize(preferredDayKeyword);
+    const preferred = parsedOptions.find((opt) => opt.dayLabelNormalized.includes(preferredNormalized));
+    if (preferred) return { dayLabel: preferred.dayLabel, times: preferred.times };
+  }
+
+  return { dayLabel: parsedOptions[0].dayLabel, times: parsedOptions[0].times };
+}
+
+function enforceBookingIntentContinuationForTest(
+  userMessage: string,
+  reply: string,
+  knownService: string | null,
+  availableSlots: string,
+): string {
+  const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const replyNorm = (reply || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const userHasBookingIntent = /(quero|gostaria|preciso|pode|vamos).*(agendar|marcar)|\bagendar\b|\bmarcar\b/.test(userNorm);
+  const userHasDateOrTimeSignal = /\b(amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo|\d{1,2}\/\d{1,2}|\d{4}-\d{2}-\d{2}|([01]?\d|2[0-3])[:h]([0-5]\d)?)\b/.test(userNorm)
+    || /[àa]s\s+\d{1,2}/i.test(userNorm);
+  const shouldContinueBooking = userHasBookingIntent || (!!knownService && userHasDateOrTimeSignal);
+  if (!shouldContinueBooking) return reply;
+
+  const isGenericDeflection = /(o\s+que\s+.*deseja\s+fazer|como\s+posso\s+ajudar|em\s+que\s+posso\s+ajudar|como\s+posso\s+auxili(?:ar|a\-?lo|a\-?la|a\-?los|a\-?las)|como\s+(?:o\s+senhor\s+|a\s+senhora\s+|voce\s+|vc\s+)?(?:gostaria|deseja)\s+de?\s*prosseguir|estou\s+a\s+disposicao)/.test(replyNorm);
+  if (!isGenericDeflection) return reply;
+
+  const preferredDayKeyword = /\bsexta\b/.test(userNorm) ? "sexta" : undefined;
+  const suggestions = buildSuggestedTimeOptionsFromAvailabilityForTest(availableSlots, 6, preferredDayKeyword);
+  if (!suggestions) return reply;
+
+  const slotsText = suggestions.times.map((t) => `• ${t}`).join("\n");
+  return `Perfeito! Vamos agendar ${knownService || ""} ✅\nSeguem algumas sugestões de horários para ${suggestions.dayLabel}:\n${slotsText}\nQual horário você prefere?`.trim();
+}
+
+Deno.test("Booking continuation: weekday-only user message must continue booking when service context exists", () => {
+  const availableSlots = [
+    "Quinta-feira 2026-03-05: 15:00 (até 30min livre), 16:30 (até 30min livre)",
+    "Sexta-feira 2026-03-06: 08:00 (até 600min livre), 08:30 (até 570min livre), 09:00 (até 540min livre)",
+  ].join("\n");
+
+  const result = enforceBookingIntentContinuationForTest(
+    "Sexta-feira",
+    "Senhor, como posso auxiliá-lo hoje?",
+    "Barba",
+    availableSlots,
+  );
+
+  assertEquals(/sugest(õ|o)es de hor[aá]rios/i.test(result), true);
+  assertEquals(result.includes("Sexta-feira"), true);
+  assertEquals(result.includes("• 08:00"), true);
+  assertEquals(/Qual horário você prefere\?/i.test(result), true);
+});
+
+Deno.test("Booking continuation: must recognize generic deflection with 'como posso auxiliá-lo'", () => {
+  const availableSlots = "Sexta-feira 2026-03-06: 10:00 (até 120min livre), 10:30 (até 90min livre)";
+  const result = enforceBookingIntentContinuationForTest(
+    "sexta",
+    "Senhor, como posso auxiliá-lo hoje?",
+    "Corte + Barba",
+    availableSlots,
+  );
+
+  assertEquals(result.includes("Corte + Barba"), true);
+  assertEquals(result.includes("• 10:00"), true);
+});
