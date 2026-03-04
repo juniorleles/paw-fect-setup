@@ -3082,12 +3082,35 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
-    // Deterministic safeguards for booking flow
-    reply = enforceBookingDateTimeQuestion(message, reply);
-    reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory, lastMentionedService || convState.service);
-    reply = enforceBookingIntentContinuation(message, reply, shopConfig.services || [], lastMentionedService || convState.service, availableSlotsForContext);
-    reply = enforceBookingDateTimeQuestion(message, reply);
-    reply = enforceNoRedundantTimeQuestion(message, reply, conversationHistory);
+    // Deterministic safeguards for booking flow — with structured observability
+    console.log(`[GUARD_PIPELINE] Starting guardrail pipeline for message: "${(message || "").substring(0, 60)}"`);
+    const aiRawReply = reply; // preserve original AI reply for logging
+
+    {
+      const before = reply;
+      reply = enforceBookingDateTimeQuestion(message, reply);
+      if (reply !== before) guardLog("BookingDateTimeGuard", "Added missing date/time question to booking reply", before, reply);
+    }
+    {
+      const before = reply;
+      reply = enforceKnownServiceNoRedundantQuestion(message, reply, shopConfig.services || [], conversationHistory, lastMentionedService || convState.service);
+      if (reply !== before) guardLog("ServiceGuard", "Removed redundant service question (service already known)", before, reply);
+    }
+    {
+      const before = reply;
+      reply = enforceBookingIntentContinuation(message, reply, shopConfig.services || [], lastMentionedService || convState.service, availableSlotsForContext);
+      if (reply !== before) guardLog("BookingContinuationGuard", "Overrode generic deflection with booking suggestions", before, reply);
+    }
+    {
+      const before = reply;
+      reply = enforceBookingDateTimeQuestion(message, reply);
+      if (reply !== before) guardLog("BookingDateTimeGuard(2nd)", "Added missing date/time question (post-continuation)", before, reply);
+    }
+    {
+      const before = reply;
+      reply = enforceNoRedundantTimeQuestion(message, reply, conversationHistory);
+      if (reply !== before) guardLog("TimeQuestionGuard", "Stripped redundant time question (user already provided time)", before, reply);
+    }
 
     // Track AI usage with latency
     const tokensUsed = aiData.usage?.total_tokens || 0;
@@ -3120,13 +3143,16 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
 
     // Guardrail 1: never send more than one question in a single message
     if (!isBookingFlowMessage) {
+      const before = reply;
       reply = enforceSingleQuestionPerReply(reply);
+      if (reply !== before) guardLog("SingleQuestionGuard", "Reduced multiple questions to single question", before, reply);
     }
 
     // Guardrail 2: never send a question right after another assistant question
     if (!isBookingFlowMessage && (shouldSuppressRepeatedQuestion(lastAssistantMessage, reply) || shouldSuppressConsecutiveQuestion(lastAssistantMessage, reply))) {
-      console.log("Suppressing consecutive question in AI reply");
+      const before = reply;
       reply = removeRepeatedQuestion(reply);
+      guardLog("ConsecutiveQuestionGuard", "Suppressed consecutive/repeated question after previous assistant question", before, reply);
     }
 
     // Guardrail 3: If AI is about to create an appointment but we don't know the client's name, block the action and ask for it
@@ -3143,24 +3169,31 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       } catch { /* ignore */ }
       
       if (!actionHasName) {
-        console.log("[NameGuard] AI tried to create appointment without client name. Blocking action.");
-        // Remove the action block and ask for the name
+        const before = reply;
         reply = reply.replace(/<action>.*?<\/action>/s, "").trim();
-        // Clean up any broken confirmation text
         reply = reply.replace(/(agendamento\s+confirmado\s*✅?)/gi, "").trim();
         if (!reply || reply.length < 5) {
           reply = "Quase lá! Qual o seu nome para eu finalizar o agendamento? 😊";
         } else {
           reply += "\n\nQual o seu nome para eu finalizar? 😊";
         }
+        guardLog("NameGuard", "Blocked booking action — client name unknown", before, reply);
       }
     }
 
     // Guardrail 4: for "agendar mais um", never auto-reuse previous slot without explicit new date/time
-    reply = enforceAdditionalBookingIntentGuard(message, reply, lastAssistantMessage);
+    {
+      const before = reply;
+      reply = enforceAdditionalBookingIntentGuard(message, reply, lastAssistantMessage);
+      if (reply !== before) guardLog("AdditionalBookingGuard", "Prevented reuse of previous slot for additional booking", before, reply);
+    }
 
     // Guardrail 5: if user says "amanhã" but AI used today's date, correct deterministically
-    reply = enforceDateCorrectionGuard(message, reply);
+    {
+      const before = reply;
+      reply = enforceDateCorrectionGuard(message, reply);
+      if (reply !== before) guardLog("DateCorrectionGuard", "Corrected date from today to tomorrow (user said 'amanhã')", before, reply);
+    }
 
     // Process actions (create/cancel/reschedule/confirm)
     reply = await processAction(serviceClient, shopConfig, cleanPhone, reply, message, lastAssistantMessage);
@@ -3172,12 +3205,21 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       cleanPhone
     );
     if (!isBookingFlowMessage && shouldSuppressConsecutiveQuestion(latestAssistantBeforeSend, reply)) {
-      console.log("Suppressing race-condition consecutive question in AI reply");
+      const before = reply;
       reply = removeRepeatedQuestion(reply);
+      guardLog("RaceConditionGuard", "Suppressed consecutive question vs latest persisted message", before, reply);
     }
 
     // Sanitize any leaked system instructions before saving/sending
-    reply = sanitizeLeakedInstructions(reply);
+    {
+      const before = reply;
+      reply = sanitizeLeakedInstructions(reply);
+      // guardLog is already called inside sanitizeLeakedInstructions if triggered
+    }
+
+    // Final pipeline summary
+    const pipelineChanged = reply !== aiRawReply;
+    console.log(`[GUARD_PIPELINE] Complete | changed=${pipelineChanged} | final_length=${reply.length} | original_length=${aiRawReply.length}`);
 
     // Save assistant reply to history
     await saveMessage(serviceClient, shopConfig.user_id, cleanPhone, "assistant", reply);
