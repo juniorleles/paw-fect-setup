@@ -951,6 +951,62 @@ function detectDateOrTimeSignal(userMessage: string): boolean {
     || /[àa]s\s+\d{1,2}/i.test(userNorm);
 }
 
+// Extract the user's preferred weekday from their message
+function extractPreferredWeekday(userMessage: string): string | null {
+  const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const weekdayMap: Record<string, string> = {
+    domingo: "Domingo",
+    segunda: "Segunda-feira",
+    terca: "Terça-feira",
+    quarta: "Quarta-feira",
+    quinta: "Quinta-feira",
+    sexta: "Sexta-feira",
+    sabado: "Sábado",
+  };
+  for (const [key, label] of Object.entries(weekdayMap)) {
+    if (userNorm.includes(key)) return label;
+  }
+  if (/\bamanha\b/.test(userNorm)) return "__tomorrow__";
+  if (/\bhoje\b/.test(userNorm)) return "__today__";
+  return null;
+}
+
+// Extract allowed times from availableSlots, optionally filtered by a specific day
+function extractAllowedTimesForDay(availableSlots: string, preferredDay: string | null): string[] {
+  if (!availableSlots) return [];
+
+  const lines = availableSlots.split("\n").map(l => l.trim()).filter(Boolean);
+
+  // Resolve __today__ and __tomorrow__ to actual weekday names
+  let resolvedDayLabel = preferredDay;
+  if (preferredDay === "__today__" || preferredDay === "__tomorrow__") {
+    const brNow = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    if (preferredDay === "__tomorrow__") brNow.setUTCDate(brNow.getUTCDate() + 1);
+    const dayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+    resolvedDayLabel = dayNames[brNow.getUTCDay()];
+  }
+
+  const normalize = (t: string) => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  for (const line of lines) {
+    if (/EXPEDIENTE ENCERRADO|LOTADO/i.test(line)) continue;
+
+    // If we have a preferred day, only match that day's line
+    if (resolvedDayLabel) {
+      const lineNorm = normalize(line);
+      const dayNorm = normalize(resolvedDayLabel);
+      if (!lineNorm.includes(dayNorm)) continue;
+    }
+
+    const times = [...line.matchAll(/(\d{2}:\d{2})\s*\([^)]+\)/g)].map(m => m[1]);
+    if (times.length > 0) return [...new Set(times)];
+  }
+
+  // Fallback: return all times from all days
+  const allTimes = [...new Set([...availableSlots.matchAll(/(\d{2}:\d{2})\s*\([^)]+\)/g)].map(m => m[1]))];
+  return allTimes;
+}
+
 function enforceServiceCompatibleSlotSuggestion(
   userMessage: string,
   reply: string,
@@ -964,9 +1020,9 @@ function enforceServiceCompatibleSlotSuggestion(
   const isSchedulingContext = /\b(agendar|marcar|horario|amanha|hoje|segunda|terca|quarta|quinta|sexta|sabado|domingo)\b/.test(userNorm);
   if (!isSchedulingContext) return reply;
 
-  const allowedTimes = [...new Set([
-    ...availableSlots.matchAll(/(\d{2}:\d{2})\s*\([^)]+\)/g),
-  ].map((m) => m[1]))];
+  // Get the user's preferred day to filter slots correctly
+  const preferredDay = extractPreferredWeekday(userMessage);
+  const allowedTimes = extractAllowedTimesForDay(availableSlots, preferredDay);
 
   if (allowedTimes.length === 0) return reply;
 
@@ -976,13 +1032,107 @@ function enforceServiceCompatibleSlotSuggestion(
   const invalidTimes = timesInReply.filter((t) => !allowedTimes.includes(t));
   if (invalidTimes.length === 0) return reply;
 
+  console.log(`[ServiceCompatibleSlotGuard] Invalid times found: ${invalidTimes.join(", ")}. Allowed for ${preferredDay || "any day"}: ${allowedTimes.join(", ")}`);
+
   const suggestions = allowedTimes.slice(0, 6);
   if (suggestions.length === 0) {
     return `Para ${knownService}, não há horários compatíveis no momento. Me diz outro dia que eu te mostro opções.`;
   }
 
+  // Build a day-aware label
+  const dayLabel = (() => {
+    if (!preferredDay || preferredDay.startsWith("__")) {
+      // Find the day label from available slots
+      const lines = availableSlots.split("\n");
+      for (const line of lines) {
+        if (/EXPEDIENTE ENCERRADO|LOTADO/i.test(line)) continue;
+        const match = line.match(/^([^:]+\d{4}-\d{2}-\d{2})/);
+        if (match) {
+          const raw = match[1].trim();
+          const isoMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
+          if (isoMatch) {
+            const [y, m, d] = isoMatch[1].split("-");
+            const dayName = raw.replace(isoMatch[1], "").trim();
+            return `${dayName}, ${d}/${m}/${y}`;
+          }
+        }
+      }
+      return "";
+    }
+    // Find the specific day line
+    const normalize = (t: string) => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const lines = availableSlots.split("\n");
+    for (const line of lines) {
+      if (normalize(line).includes(normalize(preferredDay))) {
+        const match = line.match(/(\d{4}-\d{2}-\d{2})/);
+        if (match) {
+          const [y, m, d] = match[1].split("-");
+          return `${preferredDay}, ${d}/${m}/${y}`;
+        }
+        return preferredDay;
+      }
+    }
+    return preferredDay;
+  })();
+
+  const dayContext = dayLabel ? `\nPara ${dayLabel}` : "";
   const slotsText = suggestions.map((t) => `• ${t}`).join("\n");
-  return `Perfeito! Para ${knownService}, tenho estas sugestões que comportam a duração do serviço:\n${slotsText}\nQual horário você prefere?`;
+  return `Para ${knownService}${dayContext}, temos estas sugestões de horários:\n${slotsText}\nQual horário você prefere?`;
+}
+
+// Guardrail: If user mentions a specific weekday but AI responds with a different day, correct it
+function enforceWeekdayCorrection(
+  userMessage: string,
+  reply: string,
+  availableSlots: string,
+  convState: ConversationState,
+): string {
+  if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
+
+  const preferredDay = extractPreferredWeekday(userMessage);
+  if (!preferredDay || preferredDay.startsWith("__")) return reply;
+
+  const normalize = (t: string) => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const replyNorm = normalize(reply);
+  const preferredNorm = normalize(preferredDay);
+
+  // Check if the reply mentions a DIFFERENT weekday
+  const weekdays = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const mentionedOtherDay = weekdays.some(wd => {
+    if (wd === normalize(preferredDay).replace(/-feira/g, "").trim()) return false;
+    // Check short form match
+    return new RegExp(`\\b${wd}(?:-feira)?\\b`).test(replyNorm);
+  });
+
+  if (!mentionedOtherDay) return reply;
+
+  // The AI mentioned a different day — override with correct day's slots
+  console.log(`[WeekdayGuard] User asked for "${preferredDay}" but AI mentioned a different day. Correcting.`);
+
+  const allowedTimes = extractAllowedTimesForDay(availableSlots, preferredDay);
+  if (allowedTimes.length === 0) {
+    return `Infelizmente não temos horários disponíveis para ${preferredDay}. Quer que eu sugira outro dia?`;
+  }
+
+  // Find the date for the preferred day
+  const lines = availableSlots.split("\n");
+  let dayLabel = preferredDay;
+  for (const line of lines) {
+    if (normalize(line).includes(preferredNorm.replace(/-feira/g, "").trim())) {
+      const match = line.match(/(\d{4}-\d{2}-\d{2})/);
+      if (match) {
+        const [y, m, d] = match[1].split("-");
+        dayLabel = `${preferredDay}, ${d}/${m}/${y}`;
+      }
+      break;
+    }
+  }
+
+  const suggestions = allowedTimes.slice(0, 6);
+  const slotsText = suggestions.map((t) => `• ${t}`).join("\n");
+  const serviceName = convState.service || "";
+  const serviceContext = serviceName ? ` para ${serviceName}` : "";
+  return `Para ${dayLabel}${serviceContext}, temos estas sugestões de horários:\n${slotsText}\nQual horário você prefere?`;
 }
 
 // Deterministic date correction: if user says "amanhã" but AI used today's date, fix it
@@ -3148,6 +3298,11 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       const before = reply;
       reply = enforceBookingIntentContinuation(message, reply, shopConfig.services || [], lastMentionedService || convState.service, availableSlotsForContext);
       if (reply !== before) guardLog("BookingContinuationGuard", "Overrode generic deflection with booking suggestions", before, reply);
+    }
+    {
+      const before = reply;
+      reply = enforceWeekdayCorrection(message, reply, availableSlotsForContext, convState);
+      if (reply !== before) guardLog("WeekdayGuard", "Corrected AI response that mentioned wrong weekday", before, reply);
     }
     {
       const before = reply;
