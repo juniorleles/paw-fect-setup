@@ -171,7 +171,8 @@ const MyAccount = () => {
             .from("subscriptions")
             .select("*")
             .eq("user_id", userId)
-            .maybeSingle(),
+            .order("updated_at", { ascending: false })
+            .limit(1),
           supabase
             .from("conversation_messages")
             .select("id", { count: "exact", head: true })
@@ -194,7 +195,7 @@ const MyAccount = () => {
           );
         }
 
-        setSub((subRes.data as unknown as SubscriptionData) ?? null);
+        setSub((subRes.data?.[0] as unknown as SubscriptionData) ?? null);
         setMessagesUsed(messagesRes.count ?? 0);
         setPayments((payRes.data as unknown as PaymentRecord[]) ?? []);
 
@@ -206,10 +207,11 @@ const MyAccount = () => {
             .from("subscriptions")
             .select("*")
             .eq("user_id", userId)
-            .maybeSingle();
+            .order("updated_at", { ascending: false })
+            .limit(1);
 
-        if (!refreshedSubError && data) {
-          setSub(data as unknown as SubscriptionData);
+        if (!refreshedSubError && data && data.length > 0) {
+          setSub(data[0] as unknown as SubscriptionData);
         }
       } catch (e: any) {
         console.error("MyAccount load error:", e);
