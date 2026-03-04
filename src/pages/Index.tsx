@@ -36,10 +36,12 @@ const Index = () => {
   const [activated, setActivated] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [activatingAfterCheckout, setActivatingAfterCheckout] = useState(false);
   
   const isMobile = useIsMobile();
   const [configId, setConfigId] = useState<string | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   // Determine the chosen plan (from localStorage, set during signup)
   const chosenPlan = localStorage.getItem("chosen_plan") || "free";
