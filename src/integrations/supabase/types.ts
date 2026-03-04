@@ -221,6 +221,54 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_state: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          date: string | null
+          extra: Json | null
+          id: string
+          notes: string | null
+          pet_name: string | null
+          phone: string
+          service: string | null
+          step: string
+          time: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          date?: string | null
+          extra?: Json | null
+          id?: string
+          notes?: string | null
+          pet_name?: string | null
+          phone: string
+          service?: string | null
+          step?: string
+          time?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          date?: string | null
+          extra?: Json | null
+          id?: string
+          notes?: string | null
+          pet_name?: string | null
+          phone?: string
+          service?: string | null
+          step?: string
+          time?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customer_contacts: {
         Row: {
           campaign_month: string
