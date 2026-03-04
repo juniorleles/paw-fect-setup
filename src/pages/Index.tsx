@@ -36,10 +36,12 @@ const Index = () => {
   const [activated, setActivated] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [activatingAfterCheckout, setActivatingAfterCheckout] = useState(false);
   
   const isMobile = useIsMobile();
   const [configId, setConfigId] = useState<string | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   // Determine the chosen plan (from localStorage, set during signup)
   const chosenPlan = localStorage.getItem("chosen_plan") || "free";
@@ -55,6 +57,11 @@ const Index = () => {
     const checkoutPending = localStorage.getItem("checkout_pending");
 
     if (checkoutResult !== "success" && !checkoutPending) return;
+    // Wait for config to be loaded before activating
+    if (!configLoaded) return;
+
+    // Show full-screen loading immediately
+    setActivatingAfterCheckout(true);
 
     // Clear all checkout state
     localStorage.removeItem("checkout_pending");
@@ -68,8 +75,15 @@ const Index = () => {
         // 1. Sync subscription status
         await refetchSubscription();
 
-        // 2. Save config as activated
-        await saveConfig(data, true);
+        // 2. Save config as activated (use current data state which is loaded from DB)
+        if (user) {
+          const cId = configId;
+          if (cId) {
+            await supabase.from("pet_shop_configs").update({ activated: true }).eq("id", cId);
+          } else {
+            await saveConfig(data, true);
+          }
+        }
 
         // 3. Call activate-subscription to create Evolution instance
         if (user) {
@@ -91,7 +105,7 @@ const Index = () => {
         navigate("/dashboard", { replace: true });
       } catch (err) {
         console.error("Auto-activate error:", err);
-        // Fallback: show step 6 for manual activation
+        setActivatingAfterCheckout(false);
         setStep(6);
         toast({
           title: "Pagamento confirmado",
@@ -102,7 +116,7 @@ const Index = () => {
 
     autoActivate();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, configLoaded]);
 
   // Load existing config
   useEffect(() => {
@@ -137,6 +151,7 @@ const Index = () => {
           return;
         }
       }
+      setConfigLoaded(true);
       setLoadingConfig(false);
     };
     loadConfig();
@@ -311,6 +326,16 @@ const Index = () => {
     setActivated(true);
     toast({ title: "Secretária ativada!", description: "Sua instância WhatsApp foi criada com sucesso." });
   };
+
+  if (activatingAfterCheckout) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-lg font-semibold text-foreground">Ativando sua secretária...</p>
+        <p className="text-sm text-muted-foreground">Aguarde enquanto configuramos tudo para você.</p>
+      </div>
+    );
+  }
 
   if (loadingConfig) {
     return (
