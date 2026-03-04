@@ -210,8 +210,8 @@ const MyAccount = () => {
             .order("updated_at", { ascending: false })
             .limit(1);
 
-        if (!refreshedSubError && data) {
-          setSub(data as unknown as SubscriptionData);
+        if (!refreshedSubError && data && data.length > 0) {
+          setSub(data[0] as unknown as SubscriptionData);
         }
       } catch (e: any) {
         console.error("MyAccount load error:", e);
