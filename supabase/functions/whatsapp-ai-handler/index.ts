@@ -1886,6 +1886,21 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       ...conversationHistory,
     ];
 
+    // --- DETERMINISTIC BOOKING SHORTCUT ---
+    // When user selects a time from a list the AI just presented, bypass the AI entirely
+    // to prevent context loss, hallucinations, and re-asking for information.
+    const deterministicBookingResult = await tryDeterministicBooking(
+      serviceClient, shopConfig, cleanPhone, message, conversationHistory,
+      ownerName, lastMentionedService, isPetNiche, instanceName, senderPhone,
+      availableSlots, appointments || [], isFarewell
+    );
+    if (deterministicBookingResult) {
+      return new Response(JSON.stringify({ success: true, reply: deterministicBookingResult }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Call AI
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
