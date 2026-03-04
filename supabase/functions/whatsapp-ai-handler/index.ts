@@ -2021,23 +2021,8 @@ async function tryDeterministicBooking(
   // Detect cancel/reschedule intents — let AI handle
   if (/(cancelar|remarcar|reagendar|desmarcar)/i.test(userNorm)) return null;
 
-  // Detect time intent in user message
-  let chosenTime: string | null = null;
-  const exactMatch = userNorm.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-  if (exactMatch) {
-    chosenTime = `${exactMatch[1].padStart(2, "0")}:${exactMatch[2]}`;
-  } else {
-    const hourWithAs = userNorm.match(/(?:as\s*)([01]?\d|2[0-3])\b/);
-    if (hourWithAs) {
-      chosenTime = `${hourWithAs[1].padStart(2, "0")}:00`;
-    } else {
-      const hourWithH = userNorm.match(/\b([01]?\d|2[0-3])h\b/);
-      if (hourWithH) {
-        chosenTime = `${hourWithH[1].padStart(2, "0")}:00`;
-      }
-    }
-  }
-
+  // Detect time intent in user message (supports 8:0, 8h, às 8)
+  const chosenTime = parseFlexibleTimeFromMessage(userMessage || "");
   if (!chosenTime) return null;
 
   // Check: does the last assistant message contain a list of available times?
