@@ -71,6 +71,7 @@ interface PaymentRecord {
 }
 
 const PLANS = {
+  free: { name: "Free", price: 0, limit: 150 },
   starter: { name: "Essencial", price: STRIPE_PLANS.starter.price, limit: STRIPE_PLANS.starter.limit },
   professional: { name: "Pro", price: STRIPE_PLANS.professional.price, limit: STRIPE_PLANS.professional.limit },
 };
