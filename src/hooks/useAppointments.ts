@@ -30,11 +30,11 @@ export const useAppointments = () => {
 
   // Fetch appointments from a date range
   const fetchDateRange = useCallback(async (fromDate: string, toDate?: string): Promise<Appointment[]> => {
-    if (!user) return [];
+    if (!ownerId) return [];
     let query = supabase
       .from("appointments")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", ownerId)
       .gte("date", fromDate)
       .order("date", { ascending: true })
       .order("time", { ascending: true })
@@ -46,7 +46,7 @@ export const useAppointments = () => {
 
     const { data } = await query;
     return (data as unknown as Appointment[]) ?? [];
-  }, [user]);
+  }, [ownerId]);
 
   // Fetch older appointments (before the oldest loaded date)
   const fetchOlderPage = useCallback(async (beforeDate: string): Promise<Appointment[]> => {
