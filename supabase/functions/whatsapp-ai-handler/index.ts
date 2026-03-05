@@ -193,12 +193,14 @@ function computeAvailableSlots(
       lines.push(`${weekday} ${dateStr}: ${freeSlots.join(", ")}`);
     } else if (d === 0) {
       // Today with no available slots — check if it's because day is ending or truly booked
-      const totalSlots = [];
-      let sh = openH, sm = openM;
-      while (sh < closeH || (sh === closeH && sm < closeM)) {
-        totalSlots.push(`${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}`);
-        sm += slotInterval;
-        if (sm >= 60) { sh += Math.floor(sm / 60); sm = sm % 60; }
+      const totalSlots: string[] = [];
+      for (const range of timeRanges) {
+        let sh = range.openH, sm = range.openM;
+        while (sh < range.closeH || (sh === range.closeH && sm < range.closeM)) {
+          totalSlots.push(`${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}`);
+          sm += slotInterval;
+          if (sm >= 60) { sh += Math.floor(sm / 60); sm = sm % 60; }
+        }
       }
       const futureSlots = totalSlots.filter(t => {
         const [th, tm] = t.split(":").map(Number);
