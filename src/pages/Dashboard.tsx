@@ -94,10 +94,10 @@ const Dashboard = () => {
         const { data: sub } = await supabase
           .from("subscriptions")
           .select("id")
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .maybeSingle();
         if (!sub) {
-          await supabase.from("subscriptions").insert({ user_id: user.id, status: "active" });
+          await supabase.from("subscriptions").insert({ user_id: ownerId, status: "active" });
         }
       }
       setLoadingConfig(false);
