@@ -630,15 +630,10 @@ const MyAccount = () => {
                   </li>
                 ))}
               </ul>
-              {currentPlan === "free" ? (
+              {currentPlan === "free" && !trialQuotaExhausted ? (
                 <Button variant="outline" disabled className="w-full text-sm">Plano atual</Button>
-              ) : isActive ? (
-                <Button variant="outline" className="w-full text-sm" onClick={() => handlePlanChange("free")} disabled={planChangeLoading === "free"}>
-                  {planChangeLoading === "free" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Downgrade
-                </Button>
               ) : (
-                <Button variant="outline" className="w-full text-sm" disabled>Free</Button>
+                <Button variant="outline" className="w-full text-sm" disabled>Free esgotado</Button>
               )}
             </CardContent>
           </Card>
