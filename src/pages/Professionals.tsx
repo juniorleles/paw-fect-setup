@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Users, UserCheck, Crown } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Loader2, Users, UserCheck, Crown, HelpCircle, ChevronDown, UserPlus, Send, Smartphone, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfessionalCard from "@/components/professionals/ProfessionalCard";
 import AddProfessionalDialog from "@/components/professionals/AddProfessionalDialog";
