@@ -580,7 +580,7 @@ const MyAccount = () => {
 
       {/* Monthly messages — paid plans */}
       {isActive && (
-        <Card>
+        <Card className={usagePercent >= 80 && currentPlan === "starter" ? "border-2 border-accent/40" : ""}>
           <CardHeader className="pb-2 sm:pb-3">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <MessageSquare className="w-4 sm:w-5 h-4 sm:h-5 text-primary" />
@@ -596,6 +596,58 @@ const MyAccount = () => {
             <p className="text-[11px] sm:text-xs text-muted-foreground">
               Renova em: {nextBillingDate}
             </p>
+
+            {/* Upgrade incentive: Essencial → Pro at 80%+ */}
+            {currentPlan === "starter" && usagePercent >= 80 && (
+              <div className="mt-3 rounded-lg border border-accent/30 bg-gradient-to-r from-accent/5 to-primary/5 p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Flame className="w-5 h-5 text-accent flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        ⚡ Suas mensagens estão acabando!
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        O plano Pro tem {STRIPE_PLANS.professional.limit.toLocaleString("pt-BR")} mensagens/mês — {Math.round((STRIPE_PLANS.professional.limit / STRIPE_PLANS.starter.limit - 1) * 100)}% a mais por apenas R$ {STRIPE_PLANS.professional.price - STRIPE_PLANS.starter.price}/mês a mais.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full sm:w-auto whitespace-nowrap bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg font-bold"
+                    onClick={() => handlePlanChange("professional")}
+                    disabled={planChangeLoading === "professional"}
+                  >
+                    {planChangeLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Rocket className="w-4 h-4 mr-1" />}
+                    Upgrade para Pro
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Blocked: Essencial messages exhausted */}
+            {currentPlan === "starter" && usagePercent >= 100 && (
+              <div className="mt-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 flex-1">
+                    <XCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+                    <p className="text-sm font-bold text-destructive">
+                      Limite de mensagens atingido! Faça upgrade para Pro e não perca clientes.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="w-full sm:w-auto whitespace-nowrap font-bold"
+                    onClick={() => handlePlanChange("professional")}
+                    disabled={planChangeLoading === "professional"}
+                  >
+                    {planChangeLoading === "professional" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Rocket className="w-4 h-4 mr-1" />}
+                    Upgrade para Pro
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
