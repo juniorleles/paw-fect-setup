@@ -468,7 +468,8 @@ const Dashboard = () => {
       {/* ─── Clientes Inativos ─── */}
       <InactiveClientsCard />
 
-      {/* ─── 5. Cotas disponíveis ─── */}
+      {/* ─── 5. Cotas disponíveis (hidden for professionals) ─── */}
+      {ownerId === user?.id && (
       <section>
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Seus recursos</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -518,6 +519,7 @@ const Dashboard = () => {
           </Card>
         </div>
       </section>
+      )}
     </div>
   );
 };
