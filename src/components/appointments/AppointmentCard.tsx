@@ -103,7 +103,12 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
           <p className="text-xl font-bold leading-none">{apt.time.slice(0, 5)}</p>
           {isOverdue && (
             <span className="text-[10px] font-semibold text-destructive flex items-center gap-0.5 mt-0.5">
-              <AlertTriangle className="w-3 h-3" /> Atrasado
+              <AlertTriangle className="w-3 h-3" /> Faltou?
+            </span>
+          )}
+          {apt.status === "no_show" && !isOverdue && (
+            <span className="text-[10px] font-semibold text-destructive flex items-center gap-0.5 mt-0.5">
+              <UserX className="w-3 h-3" /> Faltou
             </span>
           )}
           {isUrgent && (
