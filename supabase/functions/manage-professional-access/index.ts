@@ -53,6 +53,26 @@ async function sendWhatsApp(
   }
 }
 
+/** Wrap raw magic link in a safe app route to avoid link preview bots consuming OTP */
+function buildSafeInviteLink(rawMagicLink: string): string {
+  if (!rawMagicLink) return rawMagicLink;
+
+  try {
+    const rawUrl = new URL(rawMagicLink);
+    const redirectTo = rawUrl.searchParams.get("redirect_to");
+    if (!redirectTo) return rawMagicLink;
+
+    const appUrl = new URL(redirectTo);
+    appUrl.pathname = "/professional-login";
+    appUrl.search = "";
+    appUrl.searchParams.set("ml", rawMagicLink);
+
+    return appUrl.toString();
+  } catch {
+    return rawMagicLink;
+  }
+}
+
 /** Send invite link via WhatsApp and email */
 async function sendInviteNotifications(
   adminClient: any,
@@ -280,6 +300,7 @@ Deno.serve(async (req) => {
         email: prof.email,
       });
       const magicLinkUrl = linkData?.properties?.action_link || "";
+      const safeInviteLink = buildSafeInviteLink(magicLinkUrl);
 
       // 4. Send notifications (WhatsApp + Email)
       const sendResults = await sendInviteNotifications(
@@ -288,7 +309,7 @@ Deno.serve(async (req) => {
         prof.email,
         prof.phone,
         prof.name,
-        magicLinkUrl
+        safeInviteLink
       );
 
       const channels: string[] = [];
@@ -304,7 +325,7 @@ Deno.serve(async (req) => {
           success: true,
           message: channelMsg,
           auth_user_id: authUserId,
-          magic_link: channels.length === 0 ? magicLinkUrl : undefined,
+          magic_link: channels.length === 0 ? safeInviteLink : undefined,
           channels: sendResults,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -393,6 +414,7 @@ Deno.serve(async (req) => {
         email: prof.email,
       });
       const magicLinkUrl = linkData?.properties?.action_link || "";
+      const safeInviteLink = buildSafeInviteLink(magicLinkUrl);
 
       // Send notifications (WhatsApp + Email)
       const sendResults = await sendInviteNotifications(
@@ -401,7 +423,7 @@ Deno.serve(async (req) => {
         prof.email,
         prof.phone,
         prof.name,
-        magicLinkUrl
+        safeInviteLink
       );
 
       const channels: string[] = [];
@@ -414,7 +436,7 @@ Deno.serve(async (req) => {
           message: channels.length > 0
             ? `Convite reenviado via ${channels.join(" e ")} para ${prof.email}`
             : `Não foi possível reenviar automaticamente. Compartilhe o link manualmente.`,
-          magic_link: channels.length === 0 ? magicLinkUrl : undefined,
+          magic_link: channels.length === 0 ? safeInviteLink : undefined,
           channels: sendResults,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -10,6 +10,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import ProfessionalLogin from "./pages/ProfessionalLogin";
 import Settings from "./pages/Settings";
 import Appointments from "./pages/Appointments";
 import Professionals from "./pages/Professionals";
@@ -138,6 +139,7 @@ const App = () => (
                   <Route path="/" element={<Landing />} />
                   <Route path="/landing" element={<Navigate to="/" replace />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/professional-login" element={<ProfessionalLogin />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/onboarding" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
