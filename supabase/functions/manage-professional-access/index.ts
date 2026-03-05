@@ -197,12 +197,27 @@ Deno.serve(async (req) => {
         (u) => u.email === prof.email
       );
 
+      let authUserId: string;
+
       if (existingUser) {
-        return new Response(
-          JSON.stringify({ error: "Este email já está associado a outra conta no sistema" }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+        // Reuse existing auth user (e.g. from a previous revoked access)
+        authUserId = existingUser.id;
+
+        // Check if another professional is already linked to this auth user
+        const { data: linkedProf } = await adminClient
+          .from("professionals")
+          .select("id")
+          .eq("auth_user_id", existingUser.id)
+          .neq("id", professional_id)
+          .maybeSingle();
+
+        if (linkedProf) {
+          return new Response(
+            JSON.stringify({ error: "Este email já está associado a outro profissional no sistema" }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else {
 
       // 1. Create auth user
       const tempPassword = crypto.randomUUID() + "Aa1!";
