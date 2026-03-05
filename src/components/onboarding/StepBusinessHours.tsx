@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OnboardingData, DaySchedule } from "@/types/onboarding";
-import { Clock, Copy, Users, Lock } from "lucide-react";
+import { Clock, Copy, Users, Lock, Coffee } from "lucide-react";
 import { STRIPE_PLANS } from "@/config/stripe";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   data: OnboardingData;
