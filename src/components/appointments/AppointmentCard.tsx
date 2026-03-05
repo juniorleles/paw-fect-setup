@@ -209,7 +209,7 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
             </Tooltip>
           </TooltipProvider>
         )}
-        {(apt.status === "cancelled" || apt.status === "completed") && (
+        {(apt.status === "cancelled" || apt.status === "completed" || apt.status === "no_show") && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
