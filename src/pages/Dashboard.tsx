@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
+import { useOwnerId } from "@/hooks/useOwnerId";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
 import { useAppointments } from "@/hooks/useAppointments";
