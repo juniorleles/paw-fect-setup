@@ -17,7 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, CalendarDays, Settings, LogOut, Briefcase, UserCircle, Headphones, Users, UserX } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Settings, LogOut, Briefcase, UserCircle, Headphones, Users, UserX, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -25,6 +25,7 @@ const allNavItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, minPlan: "free", ownerOnly: false },
   { title: "Agendamentos", url: "/appointments", icon: CalendarDays, minPlan: "free", ownerOnly: false },
   { title: "Clientes Inativos", url: "/inactive-clients", icon: UserX, minPlan: "starter", ownerOnly: true },
+  { title: "Relatório de Faltas", url: "/no-show-report", icon: ClipboardList, minPlan: "starter", ownerOnly: true },
   { title: "Profissionais", url: "/professionals", icon: Users, minPlan: "free", ownerOnly: true },
   { title: "Configurações", url: "/settings", icon: Settings, minPlan: "free", ownerOnly: true },
   { title: "Minha Conta", url: "/my-account", icon: UserCircle, minPlan: "free", ownerOnly: true },
