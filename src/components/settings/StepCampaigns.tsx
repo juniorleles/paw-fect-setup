@@ -20,11 +20,6 @@ interface StepCampaignsProps {
   onChange: (messages: CampaignMessages) => void;
   isPro: boolean;
 }
-  messages: CampaignMessages;
-  onChange: (messages: CampaignMessages) => void;
-  isPro: boolean;
-  niche: string;
-}
 
 const VARIABLES_HELP = [
   { var: "{nome}", desc: "Primeiro nome do cliente" },
@@ -41,7 +36,7 @@ const DEFAULT_MESSAGES: Record<string, string> = {
   upsell: `E aí, {nome}! 💈\n\nCurtiu o *{servico}* de ontem aqui na *{loja}*? Ficou show! 🔥\n\nNa próxima, que tal completar o visual com:\n{sugestoes}\n\nQuer agendar? Me manda o dia e horário que fica melhor! 😎`,
 };
 
-const StepCampaigns = ({ messages, onChange, isPro, niche }: StepCampaignsProps) => {
+const StepCampaigns = ({ messages, onChange, isPro }: StepCampaignsProps) => {
   const defaults = getDefaults(niche);
 
   const getValue = (key: keyof CampaignMessages) => {
