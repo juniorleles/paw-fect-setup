@@ -178,19 +178,19 @@ const Dashboard = () => {
   const [conversationsMonth, setConversationsMonth] = useState(0);
   const [totalMessagesMonth, setTotalMessagesMonth] = useState(0);
   useEffect(() => {
-    if (!user) return;
+    if (!ownerId) return;
     const fetchConvos = async () => {
       const [convoRes, msgCountRes] = await Promise.all([
         supabase
           .from("conversation_messages")
           .select("phone")
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .gte("created_at", `${monthStart}T00:00:00`)
           .lte("created_at", `${monthEnd}T23:59:59`),
         supabase
           .from("conversation_messages")
           .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .gte("created_at", `${monthStart}T00:00:00`)
           .lte("created_at", `${monthEnd}T23:59:59`),
       ]);
@@ -199,7 +199,7 @@ const Dashboard = () => {
       setTotalMessagesMonth(msgCountRes.count ?? 0);
     };
     fetchConvos();
-  }, [user, monthStart, monthEnd]);
+  }, [ownerId, monthStart, monthEnd]);
 
   // Plan limit based on actual plan
   const planKey = (currentPlan === "professional" ? "professional" : "starter") as keyof typeof STRIPE_PLANS;
