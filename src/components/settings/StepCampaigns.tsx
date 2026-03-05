@@ -19,6 +19,10 @@ interface StepCampaignsProps {
   messages: CampaignMessages;
   onChange: (messages: CampaignMessages) => void;
   isPro: boolean;
+}
+  messages: CampaignMessages;
+  onChange: (messages: CampaignMessages) => void;
+  isPro: boolean;
   niche: string;
 }
 
