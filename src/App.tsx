@@ -10,6 +10,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import ProfessionalLogin from "./pages/ProfessionalLogin";
 import Settings from "./pages/Settings";
 import Appointments from "./pages/Appointments";
 import Professionals from "./pages/Professionals";
