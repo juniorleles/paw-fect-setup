@@ -34,6 +34,9 @@ export interface DaySchedule {
   isOpen: boolean;
   openTime: string;
   closeTime: string;
+  /** Second shift start (afternoon). If set, creates a lunch break gap. */
+  openTime2?: string;
+  closeTime2?: string;
 }
 
 export interface Service {
