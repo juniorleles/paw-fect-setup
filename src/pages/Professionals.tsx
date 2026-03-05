@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Users, UserCheck, Crown } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Loader2, Users, UserCheck, Crown, HelpCircle, ChevronDown, UserPlus, Send, Smartphone, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfessionalCard from "@/components/professionals/ProfessionalCard";
 import AddProfessionalDialog from "@/components/professionals/AddProfessionalDialog";
@@ -156,6 +161,82 @@ const Professionals = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* How it works */}
+      <Collapsible>
+        <Card className="border-muted">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="flex flex-row items-center gap-3 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors">
+              <HelpCircle className="w-5 h-5 text-primary shrink-0" />
+              <CardTitle className="text-sm font-semibold flex-1 text-left">Como funciona o acesso dos profissionais?</CardTitle>
+              <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0 pb-4 px-4 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <UserPlus className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">1. Cadastre o profissional</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Clique em "Adicionar" e preencha o nome, e-mail e telefone do profissional da sua equipe.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Send className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">2. Conceda acesso ao sistema</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Clique em "Conceder acesso" no card do profissional. Um link seguro será enviado para o e-mail e WhatsApp dele.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Smartphone className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">3. Profissional clica no link</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      O profissional abre o link recebido e toca em "Entrar agora". Ele será autenticado automaticamente, sem precisar criar senha.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <LayoutDashboard className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">4. Acesso ao painel</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Após entrar, o profissional visualiza a agenda compartilhada e dados dos clientes, mas não tem acesso a configurações ou financeiro.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-muted/40 rounded-lg p-3 flex gap-3">
+                <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    <strong className="text-foreground">Segurança:</strong> Você pode revogar o acesso a qualquer momento clicando em "Revogar acesso" no card do profissional. 
+                    Se o link expirar, basta clicar em "Reenviar link" para gerar um novo.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Professionals List */}
       {loading ? (
