@@ -505,6 +505,7 @@ export type Database = {
       }
       professionals: {
         Row: {
+          auth_user_id: string | null
           created_at: string
           email: string | null
           id: string
@@ -515,6 +516,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -525,6 +527,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -725,6 +728,7 @@ export type Database = {
         Args: { p_instance_name: string; p_sender_id: string }
         Returns: boolean
       }
+      get_owner_id: { Args: { p_user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -737,6 +741,7 @@ export type Database = {
         Returns: number
       }
       increment_trial_messages: { Args: { p_user_id: string }; Returns: number }
+      is_professional: { Args: { p_user_id: string }; Returns: boolean }
       release_sender_lock: { Args: { p_sender_id: string }; Returns: undefined }
       reset_monthly_usage: { Args: never; Returns: number }
     }
