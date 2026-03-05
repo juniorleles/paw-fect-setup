@@ -15,24 +15,26 @@ const AppointmentStatsBar = ({ appointments }: Props) => {
 
     let pending = 0;
     let confirmed = 0;
-    let overdue = 0;
+    let noShows = 0;
     let upcomingApt: Appointment | undefined;
 
     for (const a of active) {
       const pastTime = new Date(`${a.date}T${a.time}`) < now;
 
-      if (a.status === "completed" || a.status === "confirmed") {
+      if (a.status === "no_show") {
+        noShows++;
+      } else if (a.status === "completed" || a.status === "confirmed") {
         confirmed++;
         if (!pastTime && (!upcomingApt || a.time < upcomingApt.time)) upcomingApt = a;
       } else if (pastTime) {
-        overdue++;
+        noShows++; // overdue pending = potential no-show
       } else {
         pending++;
         if (!upcomingApt || a.time < upcomingApt.time) upcomingApt = a;
       }
     }
 
-    return { total: active.length, pending, confirmed, overdue, upcoming: upcomingApt };
+    return { total: active.length, pending, confirmed, noShows, upcoming: upcomingApt };
   }, [appointments]);
 
   return (
