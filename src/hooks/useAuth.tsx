@@ -23,12 +23,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -36,8 +30,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (event === "PASSWORD_RECOVERY") {
         setIsRecovery(true);
-        // Redirect will be handled by the component tree
       }
+    });
+
+    // Important: call after registering listener so magic link events are not missed
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
