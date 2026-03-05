@@ -31,6 +31,7 @@ type StatusFilter = "all" | "pending" | "recovered" | "lost" | "no_message";
 const NoShowReport = () => {
   const { user } = useAuth();
   const { ownerId } = useOwnerId();
+  const { isPetNiche } = useNiche();
   const [records, setRecords] = useState<NoShowRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
