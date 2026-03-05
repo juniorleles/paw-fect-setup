@@ -235,6 +235,13 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // Check if winback campaign is disabled by user
+      const campaignMessages = (config as any).campaign_messages as Record<string, any> | undefined;
+      if (campaignMessages?.winback_enabled === false) {
+        log("Skipping user - winback campaign disabled", { userId });
+        continue;
+      }
+
       // Find last completed appointment per unique client phone
       const { data: completedAppts } = await supabase
         .from("appointments")

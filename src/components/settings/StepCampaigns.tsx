@@ -4,7 +4,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Crown, RotateCcw, Info, MessageSquare, Gift, HelpCircle, ChevronDown, Clock, UserCheck, Zap, CalendarCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Crown, RotateCcw, Info, MessageSquare, Gift, HelpCircle, ChevronDown, Clock, Zap, CalendarCheck } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -14,6 +15,8 @@ export interface CampaignMessages {
   winback_30?: string;
   winback_60?: string;
   upsell?: string;
+  winback_enabled?: boolean;
+  upsell_enabled?: boolean;
 }
 
 interface StepCampaignsProps {
@@ -40,8 +43,11 @@ const DEFAULT_MESSAGES: Record<string, string> = {
 const StepCampaigns = ({ messages, onChange, isPro }: StepCampaignsProps) => {
   const defaults = DEFAULT_MESSAGES;
 
+  const winbackEnabled = messages.winback_enabled !== false; // default true
+  const upsellEnabled = messages.upsell_enabled !== false; // default true
+
   const getValue = (key: keyof CampaignMessages) => {
-    return messages[key] || "";
+    return (messages[key] as string) || "";
   };
 
   const getPlaceholder = (key: string) => {
@@ -56,6 +62,10 @@ const StepCampaigns = ({ messages, onChange, isPro }: StepCampaignsProps) => {
     const newMessages = { ...messages };
     delete newMessages[key];
     onChange(newMessages);
+  };
+
+  const handleToggle = (key: "winback_enabled" | "upsell_enabled", value: boolean) => {
+    onChange({ ...messages, [key]: value });
   };
 
   if (!isPro) {
@@ -181,7 +191,26 @@ const StepCampaigns = ({ messages, onChange, isPro }: StepCampaignsProps) => {
         </TabsList>
 
         <TabsContent value="winback" className="mt-4 space-y-4">
-          {(["winback_15", "winback_30", "winback_60"] as const).map((key) => {
+          {/* Toggle Win-back */}
+          <Card className={!winbackEnabled ? "opacity-60" : ""}>
+            <CardContent className="py-3 px-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Campanha Win-back</p>
+                  <p className="text-xs text-muted-foreground">
+                    {winbackEnabled ? "Ativa — mensagens serão enviadas automaticamente" : "Desativada — nenhuma mensagem de win-back será enviada"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={winbackEnabled}
+                onCheckedChange={(v) => handleToggle("winback_enabled", v)}
+              />
+            </CardContent>
+          </Card>
+
+          {winbackEnabled && (["winback_15", "winback_30", "winback_60"] as const).map((key) => {
             const labels: Record<string, { title: string; desc: string }> = {
               winback_15: { title: "15 dias inativo 💬", desc: "Primeiro contato com tom leve e convidativo" },
               winback_30: { title: "30 dias inativo 🔥", desc: "Mensagem mais urgente com oferta de horário especial" },
@@ -220,33 +249,54 @@ const StepCampaigns = ({ messages, onChange, isPro }: StepCampaignsProps) => {
         </TabsContent>
 
         <TabsContent value="upsell" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
+          {/* Toggle Upsell */}
+          <Card className={!upsellEnabled ? "opacity-60" : ""}>
+            <CardContent className="py-3 px-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Gift className="w-4 h-4 text-primary" />
                 <div>
-                  <CardTitle className="text-sm">Mensagem de Upsell 🎁</CardTitle>
-                  <CardDescription className="text-xs">
-                    Enviada 24h após atendimento concluído sugerindo serviços complementares
-                  </CardDescription>
+                  <p className="text-sm font-medium">Campanha Pós-atendimento</p>
+                  <p className="text-xs text-muted-foreground">
+                    {upsellEnabled ? "Ativa — mensagens de upsell serão enviadas 24h após atendimento" : "Desativada — nenhuma mensagem de upsell será enviada"}
+                  </p>
                 </div>
-                {getValue("upsell") && (
-                  <Button variant="ghost" size="sm" onClick={() => handleReset("upsell")} className="text-xs gap-1 h-7">
-                    <RotateCcw className="w-3 h-3" />
-                    Restaurar padrão
-                  </Button>
-                )}
               </div>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={getValue("upsell")}
-                onChange={(e) => handleChange("upsell", e.target.value)}
-                placeholder={getPlaceholder("upsell")}
-                rows={8}
-                className="font-mono text-xs resize-y"
+              <Switch
+                checked={upsellEnabled}
+                onCheckedChange={(v) => handleToggle("upsell_enabled", v)}
               />
             </CardContent>
           </Card>
+
+          {upsellEnabled && (
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm">Mensagem de Upsell 🎁</CardTitle>
+                    <CardDescription className="text-xs">
+                      Enviada 24h após atendimento concluído sugerindo serviços complementares
+                    </CardDescription>
+                  </div>
+                  {getValue("upsell") && (
+                    <Button variant="ghost" size="sm" onClick={() => handleReset("upsell")} className="text-xs gap-1 h-7">
+                      <RotateCcw className="w-3 h-3" />
+                      Restaurar padrão
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={getValue("upsell")}
+                  onChange={(e) => handleChange("upsell", e.target.value)}
+                  placeholder={getPlaceholder("upsell")}
+                  rows={8}
+                  className="font-mono text-xs resize-y"
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

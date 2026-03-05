@@ -225,6 +225,13 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // Check if upsell campaign is disabled by user
+      const campaignMessages = (config as any).campaign_messages as Record<string, any> | undefined;
+      if (campaignMessages?.upsell_enabled === false) {
+        log("Skipping user - upsell campaign disabled", { userId });
+        continue;
+      }
+
       // Find completed appointments in the 24h window
       // We need appointments whose completion time was ~24h ago
       // Since we don't have a completed_at timestamp, we use date + time
