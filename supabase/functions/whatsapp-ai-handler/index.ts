@@ -2021,7 +2021,11 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
     .join("\n");
 
   const hoursText = (shopConfig.business_hours as any[])
-    .map((h: any) => `- ${h.day}: ${h.isOpen ? `${h.openTime} - ${h.closeTime}` : "Fechado"}`)
+    .map((h: any) => {
+      if (!h.isOpen) return `- ${h.day}: Fechado`;
+      if (h.openTime2) return `- ${h.day}: ${h.openTime} - ${h.closeTime} e ${h.openTime2} - ${h.closeTime2}`;
+      return `- ${h.day}: ${h.openTime} - ${h.closeTime}`;
+    })
     .join("\n");
 
   const nicheEmojis: Record<string, string> = {
