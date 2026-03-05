@@ -30,25 +30,12 @@ const VARIABLES_HELP = [
   { var: "{sugestoes}", desc: "Lista de serviços sugeridos (upsell)" },
 ];
 
-const DEFAULT_WINBACK: Record<string, Record<string, string>> = {
-  barbearia: {
-    winback_15: `E aí, {nome}! 💈\n\nFaz {dias} dias desde o último *{servico}* aqui na *{loja}*. Tá na hora de dar aquele tapa no visual, né? 😎\n\nQuer agendar? É só me dizer o melhor dia e horário! 💈`,
-    winback_30: `Fala, {nome}! 💈\n\nSumiu, hein! Já faz {dias} dias que você não aparece aqui na *{loja}*.\n\nReservei um horário especial pra você voltar e ficar na régua. Quer marcar? Me manda o dia que fica melhor! 🔥`,
-    winback_60: `{nome}, saudade de você por aqui! 💈\n\nJá faz mais de {dias} dias desde seu último *{servico}* na *{loja}*.\n\nQue tal voltar com um combo especial? Corte + barba com aquele precinho de cliente VIP! 💪\n\nMe chama pra agendar! 💈`,
-    upsell: `E aí, {nome}! 💈\n\nCurtiu o *{servico}* de ontem aqui na *{loja}*? Ficou show! 🔥\n\nNa próxima, que tal completar o visual com:\n{sugestoes}\n\nQuer agendar? Me manda o dia e horário que fica melhor! 😎`,
-  },
-  generico: {
-    winback_15: `Olá, {nome}! ✨\n\nFaz {dias} dias desde o último *{servico}* aqui na *{loja}*. Sentimos sua falta!\n\nQuer agendar um novo horário? É só me dizer! 😊`,
-    winback_30: `Oi, {nome}! ✨\n\nJá faz {dias} dias que você não nos visita na *{loja}*.\n\nTemos horários especiais disponíveis pra você! Quer marcar? Me conta o melhor dia 💜`,
-    winback_60: `{nome}, que saudade! ✨\n\nFaz mais de {dias} dias desde seu último *{servico}* na *{loja}*.\n\nPreparamos uma oferta especial pra clientes VIP como você! Me chama pra agendar ✨`,
-    upsell: `Olá, {nome}! ✨\n\nEsperamos que tenha gostado do *{servico}* na *{loja}*! 😊\n\nPara complementar, temos serviços que combinam muito:\n{sugestoes}\n\nQuer agendar? Me envie o dia e horário preferido! 💜`,
-  },
+const DEFAULT_MESSAGES: Record<string, string> = {
+  winback_15: `E aí, {nome}! 💈\n\nFaz {dias} dias desde o último *{servico}* aqui na *{loja}*. Tá na hora de dar aquele tapa no visual, né? 😎\n\nQuer agendar? É só me dizer o melhor dia e horário! 💈`,
+  winback_30: `Fala, {nome}! 💈\n\nSumiu, hein! Já faz {dias} dias que você não aparece aqui na *{loja}*.\n\nReservei um horário especial pra você voltar e ficar na régua. Quer marcar? Me manda o dia que fica melhor! 🔥`,
+  winback_60: `{nome}, saudade de você por aqui! 💈\n\nJá faz mais de {dias} dias desde seu último *{servico}* na *{loja}*.\n\nQue tal voltar com um combo especial? Corte + barba com aquele precinho de cliente VIP! 💪\n\nMe chama pra agendar! 💈`,
+  upsell: `E aí, {nome}! 💈\n\nCurtiu o *{servico}* de ontem aqui na *{loja}*? Ficou show! 🔥\n\nNa próxima, que tal completar o visual com:\n{sugestoes}\n\nQuer agendar? Me manda o dia e horário que fica melhor! 😎`,
 };
-
-function getDefaults(niche: string): Record<string, string> {
-  const key = (niche || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  return key.includes("barb") ? DEFAULT_WINBACK.barbearia : DEFAULT_WINBACK.generico;
-}
 
 const StepCampaigns = ({ messages, onChange, isPro, niche }: StepCampaignsProps) => {
   const defaults = getDefaults(niche);
