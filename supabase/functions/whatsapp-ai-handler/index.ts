@@ -67,7 +67,7 @@ function buildOccupancyMap(
   slotInterval: number
 ): Map<string, number> {
   const occupancy = new Map<string, number>();
-  const dayApts = appointments.filter((a: any) => a.date === dateStr && a.status !== "cancelled");
+  const dayApts = appointments.filter((a: any) => a.date === dateStr && a.status !== "cancelled" && a.status !== "no_show");
 
   console.log(`[OCCUPANCY] Date: ${dateStr}, appointments: ${dayApts.length}, services config: ${services.map((s: any) => `${s.name}(${s.duration || '?'}min)`).join(', ')}`);
 
@@ -2913,7 +2913,8 @@ Deno.serve(async (req) => {
       .select("date, time, service, status, pet_name, owner_name, owner_phone")
       .eq("user_id", shopConfig.user_id)
       .gte("date", today)
-      .neq("status", "cancelled");
+      .neq("status", "cancelled")
+      .neq("status", "no_show");
 
     const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
 
