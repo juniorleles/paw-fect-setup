@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnerId } from "@/hooks/useOwnerId";
+import { useNiche } from "@/hooks/useNiche";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,6 +31,7 @@ type StatusFilter = "all" | "pending" | "recovered" | "lost" | "no_message";
 const NoShowReport = () => {
   const { user } = useAuth();
   const { ownerId } = useOwnerId();
+  const { isPetNiche } = useNiche();
   const [records, setRecords] = useState<NoShowRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -285,7 +287,7 @@ const NoShowReport = () => {
                 <TableHead>Data</TableHead>
                 <TableHead>Horário</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead className="hidden sm:table-cell">Pet</TableHead>
+                {isPetNiche && <TableHead className="hidden sm:table-cell">Pet</TableHead>}
                 <TableHead className="hidden md:table-cell">Serviço</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
@@ -293,13 +295,13 @@ const NoShowReport = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={isPetNiche ? 6 : 5} className="text-center py-8 text-muted-foreground">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={isPetNiche ? 6 : 5} className="text-center py-8 text-muted-foreground">
                     Nenhuma falta encontrada no período.
                   </TableCell>
                 </TableRow>
@@ -311,7 +313,7 @@ const NoShowReport = () => {
                     </TableCell>
                     <TableCell>{record.time.slice(0, 5)}</TableCell>
                     <TableCell>{record.owner_name}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{record.pet_name}</TableCell>
+                    {isPetNiche && <TableCell className="hidden sm:table-cell">{record.pet_name}</TableCell>}
                     <TableCell className="hidden md:table-cell">{record.service}</TableCell>
                     <TableCell>{getStatusBadge(record)}</TableCell>
                   </TableRow>
