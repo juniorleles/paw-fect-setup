@@ -6,6 +6,112 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Format phone to 55XXXXXXXXXXX */
+function formatPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  return digits.startsWith("55") ? digits : `55${digits}`;
+}
+
+/** Send WhatsApp message via Evolution API */
+async function sendWhatsApp(
+  instanceName: string,
+  phone: string,
+  text: string
+): Promise<boolean> {
+  const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
+  const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
+  if (!evolutionUrl || !evolutionKey) {
+    console.warn("Evolution API not configured, skipping WhatsApp");
+    return false;
+  }
+
+  try {
+    const res = await fetch(
+      `${evolutionUrl}/message/sendText/${instanceName}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: evolutionKey,
+        },
+        body: JSON.stringify({
+          number: formatPhone(phone),
+          text,
+        }),
+      }
+    );
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("WhatsApp send failed:", errText);
+      return false;
+    }
+    await res.text(); // consume body
+    return true;
+  } catch (err) {
+    console.error("WhatsApp send error:", err);
+    return false;
+  }
+}
+
+/** Send invite link via WhatsApp and email */
+async function sendInviteNotifications(
+  adminClient: any,
+  ownerUserId: string,
+  profEmail: string,
+  profPhone: string | null,
+  profName: string,
+  inviteLink: string
+) {
+  const results = { whatsapp: false, email: false };
+
+  // 1. Send via WhatsApp if phone is available
+  if (profPhone) {
+    const { data: config } = await adminClient
+      .from("pet_shop_configs")
+      .select("evolution_instance_name, shop_name, whatsapp_status")
+      .eq("user_id", ownerUserId)
+      .maybeSingle();
+
+    if (config?.evolution_instance_name && config.whatsapp_status === "connected") {
+      const message = [
+        `🔑 *Convite para acesso ao sistema*`,
+        ``,
+        `Olá ${profName}! Você foi convidado(a) para acessar a agenda de *${config.shop_name || "sua empresa"}*.`,
+        ``,
+        `Clique no link abaixo para ativar seu acesso:`,
+        inviteLink,
+        ``,
+        `Esse link é válido por 24 horas.`,
+      ].join("\n");
+
+      results.whatsapp = await sendWhatsApp(
+        config.evolution_instance_name,
+        profPhone,
+        message
+      );
+    }
+  }
+
+  // 2. Send magic link email using signInWithOtp (actually sends the email)
+  try {
+    const { error: otpErr } = await adminClient.auth.signInWithOtp({
+      email: profEmail,
+      options: {
+        shouldCreateUser: false,
+      },
+    });
+    if (otpErr) {
+      console.warn("OTP email send failed:", otpErr.message);
+    } else {
+      results.email = true;
+    }
+  } catch (err) {
+    console.warn("OTP email error:", err);
+  }
+
+  return results;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -98,35 +204,35 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Create user via invite — this SENDS the invite email automatically
-      const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
-        prof.email,
-        {
-          data: {
-            is_professional: true,
-            owner_id: caller.id,
-            professional_name: prof.name,
-          },
-        }
-      );
+      // 1. Create auth user
+      const tempPassword = crypto.randomUUID() + "Aa1!";
+      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
+        email: prof.email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          is_professional: true,
+          owner_id: caller.id,
+          professional_name: prof.name,
+        },
+      });
 
-      if (inviteErr) {
-        console.error("Error inviting user:", inviteErr);
+      if (createErr) {
+        console.error("Error creating auth user:", createErr);
         return new Response(
-          JSON.stringify({ error: `Erro ao criar conta: ${inviteErr.message}` }),
+          JSON.stringify({ error: `Erro ao criar conta: ${createErr.message}` }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Link auth_user_id to professional record
+      // 2. Link auth_user_id to professional record
       const { error: updateErr } = await adminClient
         .from("professionals")
-        .update({ auth_user_id: inviteData.user.id })
+        .update({ auth_user_id: newUser.user.id })
         .eq("id", professional_id);
 
       if (updateErr) {
-        // Rollback: delete the created auth user
-        await adminClient.auth.admin.deleteUser(inviteData.user.id);
+        await adminClient.auth.admin.deleteUser(newUser.user.id);
         console.error("Error linking professional:", updateErr);
         return new Response(
           JSON.stringify({ error: "Erro ao vincular acesso ao profissional" }),
@@ -134,11 +240,38 @@ Deno.serve(async (req) => {
         );
       }
 
+      // 3. Generate magic link URL for WhatsApp
+      const { data: linkData } = await adminClient.auth.admin.generateLink({
+        type: "magiclink",
+        email: prof.email,
+      });
+      const magicLinkUrl = linkData?.properties?.action_link || "";
+
+      // 4. Send notifications (WhatsApp + Email)
+      const sendResults = await sendInviteNotifications(
+        adminClient,
+        caller.id,
+        prof.email,
+        prof.phone,
+        prof.name,
+        magicLinkUrl
+      );
+
+      const channels: string[] = [];
+      if (sendResults.whatsapp) channels.push("WhatsApp");
+      if (sendResults.email) channels.push("email");
+
+      const channelMsg = channels.length > 0
+        ? `Convite enviado via ${channels.join(" e ")} para ${prof.email}`
+        : `Acesso concedido, mas não foi possível enviar o convite automaticamente. Compartilhe o link manualmente.`;
+
       return new Response(
         JSON.stringify({
           success: true,
-          message: `Acesso concedido! Um convite foi enviado para ${prof.email}`,
-          auth_user_id: inviteData.user.id,
+          message: channelMsg,
+          auth_user_id: newUser.user.id,
+          magic_link: channels.length === 0 ? magicLinkUrl : undefined,
+          channels: sendResults,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -174,7 +307,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Delete auth user
       const { error: deleteErr } = await adminClient.auth.admin.deleteUser(
         prof.auth_user_id
       );
@@ -187,7 +319,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Clear link
       await adminClient
         .from("professionals")
         .update({ auth_user_id: null })
@@ -199,7 +330,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ─── RESEND MAGIC LINK ──────────────────────────────────────
+    // ─── RESEND LINK ────────────────────────────────────────────
     if (action === "resend-link") {
       if (!professional_id) {
         return new Response(
@@ -210,7 +341,7 @@ Deno.serve(async (req) => {
 
       const { data: prof } = await adminClient
         .from("professionals")
-        .select("email, auth_user_id, name, user_id")
+        .select("email, auth_user_id, name, phone, user_id")
         .eq("id", professional_id)
         .eq("user_id", caller.id)
         .maybeSingle();
@@ -222,45 +353,36 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Delete existing auth user and re-invite to trigger a new email
-      const { error: deleteErr } = await adminClient.auth.admin.deleteUser(prof.auth_user_id);
-      if (deleteErr) {
-        console.error("Error deleting user for re-invite:", deleteErr);
-        return new Response(
-          JSON.stringify({ error: `Erro ao reenviar: ${deleteErr.message}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      // Generate new magic link
+      const { data: linkData } = await adminClient.auth.admin.generateLink({
+        type: "magiclink",
+        email: prof.email,
+      });
+      const magicLinkUrl = linkData?.properties?.action_link || "";
 
-      const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
+      // Send notifications (WhatsApp + Email)
+      const sendResults = await sendInviteNotifications(
+        adminClient,
+        caller.id,
         prof.email,
-        {
-          data: {
-            is_professional: true,
-            owner_id: caller.id,
-            professional_name: prof.name,
-          },
-        }
+        prof.phone,
+        prof.name,
+        magicLinkUrl
       );
 
-      if (inviteErr) {
-        console.error("Error re-inviting user:", inviteErr);
-        // Clear the stale auth_user_id
-        await adminClient.from("professionals").update({ auth_user_id: null }).eq("id", professional_id);
-        return new Response(
-          JSON.stringify({ error: `Erro ao reenviar convite: ${inviteErr.message}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Update with new auth_user_id
-      await adminClient
-        .from("professionals")
-        .update({ auth_user_id: inviteData.user.id })
-        .eq("id", professional_id);
+      const channels: string[] = [];
+      if (sendResults.whatsapp) channels.push("WhatsApp");
+      if (sendResults.email) channels.push("email");
 
       return new Response(
-        JSON.stringify({ success: true, message: `Convite reenviado para ${prof.email}` }),
+        JSON.stringify({
+          success: true,
+          message: channels.length > 0
+            ? `Convite reenviado via ${channels.join(" e ")} para ${prof.email}`
+            : `Não foi possível reenviar automaticamente. Compartilhe o link manualmente.`,
+          magic_link: channels.length === 0 ? magicLinkUrl : undefined,
+          channels: sendResults,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
