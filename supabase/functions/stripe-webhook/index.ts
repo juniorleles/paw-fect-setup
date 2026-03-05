@@ -94,6 +94,29 @@ serve(async (req) => {
           break;
         }
 
+        // Check for scheduled downgrade BEFORE upsert — apply Stripe price change
+        const { data: existingSub } = await supabase
+          .from("subscriptions")
+          .select("plan, next_plan, next_plan_effective_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (existingSub?.next_plan && existingSub?.next_plan_effective_at) {
+          const effectiveAt = new Date(existingSub.next_plan_effective_at);
+          if (new Date() >= effectiveAt) {
+            const targetPlan = existingSub.next_plan;
+            const newPriceId = PRICE_MAP[targetPlan];
+            if (newPriceId) {
+              const currentItem = sub.items.data[0];
+              logStep("Applying Stripe downgrade", { from: existingSub.plan, to: targetPlan, newPriceId });
+              await stripe.subscriptions.update(sub.id, {
+                items: [{ id: currentItem.id, price: newPriceId }],
+                proration_behavior: "none",
+              });
+            }
+          }
+        }
+
         await upsertSubscription(supabase, userId, sub);
 
         // Record payment history
