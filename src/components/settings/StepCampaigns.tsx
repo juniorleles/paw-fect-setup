@@ -37,7 +37,7 @@ const DEFAULT_MESSAGES: Record<string, string> = {
 };
 
 const StepCampaigns = ({ messages, onChange, isPro }: StepCampaignsProps) => {
-  const defaults = getDefaults(niche);
+  const defaults = DEFAULT_MESSAGES;
 
   const getValue = (key: keyof CampaignMessages) => {
     return messages[key] || "";
