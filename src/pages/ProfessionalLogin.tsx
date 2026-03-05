@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,12 @@ const ProfessionalLogin = () => {
 
   const magicLink = useMemo(() => searchParams.get("ml") ?? "", [searchParams]);
 
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [loading, user, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -20,10 +26,7 @@ const ProfessionalLogin = () => {
     );
   }
 
-  if (user) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
+  if (user) return null;
 
   const handleContinue = () => {
     if (!magicLink) return;
