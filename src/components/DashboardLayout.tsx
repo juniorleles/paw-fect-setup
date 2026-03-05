@@ -17,7 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, CalendarDays, Settings, LogOut, Briefcase, UserCircle, Headphones, Users, UserX } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Settings, LogOut, Briefcase, UserCircle, Headphones, Users, UserX, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
