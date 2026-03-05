@@ -42,6 +42,7 @@ import WinbackMetricsCard from "@/components/dashboard/WinbackMetricsCard";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { ownerId } = useOwnerId();
   const navigate = useNavigate();
   const whatsappStatus = useWhatsAppStatus();
   const { status: subStatus, trialEndAt, plan: currentPlan } = useSubscription();
