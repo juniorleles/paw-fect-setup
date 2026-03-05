@@ -414,6 +414,7 @@ Deno.serve(async (req) => {
         email: prof.email,
       });
       const magicLinkUrl = linkData?.properties?.action_link || "";
+      const safeInviteLink = buildSafeInviteLink(magicLinkUrl);
 
       // Send notifications (WhatsApp + Email)
       const sendResults = await sendInviteNotifications(
@@ -422,7 +423,7 @@ Deno.serve(async (req) => {
         prof.email,
         prof.phone,
         prof.name,
-        magicLinkUrl
+        safeInviteLink
       );
 
       const channels: string[] = [];
