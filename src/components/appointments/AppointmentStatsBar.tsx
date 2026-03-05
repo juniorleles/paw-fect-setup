@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { CalendarDays, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Clock, UserX, CheckCircle2 } from "lucide-react";
 import type { Appointment } from "@/types/appointment";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
