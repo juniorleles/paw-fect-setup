@@ -1,8 +1,9 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAppointmentNotifications } from "@/hooks/useAppointmentNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -21,26 +22,37 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const allNavItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, minPlan: "free" },
-  { title: "Agendamentos", url: "/appointments", icon: CalendarDays, minPlan: "free" },
-  { title: "Clientes Inativos", url: "/inactive-clients", icon: UserX, minPlan: "starter" },
-  { title: "Profissionais", url: "/professionals", icon: Users, minPlan: "free" },
-  { title: "Configurações", url: "/settings", icon: Settings, minPlan: "free" },
-  { title: "Minha Conta", url: "/my-account", icon: UserCircle, minPlan: "free" },
-  { title: "Suporte", url: "/support", icon: Headphones, minPlan: "free" },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, minPlan: "free", ownerOnly: false },
+  { title: "Agendamentos", url: "/appointments", icon: CalendarDays, minPlan: "free", ownerOnly: false },
+  { title: "Clientes Inativos", url: "/inactive-clients", icon: UserX, minPlan: "starter", ownerOnly: true },
+  { title: "Profissionais", url: "/professionals", icon: Users, minPlan: "free", ownerOnly: true },
+  { title: "Configurações", url: "/settings", icon: Settings, minPlan: "free", ownerOnly: true },
+  { title: "Minha Conta", url: "/my-account", icon: UserCircle, minPlan: "free", ownerOnly: true },
+  { title: "Suporte", url: "/support", icon: Headphones, minPlan: "free", ownerOnly: false },
 ];
 
 const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, professional: 2 };
 
 const DashboardSidebarContent = () => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { plan } = useSubscription();
   const navigate = useNavigate();
   const { setOpenMobile, isMobile } = useSidebar();
+  const [isProfessional, setIsProfessional] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_professional", { p_user_id: user.id }).then(({ data }) => {
+      setIsProfessional(!!data);
+    });
+  }, [user]);
 
   const userRank = PLAN_RANK[plan] ?? 0;
-  const navItems = allNavItems.filter((item) => userRank >= (PLAN_RANK[item.minPlan] ?? 0));
-
+  const navItems = allNavItems.filter((item) => {
+    if (userRank < (PLAN_RANK[item.minPlan] ?? 0)) return false;
+    if (item.ownerOnly && isProfessional) return false;
+    return true;
+  });
   const handleSignOut = async () => {
     if (isMobile) setOpenMobile(false);
     await signOut();
