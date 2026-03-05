@@ -46,9 +46,23 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
         ...d,
         openTime: first.openTime,
         closeTime: first.closeTime,
+        openTime2: first.openTime2,
+        closeTime2: first.closeTime2,
         isOpen: true,
       })),
     });
+  };
+
+  const hasLunchBreak = (day: DaySchedule) => !!day.openTime2;
+
+  const toggleLunchBreak = (index: number) => {
+    const day = data.businessHours[index];
+    if (hasLunchBreak(day)) {
+      updateDay(index, { openTime2: undefined, closeTime2: undefined });
+    } else {
+      updateDay(index, { openTime2: "13:00", closeTime2: day.closeTime || "18:00" });
+      updateDay(index, { closeTime: "12:00" });
+    }
   };
 
   return (
