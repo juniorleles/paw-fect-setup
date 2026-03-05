@@ -103,7 +103,7 @@ const Dashboard = () => {
       setLoadingConfig(false);
     };
     load();
-  }, [user]);
+  }, [ownerId]);
 
   const todayStr = now.toISOString().split("T")[0];
   const monthStart = format(startOfMonth(now), "yyyy-MM-dd");
