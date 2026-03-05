@@ -218,36 +218,36 @@ Deno.serve(async (req) => {
           );
         }
       } else {
+        // Create new auth user
+        const tempPassword = crypto.randomUUID() + "Aa1!";
+        const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
+          email: prof.email,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            is_professional: true,
+            owner_id: caller.id,
+            professional_name: prof.name,
+          },
+        });
 
-      // 1. Create auth user
-      const tempPassword = crypto.randomUUID() + "Aa1!";
-      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
-        email: prof.email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-          is_professional: true,
-          owner_id: caller.id,
-          professional_name: prof.name,
-        },
-      });
-
-      if (createErr) {
-        console.error("Error creating auth user:", createErr);
-        return new Response(
-          JSON.stringify({ error: `Erro ao criar conta: ${createErr.message}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        if (createErr) {
+          console.error("Error creating auth user:", createErr);
+          return new Response(
+            JSON.stringify({ error: `Erro ao criar conta: ${createErr.message}` }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        authUserId = newUser.user.id;
       }
 
       // 2. Link auth_user_id to professional record
       const { error: updateErr } = await adminClient
         .from("professionals")
-        .update({ auth_user_id: newUser.user.id })
+        .update({ auth_user_id: authUserId })
         .eq("id", professional_id);
 
       if (updateErr) {
-        await adminClient.auth.admin.deleteUser(newUser.user.id);
         console.error("Error linking professional:", updateErr);
         return new Response(
           JSON.stringify({ error: "Erro ao vincular acesso ao profissional" }),
@@ -284,7 +284,7 @@ Deno.serve(async (req) => {
         JSON.stringify({
           success: true,
           message: channelMsg,
-          auth_user_id: newUser.user.id,
+          auth_user_id: authUserId,
           magic_link: channels.length === 0 ? magicLinkUrl : undefined,
           channels: sendResults,
         }),
