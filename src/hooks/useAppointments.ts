@@ -20,13 +20,13 @@ export const useAppointments = () => {
 
   // Fetch total count for display purposes
   const fetchTotalCount = useCallback(async () => {
-    if (!user) return;
+    if (!ownerId) return;
     const { count } = await supabase
       .from("appointments")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
+      .eq("user_id", ownerId);
     setTotalCount(count);
-  }, [user]);
+  }, [ownerId]);
 
   // Fetch appointments from a date range
   const fetchDateRange = useCallback(async (fromDate: string, toDate?: string): Promise<Appointment[]> => {
