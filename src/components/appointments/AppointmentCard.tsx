@@ -62,6 +62,12 @@ export const STATUS_CONFIG: Record<
     bgClass: "border-l-destructive",
     icon: XCircle,
   },
+  no_show: {
+    label: "Faltou",
+    class: "bg-destructive/15 text-destructive border-destructive/30",
+    bgClass: "border-l-destructive",
+    icon: UserX,
+  },
 };
 
 interface Props {
