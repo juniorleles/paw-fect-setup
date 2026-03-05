@@ -436,7 +436,7 @@ Deno.serve(async (req) => {
           message: channels.length > 0
             ? `Convite reenviado via ${channels.join(" e ")} para ${prof.email}`
             : `Não foi possível reenviar automaticamente. Compartilhe o link manualmente.`,
-          magic_link: channels.length === 0 ? magicLinkUrl : undefined,
+          magic_link: channels.length === 0 ? safeInviteLink : undefined,
           channels: sendResults,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
