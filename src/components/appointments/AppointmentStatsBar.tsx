@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { CalendarDays, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Clock, UserX, CheckCircle2 } from "lucide-react";
 import type { Appointment } from "@/types/appointment";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -15,24 +15,26 @@ const AppointmentStatsBar = ({ appointments }: Props) => {
 
     let pending = 0;
     let confirmed = 0;
-    let overdue = 0;
+    let noShows = 0;
     let upcomingApt: Appointment | undefined;
 
     for (const a of active) {
       const pastTime = new Date(`${a.date}T${a.time}`) < now;
 
-      if (a.status === "completed" || a.status === "confirmed") {
+      if (a.status === "no_show") {
+        noShows++;
+      } else if (a.status === "completed" || a.status === "confirmed") {
         confirmed++;
         if (!pastTime && (!upcomingApt || a.time < upcomingApt.time)) upcomingApt = a;
       } else if (pastTime) {
-        overdue++;
+        noShows++; // overdue pending = potential no-show
       } else {
         pending++;
         if (!upcomingApt || a.time < upcomingApt.time) upcomingApt = a;
       }
     }
 
-    return { total: active.length, pending, confirmed, overdue, upcoming: upcomingApt };
+    return { total: active.length, pending, confirmed, noShows, upcoming: upcomingApt };
   }, [appointments]);
 
   return (
@@ -83,20 +85,20 @@ const AppointmentStatsBar = ({ appointments }: Props) => {
           <TooltipContent><p>Aguardando confirmação e ainda dentro do horário</p></TooltipContent>
         </Tooltip>
 
-        {stats.overdue > 0 ? (
+        {stats.noShows > 0 ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-3 bg-destructive/5 rounded-xl p-3 shadow-sm border border-destructive/20 cursor-default">
                 <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                  <UserX className="w-5 h-5 text-destructive" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-destructive leading-none">{stats.overdue}</p>
-                  <p className="text-xs text-muted-foreground">Atrasados</p>
+                  <p className="text-2xl font-bold text-destructive leading-none">{stats.noShows}</p>
+                  <p className="text-xs text-muted-foreground">Faltas</p>
                 </div>
               </div>
             </TooltipTrigger>
-            <TooltipContent><p>Horário já passou e não foram concluídos</p></TooltipContent>
+            <TooltipContent><p>Clientes que faltaram ou estão com horário ultrapassado</p></TooltipContent>
           </Tooltip>
         ) : (
           <Tooltip>

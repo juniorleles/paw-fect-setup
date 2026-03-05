@@ -7,7 +7,7 @@ export interface Appointment {
   service: string;
   date: string;
   time: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
+  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
   notes: string;
   created_at: string;
   updated_at: string;

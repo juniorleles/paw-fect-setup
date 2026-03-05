@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   User,
   Phone,
+  UserX,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -61,6 +62,12 @@ export const STATUS_CONFIG: Record<
     bgClass: "border-l-destructive",
     icon: XCircle,
   },
+  no_show: {
+    label: "Faltou",
+    class: "bg-destructive/15 text-destructive border-destructive/30",
+    bgClass: "border-l-destructive",
+    icon: UserX,
+  },
 };
 
 interface Props {
@@ -75,13 +82,14 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
   const statusInfo = STATUS_CONFIG[apt.status] ?? STATUS_CONFIG.pending;
   const now = new Date();
   const aptDateTime = new Date(`${apt.date}T${apt.time}`);
-  const isOverdue = aptDateTime < now && apt.status !== "cancelled" && apt.status !== "completed";
+  const isOverdue = aptDateTime < now && apt.status === "pending";
   const isUrgent =
     !isOverdue &&
     aptDateTime.getTime() - now.getTime() < 3600000 &&
     aptDateTime > now &&
     apt.status !== "cancelled" &&
-    apt.status !== "completed";
+    apt.status !== "completed" &&
+    apt.status !== "no_show";
 
   return (
     <div
@@ -95,7 +103,12 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
           <p className="text-xl font-bold leading-none">{apt.time.slice(0, 5)}</p>
           {isOverdue && (
             <span className="text-[10px] font-semibold text-destructive flex items-center gap-0.5 mt-0.5">
-              <AlertTriangle className="w-3 h-3" /> Atrasado
+              <AlertTriangle className="w-3 h-3" /> Faltou?
+            </span>
+          )}
+          {apt.status === "no_show" && !isOverdue && (
+            <span className="text-[10px] font-semibold text-destructive flex items-center gap-0.5 mt-0.5">
+              <UserX className="w-3 h-3" /> Faltou
             </span>
           )}
           {isUrgent && (
@@ -160,7 +173,7 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
 
       {/* Quick actions */}
       <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-        {apt.status === "pending" && (
+        {apt.status === "pending" && !isOverdue && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -169,6 +182,18 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Confirmar</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {isOverdue && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => onStatusChange(apt.id, "no_show")}>
+                  <UserX className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Marcar como falta</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
@@ -184,7 +209,7 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
             </Tooltip>
           </TooltipProvider>
         )}
-        {(apt.status === "cancelled" || apt.status === "completed") && (
+        {(apt.status === "cancelled" || apt.status === "completed" || apt.status === "no_show") && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
