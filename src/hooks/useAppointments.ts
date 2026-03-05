@@ -89,7 +89,7 @@ export const useAppointments = () => {
 
   // Load more (older) appointments
   const loadMore = useCallback(async () => {
-    if (!user || !oldestLoadedDate.current || loadingMore || !hasMore) return;
+    if (!ownerId || !oldestLoadedDate.current || loadingMore || !hasMore) return;
     setLoadingMore(true);
 
     const olderData = await fetchOlderPage(oldestLoadedDate.current);
@@ -114,14 +114,14 @@ export const useAppointments = () => {
         const { count } = await supabase
           .from("appointments")
           .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .lt("date", newOldest!);
         setHasMore((count ?? 0) > 0);
       }
     }
 
     setLoadingMore(false);
-  }, [user, loadingMore, hasMore, fetchOlderPage]);
+  }, [ownerId, loadingMore, hasMore, fetchOlderPage]);
 
   useEffect(() => {
     fetchInitial();
