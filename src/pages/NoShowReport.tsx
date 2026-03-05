@@ -313,7 +313,7 @@ const NoShowReport = () => {
                     </TableCell>
                     <TableCell>{record.time.slice(0, 5)}</TableCell>
                     <TableCell>{record.owner_name}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{record.pet_name}</TableCell>
+                    {isPetNiche && <TableCell className="hidden sm:table-cell">{record.pet_name}</TableCell>}
                     <TableCell className="hidden md:table-cell">{record.service}</TableCell>
                     <TableCell>{getStatusBadge(record)}</TableCell>
                   </TableRow>
