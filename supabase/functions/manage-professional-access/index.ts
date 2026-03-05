@@ -197,42 +197,57 @@ Deno.serve(async (req) => {
         (u) => u.email === prof.email
       );
 
+      let authUserId: string;
+
       if (existingUser) {
-        return new Response(
-          JSON.stringify({ error: "Este email já está associado a outra conta no sistema" }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+        // Reuse existing auth user (e.g. from a previous revoked access)
+        authUserId = existingUser.id;
 
-      // 1. Create auth user
-      const tempPassword = crypto.randomUUID() + "Aa1!";
-      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
-        email: prof.email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-          is_professional: true,
-          owner_id: caller.id,
-          professional_name: prof.name,
-        },
-      });
+        // Check if another professional is already linked to this auth user
+        const { data: linkedProf } = await adminClient
+          .from("professionals")
+          .select("id")
+          .eq("auth_user_id", existingUser.id)
+          .neq("id", professional_id)
+          .maybeSingle();
 
-      if (createErr) {
-        console.error("Error creating auth user:", createErr);
-        return new Response(
-          JSON.stringify({ error: `Erro ao criar conta: ${createErr.message}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        if (linkedProf) {
+          return new Response(
+            JSON.stringify({ error: "Este email já está associado a outro profissional no sistema" }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else {
+        // Create new auth user
+        const tempPassword = crypto.randomUUID() + "Aa1!";
+        const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
+          email: prof.email,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            is_professional: true,
+            owner_id: caller.id,
+            professional_name: prof.name,
+          },
+        });
+
+        if (createErr) {
+          console.error("Error creating auth user:", createErr);
+          return new Response(
+            JSON.stringify({ error: `Erro ao criar conta: ${createErr.message}` }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        authUserId = newUser.user.id;
       }
 
       // 2. Link auth_user_id to professional record
       const { error: updateErr } = await adminClient
         .from("professionals")
-        .update({ auth_user_id: newUser.user.id })
+        .update({ auth_user_id: authUserId })
         .eq("id", professional_id);
 
       if (updateErr) {
-        await adminClient.auth.admin.deleteUser(newUser.user.id);
         console.error("Error linking professional:", updateErr);
         return new Response(
           JSON.stringify({ error: "Erro ao vincular acesso ao profissional" }),
@@ -269,7 +284,7 @@ Deno.serve(async (req) => {
         JSON.stringify({
           success: true,
           message: channelMsg,
-          auth_user_id: newUser.user.id,
+          auth_user_id: authUserId,
           magic_link: channels.length === 0 ? magicLinkUrl : undefined,
           channels: sendResults,
         }),
