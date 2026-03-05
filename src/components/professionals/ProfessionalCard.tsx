@@ -115,7 +115,15 @@ const ProfessionalCard = ({ professional: p, onDelete, onRefresh }: Professional
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast({ title: "Link reenviado!", description: data.message });
+      if (data?.magic_link) {
+        await navigator.clipboard.writeText(data.magic_link);
+        toast({
+          title: "Link copiado!",
+          description: "Não foi possível reenviar automaticamente. O link foi copiado — compartilhe manualmente.",
+        });
+      } else {
+        toast({ title: "Link reenviado!", description: data.message });
+      }
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally {
