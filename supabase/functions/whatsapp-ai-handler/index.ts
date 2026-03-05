@@ -67,7 +67,7 @@ function buildOccupancyMap(
   slotInterval: number
 ): Map<string, number> {
   const occupancy = new Map<string, number>();
-  const dayApts = appointments.filter((a: any) => a.date === dateStr && a.status !== "cancelled");
+  const dayApts = appointments.filter((a: any) => a.date === dateStr && a.status !== "cancelled" && a.status !== "no_show");
 
   console.log(`[OCCUPANCY] Date: ${dateStr}, appointments: ${dayApts.length}, services config: ${services.map((s: any) => `${s.name}(${s.duration || '?'}min)`).join(', ')}`);
 
