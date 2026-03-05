@@ -4,9 +4,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Crown, RotateCcw, Info, MessageSquare, Gift } from "lucide-react";
+import { Crown, RotateCcw, Info, MessageSquare, Gift, HelpCircle, ChevronDown, Clock, UserCheck, Zap, CalendarCheck } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export interface CampaignMessages {
   winback_15?: string;
@@ -72,6 +73,78 @@ const StepCampaigns = ({ messages, onChange, isPro }: StepCampaignsProps) => {
 
   return (
     <div className="space-y-6">
+      {/* How it works */}
+      <Collapsible>
+        <Card className="border-muted">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="flex flex-row items-center gap-3 py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors">
+              <HelpCircle className="w-5 h-5 text-primary shrink-0" />
+              <CardTitle className="text-sm font-semibold flex-1 text-left">Como funcionam as campanhas automáticas?</CardTitle>
+              <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0 pb-4 px-4 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Clock className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Win-back automático</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      O sistema identifica clientes que não agendam há 15, 30 ou 60 dias e envia uma mensagem personalizada no WhatsApp convidando-os a voltar.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Gift className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Pós-atendimento (Upsell)</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      24h após um atendimento concluído, o cliente recebe uma mensagem sugerindo serviços complementares para aumentar o ticket médio.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Zap className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Variáveis dinâmicas</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Use variáveis como <code className="bg-muted px-1 rounded text-[10px]">{"{nome}"}</code>, <code className="bg-muted px-1 rounded text-[10px]">{"{servico}"}</code> e <code className="bg-muted px-1 rounded text-[10px]">{"{loja}"}</code> para que cada mensagem seja personalizada automaticamente com os dados do cliente.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <CalendarCheck className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Totalmente automático</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      As campanhas rodam automaticamente todos os dias. Você personaliza o texto aqui e o sistema cuida do envio, respeitando limites de segurança e horário comercial.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-muted/50 rounded-lg p-3 mt-2">
+                <p className="text-xs text-muted-foreground">
+                  💡 <strong>Dica:</strong> Deixe os campos vazios para usar as mensagens padrão otimizadas para barbearias. Personalize apenas se quiser dar seu toque especial!
+                </p>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Popover>
           <PopoverTrigger asChild>
