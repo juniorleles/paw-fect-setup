@@ -325,7 +325,7 @@ Deno.serve(async (req) => {
           success: true,
           message: channelMsg,
           auth_user_id: authUserId,
-          magic_link: channels.length === 0 ? magicLinkUrl : undefined,
+          magic_link: channels.length === 0 ? safeInviteLink : undefined,
           channels: sendResults,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
