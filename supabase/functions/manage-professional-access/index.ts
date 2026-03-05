@@ -53,6 +53,26 @@ async function sendWhatsApp(
   }
 }
 
+/** Wrap raw magic link in a safe app route to avoid link preview bots consuming OTP */
+function buildSafeInviteLink(rawMagicLink: string): string {
+  if (!rawMagicLink) return rawMagicLink;
+
+  try {
+    const rawUrl = new URL(rawMagicLink);
+    const redirectTo = rawUrl.searchParams.get("redirect_to");
+    if (!redirectTo) return rawMagicLink;
+
+    const appUrl = new URL(redirectTo);
+    appUrl.pathname = "/professional-login";
+    appUrl.search = "";
+    appUrl.searchParams.set("ml", rawMagicLink);
+
+    return appUrl.toString();
+  } catch {
+    return rawMagicLink;
+  }
+}
+
 /** Send invite link via WhatsApp and email */
 async function sendInviteNotifications(
   adminClient: any,
