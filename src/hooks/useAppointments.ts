@@ -50,11 +50,11 @@ export const useAppointments = () => {
 
   // Fetch older appointments (before the oldest loaded date)
   const fetchOlderPage = useCallback(async (beforeDate: string): Promise<Appointment[]> => {
-    if (!user) return [];
+    if (!ownerId) return [];
     const { data } = await supabase
       .from("appointments")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", ownerId)
       .lt("date", beforeDate)
       .order("date", { ascending: false })
       .order("time", { ascending: false })
@@ -62,7 +62,7 @@ export const useAppointments = () => {
 
     // Reverse to maintain ascending order
     return ((data as unknown as Appointment[]) ?? []).reverse();
-  }, [user]);
+  }, [ownerId]);
 
   // Initial load: today - INITIAL_PAST_DAYS → all future
   const fetchInitial = useCallback(async () => {
