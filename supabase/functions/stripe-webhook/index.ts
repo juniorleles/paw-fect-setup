@@ -94,6 +94,29 @@ serve(async (req) => {
           break;
         }
 
+        // Check for scheduled downgrade BEFORE upsert — apply Stripe price change
+        const { data: existingSub } = await supabase
+          .from("subscriptions")
+          .select("plan, next_plan, next_plan_effective_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (existingSub?.next_plan && existingSub?.next_plan_effective_at) {
+          const effectiveAt = new Date(existingSub.next_plan_effective_at);
+          if (new Date() >= effectiveAt) {
+            const targetPlan = existingSub.next_plan;
+            const newPriceId = getPriceMap(stripeKey)[targetPlan];
+            if (newPriceId) {
+              const currentItem = sub.items.data[0];
+              logStep("Applying Stripe downgrade", { from: existingSub.plan, to: targetPlan, newPriceId });
+              await stripe.subscriptions.update(sub.id, {
+                items: [{ id: currentItem.id, price: newPriceId }],
+                proration_behavior: "none",
+              });
+            }
+          }
+        }
+
         await upsertSubscription(supabase, userId, sub);
 
         // Record payment history
@@ -209,6 +232,15 @@ const PLAN_LIMITS: Record<string, { messagesLimit: number; appointmentsLimit: nu
   starter: { messagesLimit: 800, appointmentsLimit: -1 },      // Essencial
   professional: { messagesLimit: 1500, appointmentsLimit: -1 }, // Pro
 };
+
+// Price IDs for applying downgrades on Stripe — uses test or live based on key prefix
+function getPriceMap(stripeKey: string): Record<string, string> {
+  const isTest = stripeKey.startsWith("sk_test_") || stripeKey.startsWith("rk_test_");
+  return {
+    starter: isTest ? "price_1T6tafE3YGO6w5oC8iAWHVQB" : "price_1T4S0JE3YGO6w5oCBXFikz8v",
+    professional: isTest ? "price_1T6tcYE3YGO6w5oCZZ6rAitZ" : "price_1T4S1KE3YGO6w5oC23qcdMl3",
+  };
+}
 
 function detectPlanFromSubscription(sub: Stripe.Subscription): string {
   const priceId = sub.items?.data?.[0]?.price?.id;
