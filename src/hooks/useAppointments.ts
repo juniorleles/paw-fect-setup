@@ -66,7 +66,7 @@ export const useAppointments = () => {
 
   // Initial load: today - INITIAL_PAST_DAYS → all future
   const fetchInitial = useCallback(async () => {
-    if (!user) return;
+    if (!ownerId) return;
     setLoading(true);
 
     const startDate = format(subDays(new Date(), INITIAL_PAST_DAYS), "yyyy-MM-dd");
@@ -79,13 +79,13 @@ export const useAppointments = () => {
     const { count } = await supabase
       .from("appointments")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
+      .eq("user_id", ownerId)
       .lt("date", startDate);
     setHasMore((count ?? 0) > 0);
 
     await fetchTotalCount();
     setLoading(false);
-  }, [user, fetchDateRange, fetchTotalCount]);
+  }, [ownerId, fetchDateRange, fetchTotalCount]);
 
   // Load more (older) appointments
   const loadMore = useCallback(async () => {
