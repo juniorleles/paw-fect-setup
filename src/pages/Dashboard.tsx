@@ -227,7 +227,7 @@ const Dashboard = () => {
       <TrialBanner />
 
       {/* ─── WhatsApp Connection Banner ─── */}
-      {whatsappStatus !== "connected" && (
+      {whatsappStatus !== "connected" && ownerId === user?.id && (
         <Card className="border-none shadow-lg bg-gradient-to-r from-primary/15 via-primary/5 to-transparent overflow-hidden">
           <CardContent className="py-5 px-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
