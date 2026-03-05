@@ -219,7 +219,6 @@ const Settings = () => {
             messages={campaignMessages}
             onChange={setCampaignMessages}
             isPro={subscriptionPlan === "professional"}
-            niche={niche}
           />
         </TabsContent>
       </Tabs>
