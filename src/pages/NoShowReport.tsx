@@ -301,7 +301,7 @@ const NoShowReport = () => {
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={isPetNiche ? 6 : 5} className="text-center py-8 text-muted-foreground">
                     Nenhuma falta encontrada no período.
                   </TableCell>
                 </TableRow>
