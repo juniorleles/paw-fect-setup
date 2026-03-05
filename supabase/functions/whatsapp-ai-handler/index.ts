@@ -1975,11 +1975,14 @@ async function handleConfirmationResponse(
     return "Não encontrei nenhum agendamento próximo no seu nome. Deseja fazer um novo agendamento?";
   }
 
-  // Prioritize the appointment that had a reminder sent (confirmation_message_sent_at not null)
-  // and is still pending — this is the one the user is most likely responding to
-  const reminderAppt = customerAppts.find((a: any) =>
-    a.confirmation_message_sent_at && a.status === "pending"
-  );
+  // Prioritize the appointment whose reminder was sent MOST RECENTLY and is still pending
+  // This ensures that when multiple appointments have reminders, we confirm the right one
+  const pendingWithReminder = customerAppts
+    .filter((a: any) => a.confirmation_message_sent_at && a.status === "pending")
+    .sort((a: any, b: any) =>
+      new Date(b.confirmation_message_sent_at).getTime() - new Date(a.confirmation_message_sent_at).getTime()
+    );
+  const reminderAppt = pendingWithReminder[0] || null;
   const nextAppt = reminderAppt || customerAppts[0];
 
   if (isConfirm) {
