@@ -2913,7 +2913,8 @@ Deno.serve(async (req) => {
       .select("date, time, service, status, pet_name, owner_name, owner_phone")
       .eq("user_id", shopConfig.user_id)
       .gte("date", today)
-      .neq("status", "cancelled");
+      .neq("status", "cancelled")
+      .neq("status", "no_show");
 
     const isPetNiche = ["petshop", "veterinaria"].includes(shopConfig.niche || "petshop");
 
