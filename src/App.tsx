@@ -42,6 +42,7 @@ import Support from "./pages/Support";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
 import { useOnboardingStatus, OnboardingProvider } from "@/hooks/useOnboardingStatus";
 import { useTrialStatus } from "@/hooks/useTrialStatus";
 const queryClient = new QueryClient({
