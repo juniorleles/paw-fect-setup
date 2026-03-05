@@ -206,16 +206,35 @@ Deno.serve(async (req) => {
         // Check if another professional is already linked to this auth user
         const { data: linkedProf } = await adminClient
           .from("professionals")
-          .select("id")
+          .select("id, user_id")
           .eq("auth_user_id", existingUser.id)
           .neq("id", professional_id)
           .maybeSingle();
 
         if (linkedProf) {
-          return new Response(
-            JSON.stringify({ error: "Este email já está associado a outro profissional no sistema" }),
-            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          // Security: do not allow taking over a professional from another owner
+          if (linkedProf.user_id !== caller.id) {
+            return new Response(
+              JSON.stringify({ error: "Este email já está associado a outro profissional no sistema" }),
+              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+
+          // Same owner: transfer access to the current professional
+          const { error: detachErr } = await adminClient
+            .from("professionals")
+            .update({ auth_user_id: null })
+            .eq("auth_user_id", existingUser.id)
+            .eq("user_id", caller.id)
+            .neq("id", professional_id);
+
+          if (detachErr) {
+            console.error("Error transferring professional access:", detachErr);
+            return new Response(
+              JSON.stringify({ error: "Erro ao transferir acesso entre profissionais" }),
+              { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
         }
       } else {
         // Create new auth user
