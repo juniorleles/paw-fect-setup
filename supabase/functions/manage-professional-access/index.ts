@@ -98,23 +98,22 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Create auth user with a random password (login will be via Magic Link)
-      const tempPassword = crypto.randomUUID() + "Aa1!";
-      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
-        email: prof.email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-          is_professional: true,
-          owner_id: caller.id,
-          professional_name: prof.name,
-        },
-      });
+      // Create user via invite — this SENDS the invite email automatically
+      const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
+        prof.email,
+        {
+          data: {
+            is_professional: true,
+            owner_id: caller.id,
+            professional_name: prof.name,
+          },
+        }
+      );
 
-      if (createErr) {
-        console.error("Error creating auth user:", createErr);
+      if (inviteErr) {
+        console.error("Error inviting user:", inviteErr);
         return new Response(
-          JSON.stringify({ error: `Erro ao criar conta: ${createErr.message}` }),
+          JSON.stringify({ error: `Erro ao criar conta: ${inviteErr.message}` }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -122,12 +121,12 @@ Deno.serve(async (req) => {
       // Link auth_user_id to professional record
       const { error: updateErr } = await adminClient
         .from("professionals")
-        .update({ auth_user_id: newUser.user.id })
+        .update({ auth_user_id: inviteData.user.id })
         .eq("id", professional_id);
 
       if (updateErr) {
         // Rollback: delete the created auth user
-        await adminClient.auth.admin.deleteUser(newUser.user.id);
+        await adminClient.auth.admin.deleteUser(inviteData.user.id);
         console.error("Error linking professional:", updateErr);
         return new Response(
           JSON.stringify({ error: "Erro ao vincular acesso ao profissional" }),
@@ -135,21 +134,11 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Send Magic Link for first login
-      const { error: magicErr } = await adminClient.auth.admin.generateLink({
-        type: "magiclink",
-        email: prof.email,
-      });
-
-      if (magicErr) {
-        console.warn("Magic link generation failed (non-critical):", magicErr.message);
-      }
-
       return new Response(
         JSON.stringify({
           success: true,
-          message: `Acesso concedido! Um link de acesso será enviado para ${prof.email}`,
-          auth_user_id: newUser.user.id,
+          message: `Acesso concedido! Um convite foi enviado para ${prof.email}`,
+          auth_user_id: inviteData.user.id,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -221,7 +210,7 @@ Deno.serve(async (req) => {
 
       const { data: prof } = await adminClient
         .from("professionals")
-        .select("email, auth_user_id")
+        .select("email, auth_user_id, name, user_id")
         .eq("id", professional_id)
         .eq("user_id", caller.id)
         .maybeSingle();
@@ -233,20 +222,45 @@ Deno.serve(async (req) => {
         );
       }
 
-      const { error: magicErr } = await adminClient.auth.admin.generateLink({
-        type: "magiclink",
-        email: prof.email,
-      });
-
-      if (magicErr) {
+      // Delete existing auth user and re-invite to trigger a new email
+      const { error: deleteErr } = await adminClient.auth.admin.deleteUser(prof.auth_user_id);
+      if (deleteErr) {
+        console.error("Error deleting user for re-invite:", deleteErr);
         return new Response(
-          JSON.stringify({ error: `Erro ao enviar link: ${magicErr.message}` }),
+          JSON.stringify({ error: `Erro ao reenviar: ${deleteErr.message}` }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
+        prof.email,
+        {
+          data: {
+            is_professional: true,
+            owner_id: caller.id,
+            professional_name: prof.name,
+          },
+        }
+      );
+
+      if (inviteErr) {
+        console.error("Error re-inviting user:", inviteErr);
+        // Clear the stale auth_user_id
+        await adminClient.from("professionals").update({ auth_user_id: null }).eq("id", professional_id);
+        return new Response(
+          JSON.stringify({ error: `Erro ao reenviar convite: ${inviteErr.message}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Update with new auth_user_id
+      await adminClient
+        .from("professionals")
+        .update({ auth_user_id: inviteData.user.id })
+        .eq("id", professional_id);
+
       return new Response(
-        JSON.stringify({ success: true, message: `Link de acesso reenviado para ${prof.email}` }),
+        JSON.stringify({ success: true, message: `Convite reenviado para ${prof.email}` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
