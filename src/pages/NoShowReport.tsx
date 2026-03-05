@@ -287,7 +287,7 @@ const NoShowReport = () => {
                 <TableHead>Data</TableHead>
                 <TableHead>Horário</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead className="hidden sm:table-cell">Pet</TableHead>
+                {isPetNiche && <TableHead className="hidden sm:table-cell">Pet</TableHead>}
                 <TableHead className="hidden md:table-cell">Serviço</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
