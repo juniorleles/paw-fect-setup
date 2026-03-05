@@ -173,7 +173,7 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
 
       {/* Quick actions */}
       <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-        {apt.status === "pending" && (
+        {apt.status === "pending" && !isOverdue && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -182,6 +182,18 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Confirmar</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {isOverdue && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => onStatusChange(apt.id, "no_show")}>
+                  <UserX className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Marcar como falta</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
