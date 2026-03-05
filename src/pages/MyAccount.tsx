@@ -704,8 +704,7 @@ const MyAccount = () => {
                   "Lista de inativos",
                   "Campanha de retorno",
                   "Recuperação de faltas",
-                  "Upsell automático",
-                  "Relatório financeiro",
+                   "Relatório financeiro",
                   "Suporte prioritário",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">

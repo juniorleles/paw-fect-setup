@@ -159,7 +159,6 @@ const PricingSection = () => (
                   "Lista automática de clientes inativos",
                   "Campanha automática de retorno de clientes",
                   "Recuperação automática de faltas",
-                  "Upsell automático de serviços",
                   "Relatório de faturamento estimado",
                   "Prioridade no suporte",
                 ].map((f) => (
