@@ -34,14 +34,25 @@ const allNavItems = [
 const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, professional: 2 };
 
 const DashboardSidebarContent = () => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { plan } = useSubscription();
   const navigate = useNavigate();
   const { setOpenMobile, isMobile } = useSidebar();
+  const [isProfessional, setIsProfessional] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_professional", { p_user_id: user.id }).then(({ data }) => {
+      setIsProfessional(!!data);
+    });
+  }, [user]);
 
   const userRank = PLAN_RANK[plan] ?? 0;
-  const navItems = allNavItems.filter((item) => userRank >= (PLAN_RANK[item.minPlan] ?? 0));
-
+  const navItems = allNavItems.filter((item) => {
+    if (userRank < (PLAN_RANK[item.minPlan] ?? 0)) return false;
+    if (item.ownerOnly && isProfessional) return false;
+    return true;
+  });
   const handleSignOut = async () => {
     if (isMobile) setOpenMobile(false);
     await signOut();
