@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
 
       const { data: prof } = await adminClient
         .from("professionals")
-        .select("email, auth_user_id")
+        .select("email, auth_user_id, name, user_id")
         .eq("id", professional_id)
         .eq("user_id", caller.id)
         .maybeSingle();
@@ -222,20 +222,45 @@ Deno.serve(async (req) => {
         );
       }
 
-      const { error: magicErr } = await adminClient.auth.admin.generateLink({
-        type: "magiclink",
-        email: prof.email,
-      });
-
-      if (magicErr) {
+      // Delete existing auth user and re-invite to trigger a new email
+      const { error: deleteErr } = await adminClient.auth.admin.deleteUser(prof.auth_user_id);
+      if (deleteErr) {
+        console.error("Error deleting user for re-invite:", deleteErr);
         return new Response(
-          JSON.stringify({ error: `Erro ao enviar link: ${magicErr.message}` }),
+          JSON.stringify({ error: `Erro ao reenviar: ${deleteErr.message}` }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
+        prof.email,
+        {
+          data: {
+            is_professional: true,
+            owner_id: caller.id,
+            professional_name: prof.name,
+          },
+        }
+      );
+
+      if (inviteErr) {
+        console.error("Error re-inviting user:", inviteErr);
+        // Clear the stale auth_user_id
+        await adminClient.from("professionals").update({ auth_user_id: null }).eq("id", professional_id);
+        return new Response(
+          JSON.stringify({ error: `Erro ao reenviar convite: ${inviteErr.message}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Update with new auth_user_id
+      await adminClient
+        .from("professionals")
+        .update({ auth_user_id: inviteData.user.id })
+        .eq("id", professional_id);
+
       return new Response(
-        JSON.stringify({ success: true, message: `Link de acesso reenviado para ${prof.email}` }),
+        JSON.stringify({ success: true, message: `Convite reenviado para ${prof.email}` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
