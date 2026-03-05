@@ -82,13 +82,14 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
   const statusInfo = STATUS_CONFIG[apt.status] ?? STATUS_CONFIG.pending;
   const now = new Date();
   const aptDateTime = new Date(`${apt.date}T${apt.time}`);
-  const isOverdue = aptDateTime < now && apt.status !== "cancelled" && apt.status !== "completed";
+  const isOverdue = aptDateTime < now && apt.status === "pending";
   const isUrgent =
     !isOverdue &&
     aptDateTime.getTime() - now.getTime() < 3600000 &&
     aptDateTime > now &&
     apt.status !== "cancelled" &&
-    apt.status !== "completed";
+    apt.status !== "completed" &&
+    apt.status !== "no_show";
 
   return (
     <div
