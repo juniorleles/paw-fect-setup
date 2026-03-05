@@ -351,6 +351,11 @@ Deno.serve(async (req) => {
           console.log(`Skipping 3h reminder for appt ${appt.id} (Free plan)`);
           continue;
         }
+      // Skip 3h reminder if 24h reminder was already sent (avoid duplicate)
+        if (appt.reminder_24h_sent) {
+          console.log(`Skipping 3h reminder for appt ${appt.id} — 24h reminder already sent`);
+          continue;
+        }
         const config = await getConfig(appt.user_id);
         if (!config || config.whatsapp_status !== "connected" || !appt.owner_phone) continue;
 
