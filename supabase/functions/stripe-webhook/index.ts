@@ -105,7 +105,7 @@ serve(async (req) => {
           const effectiveAt = new Date(existingSub.next_plan_effective_at);
           if (new Date() >= effectiveAt) {
             const targetPlan = existingSub.next_plan;
-            const newPriceId = PRICE_MAP[targetPlan];
+            const newPriceId = getPriceMap(stripeKey)[targetPlan];
             if (newPriceId) {
               const currentItem = sub.items.data[0];
               logStep("Applying Stripe downgrade", { from: existingSub.plan, to: targetPlan, newPriceId });
