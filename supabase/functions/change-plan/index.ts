@@ -194,30 +194,9 @@ serve(async (req) => {
         });
       }
 
-      // action === "confirm" — schedule downgrade
-      logStep("Scheduling downgrade via Stripe");
-
-      // Use Stripe's subscription schedule or update at period end
-      await stripe.subscriptions.update(stripeSub.id, {
-        items: [
-          { id: currentItem.id, price: newPriceId },
-        ],
-        proration_behavior: "none",
-        billing_cycle_anchor: "unchanged",
-      });
-
-      // Actually, Stripe doesn't natively support "change at period end" for item swaps.
-      // The best approach: schedule the change using our DB and apply it via webhook on renewal.
-      // Revert the Stripe change and use DB-based scheduling instead.
-      
-      // Revert the Stripe subscription to current price
-      const currentPriceId = isTestMode ? PRICE_MAP[currentSub.plan].test : PRICE_MAP[currentSub.plan].live;
-      await stripe.subscriptions.update(stripeSub.id, {
-        items: [
-          { id: stripeSub.items.data[0].id, price: currentPriceId },
-        ],
-        proration_behavior: "none",
-      });
+      // action === "confirm" — schedule downgrade (DB-only, no Stripe changes)
+      // Stripe price will be updated by the webhook when the cycle renews
+      logStep("Scheduling downgrade (DB-only)");
 
       const periodEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
 
