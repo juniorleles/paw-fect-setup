@@ -104,7 +104,9 @@ const InactiveClients = () => {
   };
 
   const handleSent = (count: number) => {
-    setCampaignsThisMonth((c) => c + 1);
+    if (count > 0) {
+      setCampaignsThisMonth((c) => c + 1);
+    }
     setSelectedPhones(new Set());
   };
 

@@ -83,10 +83,13 @@ const SendMessageModal = ({ open, onOpenChange, clients, onSent }: SendMessageMo
       const sent = data?.sent ?? clients.length;
       const failed = data?.failed ?? 0;
 
-      if (failed > 0) {
+      if (failed > 0 && sent > 0) {
         toast.warning(`${sent} mensagens enviadas, ${failed} falharam.`);
-      } else {
+      } else if (sent > 0) {
         toast.success(`${sent} mensagem(ns) enviada(s) com sucesso!`);
+      } else {
+        toast.error("Nenhuma mensagem foi entregue. Verifique se o número possui WhatsApp ativo.");
+        return;
       }
 
       onSent(sent);
