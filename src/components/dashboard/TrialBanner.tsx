@@ -1,10 +1,14 @@
+import { useEffect, useState } from "react";
 import { useTrialStatus } from "@/hooks/useTrialStatus";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Crown, XCircle, MessageSquare, CalendarDays } from "lucide-react";
 
 const TrialBanner = () => {
+  const { user } = useAuth();
   const {
     phase, loading,
     appointmentsUsed, appointmentsLimit,
@@ -12,8 +16,17 @@ const TrialBanner = () => {
     appointmentsPercent, messagesPercent,
   } = useTrialStatus();
   const navigate = useNavigate();
+  const [isProfessional, setIsProfessional] = useState<boolean | null>(null);
 
-  if (loading) return null;
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_professional", { p_user_id: user.id }).then(({ data }) => {
+      setIsProfessional(!!data);
+    });
+  }, [user]);
+
+  if (loading || isProfessional === null) return null;
+  if (isProfessional) return null;
 
   // Blocked — quota exhausted
   if (phase === "blocked") {
