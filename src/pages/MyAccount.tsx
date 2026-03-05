@@ -598,7 +598,7 @@ const MyAccount = () => {
             </p>
 
             {/* Upgrade incentive: Essencial → Pro at 80%+ */}
-            {currentPlan === "starter" && usagePercent >= 80 && (
+            {currentPlan === "starter" && usagePercent >= 80 && usagePercent < 100 && (
               <div className="mt-3 rounded-lg border border-accent/30 bg-gradient-to-r from-accent/5 to-primary/5 p-3 sm:p-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
