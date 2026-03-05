@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Appointments from "./pages/Appointments";
 import Professionals from "./pages/Professionals";
 import InactiveClients from "./pages/InactiveClients";
+import NoShowReport from "./pages/NoShowReport";
 
 import MyAccount from "./pages/MyAccount";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
