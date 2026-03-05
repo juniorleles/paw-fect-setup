@@ -121,17 +121,28 @@ function computeAvailableSlots(
     if (!daySchedule || !daySchedule.isOpen) continue;
     console.log(`[AVAILABILITY] ${weekday} ${dateStr}: openTime=${daySchedule.openTime}, closeTime=${daySchedule.closeTime}, d=${d}`);
 
-    const [openH, openM] = daySchedule.openTime.split(":").map(Number);
-    const [closeH, closeM] = daySchedule.closeTime.split(":").map(Number);
+    // Build time ranges (supports lunch break with two shifts)
+    const timeRanges: Array<{ openH: number; openM: number; closeH: number; closeM: number }> = [];
+    {
+      const [oH, oM] = daySchedule.openTime.split(":").map(Number);
+      const [cH, cM] = daySchedule.closeTime.split(":").map(Number);
+      timeRanges.push({ openH: oH, openM: oM, closeH: cH, closeM: cM });
+
+      if (daySchedule.openTime2 && daySchedule.closeTime2) {
+        const [oH2, oM2] = daySchedule.openTime2.split(":").map(Number);
+        const [cH2, cM2] = daySchedule.closeTime2.split(":").map(Number);
+        timeRanges.push({ openH: oH2, openM: oM2, closeH: cH2, closeM: cM2 });
+      }
+    }
 
     // Build occupancy map considering service durations
     const occupancy = buildOccupancyMap(dateStr, appointments, services, slotInterval);
 
-    // Generate all slot times for this day
+    // Generate all slot times for this day (across all shifts)
     const allDaySlots: string[] = [];
-    {
-      let sh = openH, sm = openM;
-      while (sh < closeH || (sh === closeH && sm < closeM)) {
+    for (const range of timeRanges) {
+      let sh = range.openH, sm = range.openM;
+      while (sh < range.closeH || (sh === range.closeH && sm < range.closeM)) {
         allDaySlots.push(`${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}`);
         sm += slotInterval;
         if (sm >= 60) { sh += Math.floor(sm / 60); sm = sm % 60; }

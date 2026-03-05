@@ -111,38 +111,73 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
         {data.businessHours.map((day, i) => (
           <div
             key={day.day}
-            className={`flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-3 rounded-xl transition-colors ${
+            className={`p-3 rounded-xl transition-colors space-y-2 ${
               day.isOpen ? "bg-secondary" : "bg-muted/50"
             }`}
           >
-            <Switch
-              checked={day.isOpen}
-              onCheckedChange={(checked) => updateDay(i, { isOpen: checked })}
-            />
-            <span className={`font-semibold text-sm min-w-[36px] sm:min-w-[100px] ${!day.isOpen ? "text-muted-foreground" : ""}`}>
-              <span className="sm:hidden">{DAY_ABBR[day.day] ?? day.day}</span>
-              <span className="hidden sm:inline">{day.day}</span>
-            </span>
-            {day.isOpen ? (
-              <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
-                <select
-                  value={day.openTime}
-                  onChange={(e) => updateDay(i, { openTime: e.target.value })}
-                  className="h-9 rounded-md border border-input bg-background px-1 sm:px-2 text-xs sm:text-sm w-[68px] sm:w-auto"
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
+              <Switch
+                checked={day.isOpen}
+                onCheckedChange={(checked) => updateDay(i, { isOpen: checked })}
+              />
+              <span className={`font-semibold text-sm min-w-[36px] sm:min-w-[100px] ${!day.isOpen ? "text-muted-foreground" : ""}`}>
+                <span className="sm:hidden">{DAY_ABBR[day.day] ?? day.day}</span>
+                <span className="hidden sm:inline">{day.day}</span>
+              </span>
+              {day.isOpen ? (
+                <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
+                  <select
+                    value={day.openTime}
+                    onChange={(e) => updateDay(i, { openTime: e.target.value })}
+                    className="h-9 rounded-md border border-input bg-background px-1 sm:px-2 text-xs sm:text-sm w-[68px] sm:w-auto"
+                  >
+                    {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <span className="text-muted-foreground text-xs sm:text-sm">às</span>
+                  <select
+                    value={day.closeTime}
+                    onChange={(e) => updateDay(i, { closeTime: e.target.value })}
+                    className="h-9 rounded-md border border-input bg-background px-1 sm:px-2 text-xs sm:text-sm w-[68px] sm:w-auto"
+                  >
+                    {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              ) : (
+                <span className="ml-auto text-sm text-muted-foreground italic">Fechado</span>
+              )}
+            </div>
+
+            {/* Lunch break / second shift */}
+            {day.isOpen && (
+              <div className="ml-8 sm:ml-12 space-y-2">
+                <label
+                  className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => toggleLunchBreak(i)}
                 >
-                  {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <span className="text-muted-foreground text-xs sm:text-sm">às</span>
-                <select
-                  value={day.closeTime}
-                  onChange={(e) => updateDay(i, { closeTime: e.target.value })}
-                  className="h-9 rounded-md border border-input bg-background px-1 sm:px-2 text-xs sm:text-sm w-[68px] sm:w-auto"
-                >
-                  {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                  <Checkbox checked={hasLunchBreak(day)} className="h-3.5 w-3.5" />
+                  <Coffee className="w-3.5 h-3.5" />
+                  <span>Intervalo (almoço)</span>
+                </label>
+                {hasLunchBreak(day) && (
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                    <select
+                      value={day.openTime2 || "13:00"}
+                      onChange={(e) => updateDay(i, { openTime2: e.target.value })}
+                      className="h-8 rounded-md border border-input bg-background px-1 sm:px-2 text-xs w-[68px] sm:w-auto"
+                    >
+                      {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <span className="text-muted-foreground text-xs">às</span>
+                    <select
+                      value={day.closeTime2 || "18:00"}
+                      onChange={(e) => updateDay(i, { closeTime2: e.target.value })}
+                      className="h-8 rounded-md border border-input bg-background px-1 sm:px-2 text-xs w-[68px] sm:w-auto"
+                    >
+                      {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
-            ) : (
-              <span className="ml-auto text-sm text-muted-foreground italic">Fechado</span>
             )}
           </div>
         ))}
