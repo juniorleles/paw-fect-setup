@@ -957,7 +957,7 @@ const MyAccount = () => {
                 {planChangePreview?.type === "upgrade" ? (
                   <>
                     <p>
-                      Você pagará <strong className="text-foreground">R$ {planChangePreview?.prorationAmount?.toFixed(2)}</strong> hoje.
+                      Você pagará <strong className="text-foreground">R$ {planChangePreview?.prorationAmount?.toFixed(2)}</strong> hoje (proporcional aos dias restantes).
                     </p>
                     <p>
                       O plano <strong className="text-foreground">{planChangePreview?.targetPlan === "professional" ? "Pro" : "Essencial"}</strong> será ativado imediatamente.
@@ -967,14 +967,46 @@ const MyAccount = () => {
                     </p>
                   </>
                 ) : (
-                  <>
-                    <p>
-                      Plano será alterado para <strong className="text-foreground">{planChangePreview?.targetPlan === "starter" ? "Essencial" : "Pro"}</strong> na próxima cobrança.
-                    </p>
-                    <p>
-                      Recursos atuais até <strong className="text-foreground">{planChangePreview?.effectiveAt ? format(new Date(planChangePreview.effectiveAt), "dd/MM/yyyy") : ""}</strong>.
-                    </p>
-                  </>
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Plano atual</span>
+                        <span className="font-semibold text-foreground">{planChangePreview?.currentPlan === "professional" ? "Pro" : "Essencial"} — R$ {planChangePreview?.currentPrice}/mês</span>
+                      </div>
+                      <div className="border-t border-border" />
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Novo plano</span>
+                        <span className="font-semibold text-foreground">{planChangePreview?.targetPlan === "starter" ? "Essencial" : "Pro"} — R$ {planChangePreview?.targetPrice}/mês</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 space-y-1.5">
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                        <CalendarCheck className="w-4 h-4 text-accent" />
+                        Sem cobrança imediata
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Você continua com todos os recursos do plano {planChangePreview?.currentPlan === "professional" ? "Pro" : "Essencial"} até <strong className="text-foreground">{planChangePreview?.effectiveAt ? format(new Date(planChangePreview.effectiveAt), "dd/MM/yyyy") : ""}</strong>.
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Após essa data, sua próxima cobrança será de <strong className="text-foreground">R$ {planChangePreview?.targetPrice}/mês</strong>.
+                      </p>
+                    </div>
+
+                    {planChangePreview?.targetPlan === "starter" && (
+                      <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+                        <p className="text-xs font-semibold text-destructive mb-1.5">Você perderá acesso a:</p>
+                        <ul className="space-y-1 text-xs text-muted-foreground">
+                          {["Campanha de retorno automática", "Upsell pós-atendimento", "Relatório financeiro", "Suporte prioritário", "700 mensagens/mês a menos"].map((item) => (
+                            <li key={item} className="flex items-center gap-1.5">
+                              <XCircle className="w-3 h-3 text-destructive flex-shrink-0" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </AlertDialogDescription>
