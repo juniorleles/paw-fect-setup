@@ -4,9 +4,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Crown, RotateCcw, Info, MessageSquare, Gift } from "lucide-react";
+import { Crown, RotateCcw, Info, MessageSquare, Gift, HelpCircle, ChevronDown, Clock, UserCheck, Zap, CalendarCheck } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export interface CampaignMessages {
   winback_15?: string;
