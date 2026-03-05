@@ -85,20 +85,20 @@ const AppointmentStatsBar = ({ appointments }: Props) => {
           <TooltipContent><p>Aguardando confirmação e ainda dentro do horário</p></TooltipContent>
         </Tooltip>
 
-        {stats.overdue > 0 ? (
+        {stats.noShows > 0 ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-3 bg-destructive/5 rounded-xl p-3 shadow-sm border border-destructive/20 cursor-default">
                 <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                  <UserX className="w-5 h-5 text-destructive" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-destructive leading-none">{stats.overdue}</p>
-                  <p className="text-xs text-muted-foreground">Atrasados</p>
+                  <p className="text-2xl font-bold text-destructive leading-none">{stats.noShows}</p>
+                  <p className="text-xs text-muted-foreground">Faltas</p>
                 </div>
               </div>
             </TooltipTrigger>
-            <TooltipContent><p>Horário já passou e não foram concluídos</p></TooltipContent>
+            <TooltipContent><p>Clientes que faltaram ou estão com horário ultrapassado</p></TooltipContent>
           </Tooltip>
         ) : (
           <Tooltip>
