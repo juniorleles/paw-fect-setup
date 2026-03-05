@@ -26,6 +26,13 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
 
     try {
+      // Check if user is a professional — they skip onboarding
+      const { data: isProfessional } = await supabase.rpc("is_professional", { p_user_id: userId });
+      if (isProfessional) {
+        setCompleted(true);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("pet_shop_configs")
         .select("activated, updated_at")
