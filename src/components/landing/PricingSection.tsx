@@ -158,6 +158,7 @@ const PricingSection = () => (
                   "Botão Confirmar / Reagendar",
                   "Lista automática de clientes inativos",
                   "Campanha automática de retorno de clientes",
+                  "Mensagem de upsell pós-atendimento",
                   "Recuperação automática de faltas",
                   "Relatório de faturamento estimado",
                   "Prioridade no suporte",

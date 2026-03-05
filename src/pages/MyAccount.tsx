@@ -755,6 +755,7 @@ const MyAccount = () => {
                   "Confirmar / Reagendar",
                   "Lista de inativos",
                   "Campanha de retorno",
+                  "Upsell pós-atendimento",
                   "Recuperação de faltas",
                    "Relatório financeiro",
                   "Suporte prioritário",
