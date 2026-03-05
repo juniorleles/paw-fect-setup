@@ -65,11 +65,11 @@ const Dashboard = () => {
   // Load config
   useEffect(() => {
     const load = async () => {
-      if (!user) return;
+      if (!ownerId) return;
       const { data: configs } = await supabase
         .from("pet_shop_configs")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", ownerId)
         .limit(1);
 
       if (configs && configs.length > 0) {
