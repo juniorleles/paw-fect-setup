@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOwnerId } from "@/hooks/useOwnerId";
 import type { Appointment } from "@/types/appointment";
 import { subDays, format } from "date-fns";
 
@@ -9,6 +10,7 @@ const INITIAL_PAST_DAYS = 7;
 
 export const useAppointments = () => {
   const { user } = useAuth();
+  const { ownerId } = useOwnerId();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
