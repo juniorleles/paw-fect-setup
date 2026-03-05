@@ -121,7 +121,10 @@ Deno.serve(async (req) => {
         .replace(/\{\{ultimo_servico\}\}/gi, lastService || "")
         .replace(/\{\{dias_sem_voltar\}\}/gi, String(daysInactive || ""));
 
-      const formattedPhone = phone.replace(/\D/g, "");
+      let formattedPhone = phone.replace(/\D/g, "");
+      if (!formattedPhone.startsWith("55")) {
+        formattedPhone = "55" + formattedPhone;
+      }
 
       try {
         const evoResponse = await fetch(
