@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOwnerId } from "@/hooks/useOwnerId";
 import type { Appointment } from "@/types/appointment";
 import { subDays, format } from "date-fns";
 
@@ -9,6 +10,7 @@ const INITIAL_PAST_DAYS = 7;
 
 export const useAppointments = () => {
   const { user } = useAuth();
+  const { ownerId } = useOwnerId();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -18,21 +20,21 @@ export const useAppointments = () => {
 
   // Fetch total count for display purposes
   const fetchTotalCount = useCallback(async () => {
-    if (!user) return;
+    if (!ownerId) return;
     const { count } = await supabase
       .from("appointments")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
+      .eq("user_id", ownerId);
     setTotalCount(count);
-  }, [user]);
+  }, [ownerId]);
 
   // Fetch appointments from a date range
   const fetchDateRange = useCallback(async (fromDate: string, toDate?: string): Promise<Appointment[]> => {
-    if (!user) return [];
+    if (!ownerId) return [];
     let query = supabase
       .from("appointments")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", ownerId)
       .gte("date", fromDate)
       .order("date", { ascending: true })
       .order("time", { ascending: true })
@@ -44,15 +46,15 @@ export const useAppointments = () => {
 
     const { data } = await query;
     return (data as unknown as Appointment[]) ?? [];
-  }, [user]);
+  }, [ownerId]);
 
   // Fetch older appointments (before the oldest loaded date)
   const fetchOlderPage = useCallback(async (beforeDate: string): Promise<Appointment[]> => {
-    if (!user) return [];
+    if (!ownerId) return [];
     const { data } = await supabase
       .from("appointments")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", ownerId)
       .lt("date", beforeDate)
       .order("date", { ascending: false })
       .order("time", { ascending: false })
@@ -60,11 +62,11 @@ export const useAppointments = () => {
 
     // Reverse to maintain ascending order
     return ((data as unknown as Appointment[]) ?? []).reverse();
-  }, [user]);
+  }, [ownerId]);
 
   // Initial load: today - INITIAL_PAST_DAYS → all future
   const fetchInitial = useCallback(async () => {
-    if (!user) return;
+    if (!ownerId) return;
     setLoading(true);
 
     const startDate = format(subDays(new Date(), INITIAL_PAST_DAYS), "yyyy-MM-dd");
@@ -77,17 +79,17 @@ export const useAppointments = () => {
     const { count } = await supabase
       .from("appointments")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
+      .eq("user_id", ownerId)
       .lt("date", startDate);
     setHasMore((count ?? 0) > 0);
 
     await fetchTotalCount();
     setLoading(false);
-  }, [user, fetchDateRange, fetchTotalCount]);
+  }, [ownerId, fetchDateRange, fetchTotalCount]);
 
   // Load more (older) appointments
   const loadMore = useCallback(async () => {
-    if (!user || !oldestLoadedDate.current || loadingMore || !hasMore) return;
+    if (!ownerId || !oldestLoadedDate.current || loadingMore || !hasMore) return;
     setLoadingMore(true);
 
     const olderData = await fetchOlderPage(oldestLoadedDate.current);
@@ -112,14 +114,14 @@ export const useAppointments = () => {
         const { count } = await supabase
           .from("appointments")
           .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .lt("date", newOldest!);
         setHasMore((count ?? 0) > 0);
       }
     }
 
     setLoadingMore(false);
-  }, [user, loadingMore, hasMore, fetchOlderPage]);
+  }, [ownerId, loadingMore, hasMore, fetchOlderPage]);
 
   useEffect(() => {
     fetchInitial();

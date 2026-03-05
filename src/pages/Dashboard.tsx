@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
+import { useOwnerId } from "@/hooks/useOwnerId";
 import { supabase } from "@/integrations/supabase/client";
 import { OnboardingData, INITIAL_DATA } from "@/types/onboarding";
 import { useAppointments } from "@/hooks/useAppointments";
@@ -41,6 +42,7 @@ import WinbackMetricsCard from "@/components/dashboard/WinbackMetricsCard";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { ownerId } = useOwnerId();
   const navigate = useNavigate();
   const whatsappStatus = useWhatsAppStatus();
   const { status: subStatus, trialEndAt, plan: currentPlan } = useSubscription();
@@ -63,11 +65,11 @@ const Dashboard = () => {
   // Load config
   useEffect(() => {
     const load = async () => {
-      if (!user) return;
+      if (!ownerId) return;
       const { data: configs } = await supabase
         .from("pet_shop_configs")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", ownerId)
         .limit(1);
 
       if (configs && configs.length > 0) {
@@ -92,16 +94,16 @@ const Dashboard = () => {
         const { data: sub } = await supabase
           .from("subscriptions")
           .select("id")
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .maybeSingle();
         if (!sub) {
-          await supabase.from("subscriptions").insert({ user_id: user.id, status: "active" });
+          await supabase.from("subscriptions").insert({ user_id: ownerId, status: "active" });
         }
       }
       setLoadingConfig(false);
     };
     load();
-  }, [user]);
+  }, [ownerId]);
 
   const todayStr = now.toISOString().split("T")[0];
   const monthStart = format(startOfMonth(now), "yyyy-MM-dd");
@@ -176,19 +178,19 @@ const Dashboard = () => {
   const [conversationsMonth, setConversationsMonth] = useState(0);
   const [totalMessagesMonth, setTotalMessagesMonth] = useState(0);
   useEffect(() => {
-    if (!user) return;
+    if (!ownerId) return;
     const fetchConvos = async () => {
       const [convoRes, msgCountRes] = await Promise.all([
         supabase
           .from("conversation_messages")
           .select("phone")
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .gte("created_at", `${monthStart}T00:00:00`)
           .lte("created_at", `${monthEnd}T23:59:59`),
         supabase
           .from("conversation_messages")
           .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
+          .eq("user_id", ownerId)
           .gte("created_at", `${monthStart}T00:00:00`)
           .lte("created_at", `${monthEnd}T23:59:59`),
       ]);
@@ -197,7 +199,7 @@ const Dashboard = () => {
       setTotalMessagesMonth(msgCountRes.count ?? 0);
     };
     fetchConvos();
-  }, [user, monthStart, monthEnd]);
+  }, [ownerId, monthStart, monthEnd]);
 
   // Plan limit based on actual plan
   const planKey = (currentPlan === "professional" ? "professional" : "starter") as keyof typeof STRIPE_PLANS;
