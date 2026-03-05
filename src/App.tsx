@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,6 +42,7 @@ import Support from "./pages/Support";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
 import { useOnboardingStatus, OnboardingProvider } from "@/hooks/useOnboardingStatus";
 import { useTrialStatus } from "@/hooks/useTrialStatus";
 const queryClient = new QueryClient({
@@ -79,16 +81,31 @@ const OnboardingGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
   const { status, loading } = useSubscription();
   const { phase, showUpgradeRequired, loading: trialLoading } = useTrialStatus();
+  const [isProfessional, setIsProfessional] = useState<boolean | null>(null);
 
-  if (loading || trialLoading) {
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_professional", { p_user_id: user.id }).then(({ data }) => {
+      setIsProfessional(!!data);
+    });
+  }, [user]);
+
+  if (loading || trialLoading || isProfessional === null) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  // Professionals use the owner's subscription — skip guard
+  if (isProfessional) {
+    return <>{children}</>;
+  }
+
   if (status === "cancelled") {
     return <Navigate to="/subscription-cancelled" replace />;
   }
