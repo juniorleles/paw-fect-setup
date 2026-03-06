@@ -371,9 +371,28 @@ Deno.serve(async (req) => {
     const actionMatch = reply.match(/<action>(.*?)<\/action>/s);
     if (actionMatch) {
       try {
-        action = JSON.parse(actionMatch[1]);
-      } catch {}
-      reply = reply.replace(/<action>.*?<\/action>/s, "").trim();
+        const parsed = JSON.parse(actionMatch[1]);
+        // GUARDRAIL: Block confirmation if client_name is missing/generic
+        if (parsed.type === "create") {
+          const name = (parsed.client_name || "").trim().toLowerCase();
+          const invalidNames = ["", "visitante", "cliente", "usuario", "usuário"];
+          if (invalidNames.includes(name)) {
+            // Strip action — name not collected yet
+            console.log("[GUARD:NameRequired] Blocked action — no client name provided");
+            reply = reply.replace(/<action>.*?<\/action>/s, "").trim();
+            // Also strip any "Agendamento confirmado" text since we're blocking it
+            reply = reply.replace(/agendamento\s+confirmado\s*✅?/gi, "").trim();
+          } else {
+            action = parsed;
+            reply = reply.replace(/<action>.*?<\/action>/s, "").trim();
+          }
+        } else {
+          action = parsed;
+          reply = reply.replace(/<action>.*?<\/action>/s, "").trim();
+        }
+      } catch {
+        reply = reply.replace(/<action>.*?<\/action>/s, "").trim();
+      }
     }
 
     return new Response(JSON.stringify({ reply, action }), {
