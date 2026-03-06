@@ -1,15 +1,19 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 export const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navType = useNavigationType();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.history.scrollRestoration = "manual";
+
     if (navType !== "POP") {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      window.scrollTo(0, 0);
     }
-  }, [pathname, navType]);
+  }, [pathname, search, navType]);
 
   return null;
 };
