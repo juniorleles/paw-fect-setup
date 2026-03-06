@@ -418,7 +418,7 @@ const MyAccount = () => {
   const msgsAvailable = Math.max(0, trialMsgsLimit - trialMsgsUsed);
 
   return (
-    <div className="flex-1 p-3 sm:p-4 md:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-6">
+    <div className="flex-1 p-3 sm:p-4 md:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-6 w-full overflow-hidden">
       <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">Minha Conta</h1>
 
       {/* Urgency banner */}
@@ -691,7 +691,7 @@ const MyAccount = () => {
           </Card>
 
           {/* Essencial */}
-          <Card className={`border-2 transition-all relative overflow-hidden ${(currentPlan === "starter" && isActive) ? "border-primary shadow-xl" : "border-primary/50 shadow-lg"} sm:scale-[1.02]`}>
+          <Card className={`border-2 transition-all relative overflow-hidden ${(currentPlan === "starter" && isActive) ? "border-primary shadow-xl" : "border-primary/50 shadow-lg"}`}>
             <CardContent className="p-4 sm:p-5 flex flex-col h-full">
               <Badge className="w-fit mb-2 bg-primary text-primary-foreground text-xs">
                 <Star className="w-3 h-3 mr-1 fill-current" /> Mais Escolhido
