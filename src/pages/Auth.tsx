@@ -158,7 +158,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <img src={logo} alt="MagicZap" className="h-16 w-auto mx-auto" />
+          <img src={logo} alt="MagicZap" className="h-12 w-auto mx-auto" />
         </div>
 
         <Card className="border-none shadow-xl bg-card">
