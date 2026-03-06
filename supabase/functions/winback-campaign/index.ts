@@ -235,10 +235,10 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Check if winback campaign is disabled by user
+      // Check if winback campaign is enabled (default: disabled — must be explicitly true)
       const campaignMessages = (config as any).campaign_messages as Record<string, any> | undefined;
-      if (campaignMessages?.winback_enabled === false) {
-        log("Skipping user - winback campaign disabled", { userId });
+      if (campaignMessages?.winback_enabled !== true) {
+        log("Skipping user - winback campaign not enabled", { userId });
         continue;
       }
 
