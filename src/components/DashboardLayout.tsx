@@ -70,7 +70,7 @@ const DashboardSidebarContent = () => {
     <SidebarContent className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 flex items-center gap-2">
-        <img src={logo} alt="MagicZap" className="h-24 w-auto -my-6" />
+        <img src={logo} alt="MagicZap" className="h-10 w-auto" />
       </div>
 
       <SidebarGroup>
