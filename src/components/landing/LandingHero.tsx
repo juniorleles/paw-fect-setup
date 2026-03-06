@@ -111,7 +111,15 @@ const LandingHero = () => (
     </div>
 
     {/* Simulator centered below */}
-    <div className="relative max-w-lg mx-auto mt-12">
+    <div className="relative max-w-lg mx-auto mt-12 text-center">
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="text-sm font-semibold text-primary mb-3"
+      >
+        👇 Experimente agora — converse com a IA como se fosse um cliente real
+      </motion.p>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
