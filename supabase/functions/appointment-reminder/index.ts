@@ -338,7 +338,7 @@ Deno.serve(async (req) => {
     // ─── 3h REMINDERS (Essencial & Pro only) ───
     const { data: appts3h, error: err3h } = await queryAppointmentsInWindow(
       serviceClient, brFormatter, brTimeFormatter, now,
-      3 * 60, 5, "reminder_3h_sent"
+      3 * 60, 2, "reminder_3h_sent"
     );
 
     if (err3h) {
