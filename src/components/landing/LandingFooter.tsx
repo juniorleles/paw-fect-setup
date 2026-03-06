@@ -12,7 +12,7 @@ const LandingFooter = () => (
       className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground"
     >
       <div className="flex items-center gap-2">
-        <img src={logo} alt="MagicZap" className="h-8 w-auto" />
+        <img src={logo} alt="MagicZap" className="h-20 w-auto -my-5" />
       </div>
       <p>© {new Date().getFullYear()} MagicZap. Todos os direitos reservados.</p>
       <div className="flex items-center gap-4">
