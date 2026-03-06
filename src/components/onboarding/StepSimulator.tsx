@@ -49,7 +49,7 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
   const sendMessage = async (text: string) => {
