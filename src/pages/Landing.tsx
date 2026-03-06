@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import LandingNavbar from "@/components/landing/LandingNavbar";
 import LandingHero from "@/components/landing/LandingHero";
-
-import PainSolutionSection from "@/components/landing/PainSolutionSection";
+onSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import NichesSection from "@/components/landing/NichesSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
@@ -30,8 +29,7 @@ const Landing = () => {
       <LandingHero />
       <WhatsAppMockup />
       <PainSolutionSection />
-      <HowItWorksSection />
-      <NichesSection />
+      <HowItWork<NichesSection />
       <TestimonialsSection />
       <PricingSection />
       <FaqSection />
