@@ -988,7 +988,7 @@ function enforceBookingIntentContinuation(
   return "Perfeito! Vamos agendar ✅ Me confirma qual serviço e o melhor dia/horário pra você.";
 }
 
-// Guardrail: If user already provided a specific time but AI reply re-asks for time, strip the redundant question
+// Guardrail: If user already provided a specific time but AI reply lists slots or re-asks for time, strip redundant content
 function enforceNoRedundantTimeQuestion(userMessage: string, reply: string, conversationHistory?: { role: string; content: string }[]): string {
   if (!reply || /<action>.*?<\/action>/s.test(reply)) return reply;
 
@@ -998,13 +998,16 @@ function enforceNoRedundantTimeQuestion(userMessage: string, reply: string, conv
   const userProvidedExactTime = /\b([01]?\d|2[0-3])[:h]([0-5]\d)?\b/.test(userNorm) || /[àa]s\s+\d{1,2}/i.test(userNorm);
   if (!userProvidedExactTime) return reply;
 
-  // Check if the AI reply asks for time again
   const replyNorm = (reply || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  // Check if the AI reply lists available time slots (bullet points with times) or asks for time
+  const listsTimeSlots = /[•\-·]\s*\d{1,2}[:h]\d{2}/i.test(reply);
   const asksForTimeAgain = /(qual\s+hor[aá]rio\s+(voce|o\s+senhor|a\s+senhora|vc)\s+prefere|qual\s+hor[aá]rio\s+prefere|qual\s+hor[aá]rio\s+deseja|que\s+horas\s+(voce|vc)\s+(quer|prefere|deseja)|qual\s+hor[aá]rio\s+gostaria)/i.test(replyNorm);
+  const mentionsSuggestions = /(sugest[oõ]es\s+de\s+hor[aá]rios|hor[aá]rios\s+(dispon[ií]ve|para\s+hoje|para\s+amanh)|temos\s+(estes|esses|os\s+seguintes)\s+hor[aá]rios)/i.test(replyNorm);
 
-  if (!asksForTimeAgain) return reply;
+  if (!asksForTimeAgain && !listsTimeSlots) return reply;
 
-  console.log(`[TimeQuestionGuard] User already provided time in "${userMessage}" but AI re-asked for time. Stripping redundant question.`);
+  console.log(`[TimeQuestionGuard] User already provided time in "${userMessage}" but AI listed slots or re-asked. Cleaning response.`);
 
   // Extract the time the user chose
   let chosenTime: string | null = null;
@@ -1018,37 +1021,29 @@ function enforceNoRedundantTimeQuestion(userMessage: string, reply: string, conv
     }
   }
 
-  // Check if the chosen time appears in the last assistant message's available slots
-  if (chosenTime && conversationHistory) {
-    const lastAssistant = [...conversationHistory].reverse().find((m) => m.role === "assistant");
-    if (lastAssistant) {
-      const availableSlots = (lastAssistant.content || "").match(/\b([01]\d|2[0-3]):[0-5]\d\b/g) || [];
-      if (availableSlots.includes(chosenTime)) {
-        // Time is valid — remove the redundant question lines and let the AI process the booking
-        const lines = reply.split("\n");
-        const cleaned = lines.filter((line) => {
-          const lineNorm = line.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-          return !/(qual\s+hor[aá]rio|que\s+horas|temos\s+disponibilidade)/i.test(lineNorm);
-        });
-        const result = cleaned.join("\n").trim();
-        if (result && result.length > 3) {
-          console.log(`[TimeQuestionGuard] Cleaned reply, keeping: "${result.substring(0, 100)}"`);
-          return result;
-        }
-        // If cleaning removed everything, return acknowledgment without re-asking
-        return `Perfeito, anotado o horário das ${chosenTime}! Vou confirmar o agendamento.`;
-      }
-    }
-  }
-
-  // Fallback: just strip the time question
+  // Strip ALL lines that are time slot listings, time questions, or suggestion headers
   const lines = reply.split("\n");
   const cleaned = lines.filter((line) => {
-    const lineNorm = line.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    return !/(qual\s+hor[aá]rio|que\s+horas)/i.test(lineNorm);
+    const lineNorm = line.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    // Remove bullet-point time listings (e.g., "• 13:00", "- 14:30")
+    if (/^[•\-·*]\s*\d{1,2}[:h]\d{2}/.test(lineNorm)) return false;
+    // Remove time question lines
+    if (/(qual\s+hor[aá]rio|que\s+horas)/i.test(lineNorm)) return false;
+    // Remove suggestion header lines
+    if (/(sugest[oõ]es\s+de\s+hor[aá]rios|hor[aá]rios\s+(dispon[ií]ve|para\s+hoje|para\s+amanh)|temos\s+(estes|esses|os\s+seguintes)|temos\s+disponibilidade)/i.test(lineNorm)) return false;
+    return true;
   });
-  const result = cleaned.join("\n").trim();
-  return result || reply;
+
+  const result = cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  if (result && result.length > 3) {
+    console.log(`[TimeQuestionGuard] Cleaned reply, keeping: "${result.substring(0, 100)}"`);
+    return result;
+  }
+
+  // If cleaning removed everything, acknowledge the chosen time
+  return chosenTime
+    ? `Perfeito, anotado o horário das ${chosenTime}! Vou confirmar o agendamento.`
+    : reply;
 }
 
 function normalizeGuardText(text: string): string {
