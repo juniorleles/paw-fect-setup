@@ -28,7 +28,7 @@ const listItem = {
 };
 
 const PainSolutionSection = () => (
-  <section id="beneficios" className="py-24 px-4 bg-secondary/50">
+  <section id="beneficios" className="pt-12 pb-24 px-4 bg-secondary/50">
     <div className="max-w-5xl mx-auto">
       <motion.div
         initial="hidden"
