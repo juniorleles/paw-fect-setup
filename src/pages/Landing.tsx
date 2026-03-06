@@ -5,7 +5,7 @@ import LandingNavbar from "@/components/landing/LandingNavbar";
 import LandingHero from "@/components/landing/LandingHero";
 import PainSolutionSection from "@/components/landing/PainSolutionSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
-import NichesSection from "@/components/landing/NichesSection";
+
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import PricingSection from "@/components/landing/PricingSection";
 import FaqSection from "@/components/landing/FaqSection";
