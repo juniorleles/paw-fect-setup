@@ -14,7 +14,7 @@ const LandingFooter = () => (
       <div className="flex items-center gap-2">
         <img src={logo} alt="MagicZap" className="h-6 w-auto" />
       </div>
-      <p>© {new Date().getFullYear()} Secretária Digital. Todos os direitos reservados.</p>
+      <p>© {new Date().getFullYear()} MagicZap. Todos os direitos reservados.</p>
       <div className="flex items-center gap-4">
         <Link to="/terms-of-service" className="hover:text-foreground transition-colors">
           Termos de Uso

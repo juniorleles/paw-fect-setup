@@ -70,10 +70,7 @@ const DashboardSidebarContent = () => {
     <SidebarContent className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 flex items-center gap-2">
-        <Briefcase className="w-6 h-6 text-primary" />
-        <span className="text-lg font-display font-bold text-foreground">
-          Secretária <span className="text-primary">Digital</span>
-        </span>
+        <img src={logo} alt="MagicZap" className="h-8 w-auto" />
       </div>
 
       <SidebarGroup>
