@@ -45,12 +45,21 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [simulatedAppointments, setSimulatedAppointments] = useState<string[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const chatScrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages]);
+    const viewport = chatScrollAreaRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLDivElement | null;
+
+    if (!viewport) return;
+
+    viewport.scrollTo({
+      top: viewport.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -170,7 +179,7 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
 
         {/* Chat area */}
         <div className="rounded-2xl border bg-muted/30 overflow-hidden" style={{ height: 380 }}>
-          <ScrollArea className="h-full">
+          <ScrollArea ref={chatScrollAreaRef} className="h-full">
             <div className="p-4 space-y-3 min-h-full flex flex-col justify-end">
               {messages.length === 0 && (
                 <div className="text-center py-10 space-y-4">
@@ -232,7 +241,7 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
                 </motion.div>
               )}
 
-              <div ref={scrollRef} />
+              
             </div>
           </ScrollArea>
         </div>
