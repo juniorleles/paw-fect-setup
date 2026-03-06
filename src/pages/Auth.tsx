@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Loader2, Eye, EyeOff, Check, Sparkles } from "lucide-react";
+import { Loader2, Eye, EyeOff, Check, Sparkles } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
@@ -157,19 +158,14 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Briefcase className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-display font-bold text-foreground">
-              Secretária <span className="text-primary">Digital</span>
-            </h1>
-          </div>
+          <img src={logo} alt="MagicZap" className="h-16 w-auto mx-auto" />
         </div>
 
         <Card className="border-none shadow-xl bg-card">
           {resetEmailSent ? (
             <CardContent className="pt-8 pb-8 text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <Briefcase className="w-8 h-8 text-primary" />
+                <img src={logo} alt="MagicZap" className="h-10 w-auto" />
               </div>
               <CardTitle className="text-2xl font-display">E-mail enviado!</CardTitle>
               <CardDescription>
