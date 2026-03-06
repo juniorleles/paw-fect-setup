@@ -17,7 +17,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, CalendarDays, Settings, LogOut, Briefcase, UserCircle, Headphones, Users, UserX, ClipboardList, BarChart3 } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Settings, LogOut, UserCircle, Headphones, Users, UserX, ClipboardList, BarChart3 } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -69,10 +70,7 @@ const DashboardSidebarContent = () => {
     <SidebarContent className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 flex items-center gap-2">
-        <Briefcase className="w-6 h-6 text-primary" />
-        <span className="text-lg font-display font-bold text-foreground">
-          Secretária <span className="text-primary">Digital</span>
-        </span>
+        <img src={logo} alt="MagicZap" className="h-8 w-auto" />
       </div>
 
       <SidebarGroup>
