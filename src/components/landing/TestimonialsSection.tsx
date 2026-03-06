@@ -31,7 +31,7 @@ const metrics = [
 ];
 
 const MetricsSection = () => (
-  <section className="py-20 px-4 bg-muted/30">
+  <section id="numeros" className="py-20 px-4 bg-muted/30">
     <div className="max-w-5xl mx-auto">
       <motion.div
         initial="hidden"
