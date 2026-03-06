@@ -122,7 +122,6 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
       ]);
     } finally {
       setLoading(false);
-      inputRef.current?.focus();
     }
   };
 
