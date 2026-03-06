@@ -225,10 +225,10 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Check if upsell campaign is disabled by user
+      // Check if upsell campaign is enabled (default: disabled — must be explicitly true)
       const campaignMessages = (config as any).campaign_messages as Record<string, any> | undefined;
-      if (campaignMessages?.upsell_enabled === false) {
-        log("Skipping user - upsell campaign disabled", { userId });
+      if (campaignMessages?.upsell_enabled !== true) {
+        log("Skipping user - upsell campaign not enabled", { userId });
         continue;
       }
 
