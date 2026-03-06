@@ -165,7 +165,7 @@ const Auth = () => {
           {resetEmailSent ? (
             <CardContent className="pt-8 pb-8 text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <Briefcase className="w-8 h-8 text-primary" />
+                <img src={logo} alt="MagicZap" className="h-10 w-auto" />
               </div>
               <CardTitle className="text-2xl font-display">E-mail enviado!</CardTitle>
               <CardDescription>
