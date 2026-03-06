@@ -3006,7 +3006,7 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       }
     }
 
-    const maxConcurrent = (shopConfig as any).max_concurrent_appointments || 1;
+    const maxConcurrent = Math.max(1, (shopConfig as any).max_concurrent_appointments ?? 1);
     const availableSlots = computeAvailableSlots(
       shopConfig.business_hours,
       appointments || [],
