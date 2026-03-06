@@ -62,7 +62,7 @@ const SCENARIOS = [
   { label: "Cancelar horário", icon: Clock, msg: "Preciso cancelar meu agendamento" },
 ];
 
-const WhatsAppMockup = () => {
+const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -122,27 +122,12 @@ const WhatsAppMockup = () => {
 
   const hasMessages = messages.length > 0;
 
-  return (
-    <section className="py-20 px-4 bg-secondary/50">
-      <div className="max-w-2xl mx-auto">
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={{ once: true }}
-          variants={fadeUp} transition={{ duration: 0.5 }}
-          className="text-center mb-8"
-        >
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
-            Teste a IA agora mesmo
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            Converse com a Secretária Digital e veja como ela atende seus clientes
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={{ once: true }}
-          variants={fadeUp} transition={{ duration: 0.6, delay: 0.1 }}
-          className="rounded-2xl border border-border/60 shadow-lg overflow-hidden bg-background"
-        >
+  const mockupContent = (
+    <motion.div
+      initial="hidden" whileInView="visible" viewport={{ once: true }}
+      variants={fadeUp} transition={{ duration: 0.6, delay: 0.1 }}
+      className="rounded-2xl border border-border/60 shadow-lg overflow-hidden bg-background"
+    >
           {/* Header */}
           <div className="bg-primary px-4 py-3 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
@@ -321,6 +306,26 @@ const WhatsAppMockup = () => {
             )}
           </div>
         </motion.div>
+  );
+
+  if (embedded) return mockupContent;
+
+  return (
+    <section className="py-20 px-4 bg-secondary/50">
+      <div className="max-w-2xl mx-auto">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={{ once: true }}
+          variants={fadeUp} transition={{ duration: 0.5 }}
+          className="text-center mb-8"
+        >
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
+            Teste a IA agora mesmo
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            Converse com a Secretária Digital e veja como ela atende seus clientes
+          </p>
+        </motion.div>
+        {mockupContent}
       </div>
     </section>
   );

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, MessageSquare, CalendarDays, Zap, Users, Clock, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import heroIllustration from "@/assets/hero-illustration.png";
+import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
 
 const AnimatedCounter = ({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) => {
   const [value, setValue] = useState(0);
@@ -113,58 +113,14 @@ const LandingHero = () => (
 
       </div>
 
-      {/* Right illustration */}
+      {/* Right: Interactive simulator */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 0.3, type: "spring", stiffness: 100 }}
-        className="relative hidden lg:flex justify-center"
+        className="relative hidden lg:block"
       >
-        <div className="relative">
-          {/* Glow */}
-          <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-3xl scale-110" />
-
-          <motion.img
-            src={heroIllustration}
-            alt="Secretária Digital atendendo clientes pelo WhatsApp automaticamente"
-            className="relative w-[420px] rounded-3xl shadow-2xl shadow-foreground/5"
-            animate={{ y: [0, -12, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          />
-
-          {/* Floating badges */}
-          <motion.div
-            className="absolute -top-4 -right-4 bg-card rounded-2xl p-3 shadow-lg border border-border/60"
-            animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                <CalendarDays className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-foreground">Agendamento</p>
-                <p className="text-[10px] text-muted-foreground">Automático ✓</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="absolute -bottom-4 -left-4 bg-card rounded-2xl p-3 shadow-lg border border-border/60"
-            animate={{ y: [0, 8, 0], rotate: [0, -2, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-accent" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-foreground">Resposta</p>
-                <p className="text-[10px] text-muted-foreground">Em 2 segundos</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+        <WhatsAppMockup embedded />
       </motion.div>
     </div>
   </section>
