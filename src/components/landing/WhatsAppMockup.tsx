@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
-import { Send, Bot, Loader2, Zap, CalendarDays, Clock, CheckCircle2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Send, Bot, Loader2, Zap, CalendarDays, Clock, CheckCircle2, MessageSquare, Scissors, DollarSign, CalendarCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,6 @@ import { ptBR } from "date-fns/locale";
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 
 const tomorrow = addDays(new Date(), 1);
-const tomorrowStr = format(tomorrow, "dd/MM");
 
 interface ChatMsg {
   id: string;
@@ -21,33 +20,10 @@ interface ChatMsg {
 }
 
 interface SimAppointment {
-  id: string;
   time: string;
   service: string;
   clientName: string;
-  status: "confirmed" | "pending";
 }
-
-const SCRIPT: { role: "user" | "assistant"; content: string; delay: number }[] = [
-  { role: "user", content: "Oi! Quanto custa um corte masculino?", delay: 800 },
-  { role: "assistant", content: `Olá! 😊 O corte masculino custa R$ 45 (30 min).\n\nDeseja agendar?`, delay: 1500 },
-  { role: "user", content: "Quero! Tem vaga amanhã à tarde?", delay: 1000 },
-  { role: "assistant", content: `Temos! Para ${tomorrowStr}:\n\n• 13:00\n• 14:00\n• 15:30\n• 16:00\n\nQual prefere?`, delay: 1800 },
-  { role: "user", content: "14h!", delay: 800 },
-  { role: "assistant", content: `✅ Confirmado!\n\n📋 Corte Masculino\n📅 ${tomorrowStr} às 14:00\n💰 R$ 45\n\nEnviarei lembrete 24h antes! 💈`, delay: 2000 },
-];
-
-const EXISTING_APPOINTMENTS: SimAppointment[] = [
-  { id: "e1", time: "09:00", service: "Barba", clientName: "João S.", status: "confirmed" },
-  { id: "e2", time: "10:00", service: "Corte + Barba", clientName: "Pedro M.", status: "confirmed" },
-  { id: "e3", time: "11:30", service: "Corte Masculino", clientName: "Lucas R.", status: "pending" },
-];
-
-const NEW_APPOINTMENT: SimAppointment = {
-  id: "new1", time: "14:00", service: "Corte Masculino", clientName: "Visitante", status: "confirmed",
-};
-
-const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
 
 const nowTime = () => {
   const d = new Date();
@@ -55,7 +31,10 @@ const nowTime = () => {
 };
 
 const DEMO_CONFIG = {
-  shopName: "Barbearia Demo", assistantName: "Luna", voiceTone: "friendly", niche: "barbearia",
+  shopName: "Barbearia Demo",
+  assistantName: "Luna",
+  voiceTone: "friendly",
+  niche: "barbearia",
   services: [
     { name: "Corte Masculino", price: 45, duration: 30 },
     { name: "Barba", price: 30, duration: 20 },
@@ -69,291 +48,258 @@ const DEMO_CONFIG = {
     { day: "sexta", open: "09:00", close: "19:00" },
     { day: "sábado", open: "09:00", close: "17:00" },
   ],
-  address: "Rua Exemplo, 123", neighborhood: "Centro", city: "São Paulo", state: "SP",
+  address: "Rua Exemplo, 123",
+  neighborhood: "Centro",
+  city: "São Paulo",
+  state: "SP",
 };
 
-// ─── Phone Frame wrapper ───
-const PhoneFrame = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`relative mx-auto ${className}`} style={{ maxWidth: 320 }}>
-    {/* Phone bezel */}
-    <div className="rounded-[2rem] border-[3px] border-foreground/10 bg-foreground/5 p-1.5 shadow-xl">
-      {/* Notch */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-foreground/10 rounded-b-xl z-10" />
-      {/* Screen */}
-      <div className="rounded-[1.4rem] overflow-hidden bg-background">
-        {children}
-      </div>
-    </div>
-  </div>
-);
+const SCENARIOS = [
+  { label: "Agendar corte", icon: Scissors, msg: "Quero marcar um corte masculino para amanhã às 14h" },
+  { label: "Ver preços", icon: DollarSign, msg: "Quais serviços vocês oferecem e quanto custa cada um?" },
+  { label: "Horários livres", icon: CalendarCheck, msg: "Quais horários disponíveis para amanhã?" },
+  { label: "Cancelar horário", icon: Clock, msg: "Preciso cancelar meu agendamento" },
+];
 
-// ─── Typing Indicator ───
-const TypingIndicator = () => (
-  <div className="flex justify-start">
-    <div className="bg-card rounded-2xl rounded-bl-sm shadow-sm px-3 py-2 border">
-      <div className="flex items-center gap-1.5 text-muted-foreground text-[10px]">
-        <Loader2 className="w-3 h-3 animate-spin" />
-        digitando...
-      </div>
-    </div>
-  </div>
-);
-
-// ─── Agenda Phone ───
-const AgendaPhone = ({ appointments, showNew }: { appointments: SimAppointment[]; showNew: boolean }) => {
-  const allApts = [...appointments, ...(showNew ? [NEW_APPOINTMENT] : [])];
-  const aptByHour = new Map<number, SimAppointment>();
-  allApts.forEach((a) => aptByHour.set(parseInt(a.time.split(":")[0]), a));
-
-  return (
-    <PhoneFrame>
-      <div className="flex flex-col" style={{ height: 520 }}>
-        {/* Status bar */}
-        <div className="h-7 bg-background flex items-center justify-between px-5 pt-1">
-          <span className="text-[9px] font-semibold text-muted-foreground">{nowTime()}</span>
-          <div className="flex gap-1">
-            <div className="w-3 h-1.5 rounded-sm bg-muted-foreground/30" />
-            <div className="w-3 h-1.5 rounded-sm bg-muted-foreground/30" />
-          </div>
-        </div>
-
-        {/* App header */}
-        <div className="px-3 py-2 border-b border-border/50 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-            <CalendarDays className="w-3.5 h-3.5 text-primary" />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold text-foreground">Agenda</p>
-            <p className="text-[9px] text-muted-foreground capitalize">
-              {format(tomorrow, "EEE, dd MMM", { locale: ptBR })}
-            </p>
-          </div>
-          <Badge variant="outline" className="text-[8px] ml-auto border-primary/30 text-primary px-1.5 py-0">
-            Dia
-          </Badge>
-        </div>
-
-        {/* Slots */}
-        <div className="flex-1 overflow-y-auto">
-          {HOURS.map((hour) => {
-            const apt = aptByHour.get(hour);
-            const isNew = apt?.id === "new1";
-            return (
-              <div key={hour} className="flex border-b border-border/20 min-h-[42px]">
-                <div className="w-10 text-[9px] text-muted-foreground font-medium p-1 text-right border-r border-border/20 flex-shrink-0">
-                  {String(hour).padStart(2, "0")}:00
-                </div>
-                <div className="flex-1 p-0.5">
-                  {apt && (
-                    <motion.div
-                      initial={isNew ? { opacity: 0, scale: 0.8 } : false}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={isNew ? { duration: 0.5, type: "spring" } : undefined}
-                      className={`mx-0.5 px-1.5 py-1 rounded-md text-[9px] font-medium ${
-                        apt.status === "confirmed"
-                          ? "bg-success/15 text-success border border-success/30"
-                          : "bg-accent/15 text-accent border border-accent/30"
-                      } ${isNew ? "ring-1 ring-primary/40" : ""}`}
-                    >
-                      <div className="flex items-center gap-1">
-                        {apt.status === "confirmed" ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
-                        <span className="font-bold">{apt.time.slice(0, 5)}</span>
-                        <span className="truncate">{apt.clientName}</span>
-                      </div>
-                      <p className="text-[8px] opacity-75 pl-3.5">{apt.service}</p>
-                    </motion.div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </PhoneFrame>
-  );
-};
-
-// ─── MAIN ───
 const WhatsAppMockup = () => {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
-  const [scriptStep, setScriptStep] = useState(0);
-  const [scriptDone, setScriptDone] = useState(false);
-  const [showTyping, setShowTyping] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [showNewApt, setShowNewApt] = useState(false);
   const [input, setInput] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [appointments, setAppointments] = useState<SimAppointment[]>([]);
+  const [simulatedApts, setSimulatedApts] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, showTyping]);
-
-  // Scripted conversation
-  useEffect(() => {
-    if (!started || scriptDone) return;
-    if (scriptStep >= SCRIPT.length) {
-      setScriptDone(true);
-      setTimeout(() => setShowNewApt(true), 600);
-      return;
-    }
-    const step = SCRIPT[scriptStep];
-    const isBot = step.role === "assistant";
-
-    if (isBot) {
-      setShowTyping(true);
-      const t = setTimeout(() => {
-        setShowTyping(false);
-        setMessages((p) => [...p, { id: `s${scriptStep}`, role: "assistant", content: step.content, time: nowTime() }]);
-        setScriptStep((s) => s + 1);
-      }, step.delay);
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(() => {
-        setMessages((p) => [...p, { id: `s${scriptStep}`, role: "user", content: step.content, time: nowTime() }]);
-        setScriptStep((s) => s + 1);
-      }, step.delay);
-      return () => clearTimeout(t);
-    }
-  }, [started, scriptStep, scriptDone]);
+  }, [messages, loading]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || aiLoading) return;
+    if (!text.trim() || loading) return;
     const userMsg: ChatMsg = { id: crypto.randomUUID(), role: "user", content: text.trim(), time: nowTime() };
     const updated = [...messages, userMsg];
     setMessages(updated);
     setInput("");
-    setAiLoading(true);
+    setLoading(true);
+
     try {
       const { data: result, error } = await supabase.functions.invoke("chat-simulator", {
-        body: { config: DEMO_CONFIG, messages: updated.map((m) => ({ role: m.role, content: m.content })), simulatedAppointments: [] },
+        body: {
+          config: DEMO_CONFIG,
+          messages: updated.map((m) => ({ role: m.role, content: m.content })),
+          simulatedAppointments: simulatedApts,
+        },
       });
       if (error) throw error;
-      setMessages((p) => [...p, { id: crypto.randomUUID(), role: "assistant", content: result.reply, time: nowTime() }]);
+
+      setMessages((p) => [
+        ...p,
+        { id: crypto.randomUUID(), role: "assistant", content: result.reply, time: nowTime() },
+      ]);
+
+      // Track appointments
+      if (result.action?.type === "create") {
+        const a = result.action;
+        setAppointments((p) => [...p, { time: a.time, service: a.service, clientName: a.client_name || "Visitante" }]);
+        setSimulatedApts((p) => [...p, `${a.date} ${a.time} - ${a.service} (${a.client_name}, status: confirmado)`]);
+      } else if (result.action?.type === "cancel") {
+        setSimulatedApts((p) => p.filter((apt) => !apt.includes(result.action.date) || !apt.includes(result.action.time)));
+      }
     } catch {
-      setMessages((p) => [...p, { id: crypto.randomUUID(), role: "assistant", content: "Desculpe, houve um erro. Tente novamente!", time: nowTime() }]);
+      setMessages((p) => [
+        ...p,
+        { id: crypto.randomUUID(), role: "assistant", content: "Desculpe, houve um erro. Tente novamente!", time: nowTime() },
+      ]);
     } finally {
-      setAiLoading(false);
+      setLoading(false);
       inputRef.current?.focus();
     }
   };
 
-  const QUICK = [
-    { label: "Preços", msg: "Quais serviços e preços?" },
-    { label: "Horários", msg: "Qual o horário de funcionamento?" },
-    { label: "Agendar barba", msg: "Quero agendar uma barba amanhã às 16h" },
-  ];
+  const hasMessages = messages.length > 0;
 
   return (
     <section className="py-20 px-4 bg-secondary/50">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <motion.div
           initial="hidden" whileInView="visible" viewport={{ once: true }}
           variants={fadeUp} transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="text-center mb-8"
         >
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">Veja como funciona na prática</h2>
-          <p className="text-muted-foreground text-lg">A IA atende e agenda — a agenda preenche automaticamente</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
+            Teste a IA agora mesmo
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            Converse com a Secretária Digital e veja como ela atende seus clientes
+          </p>
         </motion.div>
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={{ once: true }}
           variants={fadeUp} transition={{ duration: 0.6, delay: 0.1 }}
-          onAnimationComplete={() => setStarted(true)}
-          className="flex flex-col sm:flex-row items-center sm:items-start justify-center gap-6 sm:gap-10"
+          className="rounded-2xl border border-border/60 shadow-lg overflow-hidden bg-background"
         >
-          {/* ─── WhatsApp Phone ─── */}
-          <PhoneFrame>
-            <div className="flex flex-col" style={{ height: 520 }}>
-              {/* Status bar */}
-              <div className="h-7 bg-primary flex items-center justify-between px-5 pt-1">
-                <span className="text-[9px] font-semibold text-primary-foreground/70">{nowTime()}</span>
-                <div className="flex gap-1">
-                  <div className="w-3 h-1.5 rounded-sm bg-primary-foreground/30" />
-                  <div className="w-3 h-1.5 rounded-sm bg-primary-foreground/30" />
-                </div>
+          {/* Header */}
+          <div className="bg-primary px-4 py-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+              <Bot className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-primary-foreground font-bold text-sm">Luna • Barbearia Demo</p>
+              <div className="flex items-center gap-1.5">
+                <motion.div
+                  className="w-2 h-2 rounded-full bg-primary-foreground/70"
+                  animate={{ opacity: [1, 0.4, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                <p className="text-primary-foreground/60 text-xs">online</p>
               </div>
+            </div>
+            <Badge className="bg-primary-foreground/15 text-primary-foreground border-primary-foreground/20 text-[10px]">
+              <Zap className="w-3 h-3 mr-1" /> Simulação
+            </Badge>
+          </div>
 
-              {/* WhatsApp header */}
-              <div className="bg-primary px-3 py-2 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-primary-foreground" />
+          {/* Chat area */}
+          <div className="p-4 space-y-3 overflow-y-auto bg-secondary/30" style={{ minHeight: 300, maxHeight: 420 }}>
+            {/* Empty state with scenario buttons */}
+            {!hasMessages && !loading && (
+              <div className="flex flex-col items-center justify-center py-8 space-y-5">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <MessageSquare className="w-7 h-7 text-primary/60" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-primary-foreground font-bold text-[11px] truncate">Luna • Barbearia</p>
-                  <div className="flex items-center gap-1">
-                    <motion.div className="w-1.5 h-1.5 rounded-full bg-primary-foreground/70" animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, repeat: Infinity }} />
-                    <p className="text-primary-foreground/60 text-[9px]">online</p>
-                  </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-foreground mb-1">Teste um cenário ou escreva sua mensagem</p>
+                  <p className="text-xs text-muted-foreground">Nenhuma mensagem real será enviada</p>
                 </div>
-                <Badge className="bg-primary-foreground/15 text-primary-foreground border-primary-foreground/20 text-[8px] px-1.5 py-0">
-                  <Zap className="w-2.5 h-2.5 mr-0.5" /> Demo
-                </Badge>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 p-2.5 space-y-2 overflow-y-auto bg-secondary/30">
-                <AnimatePresence initial={false}>
-                  {messages.map((msg) => (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.25, type: "spring", stiffness: 200 }}
-                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+                  {SCENARIOS.map((s) => (
+                    <button
+                      key={s.label}
+                      onClick={() => sendMessage(s.msg)}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-secondary hover:border-primary/30 transition-all text-left group"
                     >
-                      <div className={`max-w-[85%] rounded-xl px-2.5 py-1.5 text-[11px] leading-relaxed ${
-                        msg.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-sm"
-                          : "bg-card text-card-foreground rounded-bl-sm shadow-sm border"
-                      }`}>
-                        {msg.role === "assistant" && (
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <Bot className="w-2.5 h-2.5 text-primary" />
-                            <span className="text-[9px] font-semibold text-primary">Luna</span>
-                          </div>
-                        )}
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
-                        <p className={`text-[8px] mt-0.5 text-right ${msg.role === "user" ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
-                          {msg.time}
-                        </p>
+                      <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center group-hover:bg-primary/15 transition-colors flex-shrink-0">
+                        <s.icon className="w-4 h-4 text-primary" />
                       </div>
-                    </motion.div>
+                      <span className="text-xs font-medium text-foreground">{s.label}</span>
+                    </button>
                   ))}
-                </AnimatePresence>
-                {(showTyping || aiLoading) && <TypingIndicator />}
-                <div ref={scrollRef} />
+                </div>
               </div>
+            )}
 
-              {/* Input area */}
-              {scriptDone && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-t border-border/50 p-2 space-y-1.5 bg-card/80">
-                  <div className="flex flex-wrap gap-1">
-                    {QUICK.map((q) => (
-                      <button key={q.label} onClick={() => sendMessage(q.msg)} disabled={aiLoading}
-                        className="text-[8px] px-2 py-0.5 rounded-full border bg-card hover:bg-secondary transition-colors disabled:opacity-50">
-                        {q.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <Input ref={inputRef} placeholder="Mensagem..." value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-                      disabled={aiLoading} className="h-7 text-[11px] flex-1" />
-                    <Button onClick={() => sendMessage(input)} disabled={!input.trim() || aiLoading}
-                      size="icon" className="h-7 w-7 shrink-0">
-                      <Send className="w-3 h-3" />
-                    </Button>
+            {/* Messages */}
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.25, type: "spring", stiffness: 200 }}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      : "bg-card text-card-foreground rounded-bl-sm shadow-sm border"
+                  }`}>
+                    {msg.role === "assistant" && (
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Bot className="w-3 h-3 text-primary" />
+                        <span className="text-xs font-semibold text-primary">Luna</span>
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-primary/30 text-primary">IA</Badge>
+                      </div>
+                    )}
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    <p className={`text-[10px] mt-1 text-right ${msg.role === "user" ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
+                      {msg.time}
+                    </p>
                   </div>
                 </motion.div>
-              )}
-            </div>
-          </PhoneFrame>
+              ))}
+            </AnimatePresence>
 
-          {/* ─── Agenda Phone ─── */}
-          <AgendaPhone appointments={EXISTING_APPOINTMENTS} showNew={showNewApt} />
+            {/* Typing indicator */}
+            {loading && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                <div className="bg-card border rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Luna está digitando...
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            <div ref={scrollRef} />
+          </div>
+
+          {/* Appointment toast */}
+          <AnimatePresence>
+            {appointments.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="border-t border-border/50"
+              >
+                <div className="px-4 py-2.5 bg-success/5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-success/15 flex items-center justify-center flex-shrink-0">
+                    <CalendarDays className="w-4 h-4 text-success" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold text-success flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Agendamento confirmado
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {appointments[appointments.length - 1].service} • {format(tomorrow, "dd/MM")} às {appointments[appointments.length - 1].time} • {appointments[appointments.length - 1].clientName}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Quick scenarios (after first message) + Input */}
+          <div className="border-t border-border/50 p-3 space-y-2 bg-card/50">
+            {hasMessages && (
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> Teste:
+                </span>
+                {SCENARIOS.map((s) => (
+                  <button
+                    key={s.label}
+                    onClick={() => sendMessage(s.msg)}
+                    disabled={loading}
+                    className="text-[10px] px-2.5 py-1 rounded-full border bg-card hover:bg-secondary transition-colors disabled:opacity-50"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                ref={inputRef}
+                placeholder="Digite uma mensagem..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
+                disabled={loading}
+                className="h-10 flex-1 text-sm"
+              />
+              <Button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || loading}
+                size="icon"
+                className="h-10 w-10 shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>
