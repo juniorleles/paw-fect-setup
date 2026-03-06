@@ -41,7 +41,7 @@ const heroStats = [
 ];
 
 const LandingHero = () => (
-  <section className="relative overflow-hidden pt-24 pb-8 lg:pb-16 px-4 bg-background">
+  <section className="relative pt-24 pb-8 lg:pb-16 px-4 bg-background">
     {/* Subtle grid pattern */}
     <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.3)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.3)_1px,transparent_1px)] bg-[size:64px_64px]" />
     
@@ -49,7 +49,7 @@ const LandingHero = () => (
     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
     <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />
 
-    <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-12 lg:gap-16 items-center">
       {/* Left content */}
       <div className="text-center lg:text-left">
         <motion.div
