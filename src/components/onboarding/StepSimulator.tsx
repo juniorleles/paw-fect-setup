@@ -254,6 +254,8 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
           {SCENARIO_PROMPTS.map((s) => (
             <button
               key={s.label}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => sendMessage(s.message)}
               disabled={loading}
               className="text-xs px-3 py-1.5 rounded-full border bg-card hover:bg-secondary transition-colors disabled:opacity-50"
