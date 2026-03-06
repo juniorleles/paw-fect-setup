@@ -68,7 +68,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [appointments, setAppointments] = useState<SimAppointment[]>([]);
   const [simulatedApts, setSimulatedApts] = useState<string[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
