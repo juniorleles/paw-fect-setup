@@ -75,8 +75,11 @@ const WhatsAppMockup = () => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  const userMessageCount = messages.filter(m => m.role === "user").length;
+  const limitReached = userMessageCount >= MAX_USER_MESSAGES;
+
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || limitReached) return;
     const userMsg: ChatMsg = { id: crypto.randomUUID(), role: "user", content: text.trim(), time: nowTime() };
     const updated = [...messages, userMsg];
     setMessages(updated);
