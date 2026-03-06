@@ -1349,8 +1349,11 @@ function enforceKnownServiceNoRedundantQuestion(
     .trim();
 
   // Normalize connectors so "corte e barba" matches "Corte + Barba"
-  const normalizeConnectors = (text: string) =>
-    normalize(text).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+  const normalizeConnectors = (text: string) => {
+    // Preserve + as connector before normalize strips it
+    const preserved = (text || "").replace(/\s*\+\s*/g, " e ");
+    return normalize(preserved).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+  };
 
   const normalizedUserMessage = normalize(userMessage || "");
   const connectorUserMessage = normalizeConnectors(userMessage || "");
