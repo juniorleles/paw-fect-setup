@@ -350,6 +350,30 @@ function inferStateFromUserMessage(
   const updates: Partial<ConversationState> = {};
   const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
+  // --- Refusal/Decline Detection ---
+  // If the user is declining an offer (e.g. replying to upsell), do NOT infer service or advance state
+  const refusalPatterns = [
+    /\bnao\s+(quero|preciso|obrigad|agora|por\s+enquanto|vou|desejo)\b/,
+    /\bpor\s+enquanto\s+nao\b/,
+    /\bdepois\b/,
+    /\bagora\s+nao\b/,
+    /\bnao\s+tenho\s+interesse\b/,
+    /\bnao,?\s+obrigad[oa]\b/,
+    /\bnao\s+quero\b/,
+    /\bvaleu,?\s+mas\s+nao\b/,
+  ];
+  const isRefusal = refusalPatterns.some((p) => p.test(userNorm));
+
+  if (isRefusal) {
+    console.log(`[StateInfer] Refusal detected: "${userMessage}" — not advancing state`);
+    // Reset state so AI gives a graceful farewell instead of pushing a booking
+    updates.step = "greeting";
+    updates.service = null;
+    updates.date = null;
+    updates.time = null;
+    return updates;
+  }
+
   // Detect service directly from user message
   let matchedService = inferServiceFromText(userMessage || "", services);
 
@@ -359,7 +383,8 @@ function inferStateFromUserMessage(
   }
 
   // Fallback 2: recover service from recent assistant context (e.g. "seu serviço de Corte + Barba")
-  if (!matchedService && conversationHistory.length > 0) {
+  // Only use this fallback if the user is actively in a booking flow (not greeting/post_booking)
+  if (!matchedService && conversationHistory.length > 0 && currentState.step !== "greeting" && currentState.step !== "post_booking") {
     const lastAssistant = [...conversationHistory].reverse().find((m) => m.role === "assistant");
     if (lastAssistant?.content) {
       matchedService = inferServiceFromText(lastAssistant.content, services);

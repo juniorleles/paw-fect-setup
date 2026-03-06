@@ -309,6 +309,14 @@ Deno.serve(async (req) => {
           }
           await evoResp.text();
 
+          // Save to conversation_messages so the AI handler has context when client replies
+          await supabase.from("conversation_messages").insert({
+            user_id: userId,
+            phone,
+            role: "assistant",
+            content: message,
+          });
+
           // Log the campaign
           await supabase.from("inactive_campaign_logs").insert({
             user_id: userId,
