@@ -68,11 +68,17 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [appointments, setAppointments] = useState<SimAppointment[]>([]);
   const [simulatedApts, setSimulatedApts] = useState<string[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    const chatArea = chatAreaRef.current;
+    if (!chatArea) return;
+
+    chatArea.scrollTo({
+      top: chatArea.scrollHeight,
+      behavior: "smooth",
+    });
   }, [messages, loading]);
 
   const userMessageCount = messages.filter(m => m.role === "user").length;
@@ -116,7 +122,6 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
       ]);
     } finally {
       setLoading(false);
-      inputRef.current?.focus();
     }
   };
 
@@ -150,7 +155,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
           </div>
 
           {/* Chat area */}
-          <div className="p-4 space-y-3 overflow-y-auto" style={{ minHeight: 300, maxHeight: 420, backgroundImage: `url(${whatsappBg})`, backgroundSize: '300px', backgroundRepeat: 'repeat' }}>
+          <div ref={chatAreaRef} className="p-4 space-y-3 overflow-y-auto" style={{ minHeight: 300, maxHeight: 420, backgroundImage: `url(${whatsappBg})`, backgroundSize: '300px', backgroundRepeat: 'repeat' }}>
             {/* Empty state with scenario buttons */}
             {!hasMessages && !loading && (
               <div className="flex flex-col items-center justify-center py-8 space-y-5">
@@ -165,6 +170,8 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                   {SCENARIOS.map((s) => (
                     <button
                       key={s.label}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => sendMessage(s.msg)}
                       className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-secondary hover:border-primary/30 transition-all text-left group"
                     >
@@ -221,7 +228,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
               </motion.div>
             )}
 
-            <div ref={scrollRef} />
+            
           </div>
 
           {/* Appointment toast */}
@@ -274,6 +281,8 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                     {SCENARIOS.map((s) => (
                       <button
                         key={s.label}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => sendMessage(s.msg)}
                         disabled={loading}
                         className="text-[10px] px-2.5 py-1 rounded-full border bg-card hover:bg-secondary transition-colors disabled:opacity-50"
