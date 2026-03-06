@@ -7,7 +7,7 @@ import AgendaPreviewSection from "@/components/landing/AgendaPreviewSection";
 import PainSolutionSection from "@/components/landing/PainSolutionSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 
-import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import MetricsSection from "@/components/landing/TestimonialsSection";
 import PricingSection from "@/components/landing/PricingSection";
 import FaqSection from "@/components/landing/FaqSection";
 import CtaSection from "@/components/landing/CtaSection";
@@ -31,7 +31,7 @@ const Landing = () => {
       <PainSolutionSection />
       <HowItWorksSection />
       
-      <TestimonialsSection />
+      <MetricsSection />
       <PricingSection />
       <FaqSection />
       <CtaSection />
