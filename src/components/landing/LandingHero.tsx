@@ -111,31 +111,6 @@ const LandingHero = () => (
           Sem cartão • Configuração em minutos
         </motion.p>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
-          className="mt-12 grid grid-cols-3 gap-6"
-        >
-          {heroStats.map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              className="text-center lg:text-left"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 + i * 0.15 }}
-            >
-              <div className="flex items-center gap-1.5 justify-center lg:justify-start mb-1">
-                <stat.icon className="w-4 h-4 text-primary" />
-                <span className="text-2xl font-bold text-foreground">
-                  <AnimatedCounter target={stat.value} suffix={stat.suffix} />
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </motion.div>
-          ))}
-        </motion.div>
       </div>
 
       {/* Right illustration */}
