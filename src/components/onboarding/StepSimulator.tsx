@@ -179,7 +179,7 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
 
         {/* Chat area */}
         <div className="rounded-2xl border bg-muted/30 overflow-hidden" style={{ height: 380 }}>
-          <ScrollArea className="h-full">
+          <ScrollArea ref={chatScrollAreaRef} className="h-full">
             <div className="p-4 space-y-3 min-h-full flex flex-col justify-end">
               {messages.length === 0 && (
                 <div className="text-center py-10 space-y-4">
