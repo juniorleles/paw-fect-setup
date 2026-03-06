@@ -228,7 +228,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
               </motion.div>
             )}
 
-            <div ref={scrollRef} />
+            
           </div>
 
           {/* Appointment toast */}
