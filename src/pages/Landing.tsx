@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import LandingNavbar from "@/components/landing/LandingNavbar";
 import LandingHero from "@/components/landing/LandingHero";
+import AgendaPreviewSection from "@/components/landing/AgendaPreviewSection";
 import PainSolutionSection from "@/components/landing/PainSolutionSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 
