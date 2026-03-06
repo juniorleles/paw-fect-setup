@@ -2,7 +2,7 @@ import { useLayoutEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 export const ScrollToTop = () => {
-  const { pathname, search } = useLocation();
+  const { pathname, search, hash } = useLocation();
   const navType = useNavigationType();
 
   useLayoutEffect(() => {
@@ -10,10 +10,13 @@ export const ScrollToTop = () => {
 
     window.history.scrollRestoration = "manual";
 
-    if (navType !== "POP") {
+    const shouldForceTop = pathname === "/" || navType !== "POP";
+
+    if (shouldForceTop && !hash) {
       window.scrollTo(0, 0);
+      requestAnimationFrame(() => window.scrollTo(0, 0));
     }
-  }, [pathname, search, navType]);
+  }, [pathname, search, hash, navType]);
 
   return null;
 };
