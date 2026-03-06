@@ -162,7 +162,7 @@ const WhatsAppMockup = () => {
           </div>
 
           {/* Chat area */}
-          <div className="p-4 space-y-3 overflow-y-auto bg-secondary/30" style={{ minHeight: 300, maxHeight: 420 }}>
+          <div className="p-4 space-y-3 overflow-y-auto" style={{ minHeight: 300, maxHeight: 420, backgroundImage: `url(${whatsappBg})`, backgroundSize: '300px', backgroundRepeat: 'repeat' }}>
             {/* Empty state with scenario buttons */}
             {!hasMessages && !loading && (
               <div className="flex flex-col items-center justify-center py-8 space-y-5">
