@@ -7,8 +7,7 @@ import logo from "@/assets/logo.png";
 const NAV_LINKS = [
   { href: "#beneficios", label: "Benefícios" },
   { href: "#como-funciona", label: "Como Funciona" },
-  { href: "#nichos", label: "Nichos" },
-  { href: "#depoimentos", label: "Depoimentos" },
+  { href: "#numeros", label: "Resultados" },
   { href: "#precos", label: "Preços" },
   { href: "#faq", label: "FAQ" },
 ];
