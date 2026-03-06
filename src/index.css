@@ -98,15 +98,13 @@
     @apply border-border;
   }
 
-  html {
-    overflow-x: hidden;
-    scrollbar-gutter: stable;
+  html, body {
+    overflow-x: clip;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
