@@ -49,8 +49,17 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages]);
+    const viewport = chatScrollAreaRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLDivElement | null;
+
+    if (!viewport) return;
+
+    viewport.scrollTo({
+      top: viewport.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
