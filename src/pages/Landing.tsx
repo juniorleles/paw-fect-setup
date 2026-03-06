@@ -31,7 +31,7 @@ const Landing = () => {
       <PainSolutionSection />
       <HowItWorksSection />
       
-      <TestimonialsSection />
+      <MetricsSection />
       <PricingSection />
       <FaqSection />
       <CtaSection />
