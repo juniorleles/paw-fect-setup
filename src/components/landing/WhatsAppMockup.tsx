@@ -281,6 +281,8 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                     {SCENARIOS.map((s) => (
                       <button
                         key={s.label}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => sendMessage(s.msg)}
                         disabled={loading}
                         className="text-[10px] px-2.5 py-1 rounded-full border bg-card hover:bg-secondary transition-colors disabled:opacity-50"
