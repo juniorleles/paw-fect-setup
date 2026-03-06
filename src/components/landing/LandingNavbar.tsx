@@ -21,10 +21,7 @@ const LandingNavbar = () => {
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="flex items-center gap-2">
-          <Briefcase className="w-7 h-7 text-primary" />
-          <span className="text-xl font-display font-bold">
-            Secretária <span className="text-primary">Digital</span>
-          </span>
+          <img src={logo} alt="MagicZap" className="h-8 w-auto" />
         </button>
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
           {NAV_LINKS.map((link) => (
