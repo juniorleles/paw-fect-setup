@@ -154,6 +154,7 @@ const App = () => (
           <OnboardingProvider>
             <SubscriptionProvider>
               <BrowserRouter>
+                <ScrollToTop />
                 <Routes>
                   <Route path="/" element={<Landing />} />
                   <Route path="/landing" element={<Navigate to="/" replace />} />
