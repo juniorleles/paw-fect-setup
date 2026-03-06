@@ -158,12 +158,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Briefcase className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-display font-bold text-foreground">
-              Secretária <span className="text-primary">Digital</span>
-            </h1>
-          </div>
+          <img src={logo} alt="MagicZap" className="h-16 w-auto mx-auto" />
         </div>
 
         <Card className="border-none shadow-xl bg-card">
