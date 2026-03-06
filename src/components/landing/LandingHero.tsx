@@ -40,32 +40,14 @@ const heroStats = [
   { icon: TrendingUp, value: 80, suffix: "%", label: "Menos faltas" },
 ];
 
-const floatingShapes = [
-  { size: 80, x: "10%", y: "20%", delay: 0, duration: 6 },
-  { size: 60, x: "85%", y: "15%", delay: 1, duration: 7 },
-  { size: 40, x: "75%", y: "70%", delay: 2, duration: 5 },
-  { size: 50, x: "5%", y: "75%", delay: 0.5, duration: 8 },
-  { size: 30, x: "50%", y: "10%", delay: 1.5, duration: 6.5 },
-];
-
 const LandingHero = () => (
-  <section className="relative overflow-hidden pt-20 pb-28 px-4">
-    {/* Animated background shapes */}
-    {floatingShapes.map((shape, i) => (
-      <motion.div
-        key={i}
-        className="absolute rounded-full bg-primary/5 blur-xl pointer-events-none"
-        style={{ width: shape.size, height: shape.size, left: shape.x, top: shape.y }}
-        animate={{
-          y: [0, -20, 0, 15, 0],
-          x: [0, 10, 0, -10, 0],
-          scale: [1, 1.2, 1, 0.9, 1],
-        }}
-        transition={{ duration: shape.duration, repeat: Infinity, ease: "easeInOut", delay: shape.delay }}
-      />
-    ))}
-
-    <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/8" />
+  <section className="relative overflow-hidden pt-24 pb-32 px-4 bg-background">
+    {/* Subtle grid pattern */}
+    <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.3)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.3)_1px,transparent_1px)] bg-[size:64px_64px]" />
+    
+    {/* Gradient orb */}
+    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
+    <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />
 
     <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
       {/* Left content */}
@@ -75,8 +57,8 @@ const LandingHero = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Badge variant="secondary" className="mb-5 text-sm px-4 py-1.5 shadow-sm">
-            <Zap className="w-3.5 h-3.5 mr-1.5 text-accent" /> Automação inteligente no WhatsApp
+          <Badge variant="outline" className="mb-6 text-sm px-4 py-1.5 border-primary/30 text-primary bg-primary/5 font-medium rounded-full">
+            <Zap className="w-3.5 h-3.5 mr-1.5" /> Automação inteligente no WhatsApp
           </Badge>
         </motion.div>
 
@@ -84,19 +66,11 @@ const LandingHero = () => (
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-[1.1] mb-6"
+          className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] mb-6 tracking-tight"
         >
           Seu WhatsApp{" "}
-          <span className="relative">
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              vendendo e agendando
-            </span>
-            <motion.span
-              className="absolute -bottom-1 left-0 h-1 bg-gradient-to-r from-primary to-accent rounded-full"
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-            />
+          <span className="text-primary">
+            vendendo e agendando
           </span>{" "}
           clientes 24h por dia
         </motion.h1>
@@ -105,7 +79,7 @@ const LandingHero = () => (
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 mb-8"
+          className="text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed"
         >
           IA que responde clientes automaticamente, agenda horários e reduz faltas — ideal para negócios que atendem pelo WhatsApp.
         </motion.p>
@@ -117,12 +91,12 @@ const LandingHero = () => (
           className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
         >
           <a href="/auth?signup=true&plan=free">
-            <Button size="lg" className="h-14 px-8 text-base font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
+            <Button size="lg" className="h-13 px-8 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-200">
               Testar grátis no meu WhatsApp <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </a>
           <a href="#como-funciona">
-            <Button variant="outline" size="lg" className="h-14 px-8 text-base hover:bg-secondary transition-colors">
+            <Button variant="outline" size="lg" className="h-13 px-8 text-base rounded-xl border-border hover:bg-secondary transition-colors duration-200">
               Como Funciona
             </Button>
           </a>
@@ -137,12 +111,12 @@ const LandingHero = () => (
           Sem cartão • Configuração em minutos
         </motion.p>
 
-        {/* Animated stats */}
+        {/* Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}
-          className="mt-10 grid grid-cols-3 gap-4"
+          className="mt-12 grid grid-cols-3 gap-6"
         >
           {heroStats.map((stat, i) => (
             <motion.div
@@ -166,47 +140,51 @@ const LandingHero = () => (
 
       {/* Right illustration */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.85, rotate: -2 }}
-        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 0.3, type: "spring", stiffness: 100 }}
         className="relative hidden lg:flex justify-center"
       >
         <div className="relative">
-          {/* Glow effect behind image */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-3xl scale-110" />
+          {/* Glow */}
+          <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-3xl scale-110" />
 
           <motion.img
             src={heroIllustration}
             alt="Secretária Digital atendendo clientes pelo WhatsApp automaticamente"
-            className="relative w-[420px] rounded-3xl shadow-2xl"
+            className="relative w-[420px] rounded-3xl shadow-2xl shadow-foreground/5"
             animate={{ y: [0, -12, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           />
 
           {/* Floating badges */}
           <motion.div
-            className="absolute -top-6 -right-6 bg-card rounded-2xl p-3 shadow-xl border border-border"
-            animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
+            className="absolute -top-4 -right-4 bg-card rounded-2xl p-3 shadow-lg border border-border/60"
+            animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
           >
             <div className="flex items-center gap-2">
-              <CalendarDays className="w-6 h-6 text-primary" />
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <CalendarDays className="w-5 h-5 text-primary" />
+              </div>
               <div>
-                <p className="text-xs font-bold text-foreground">Agendamento</p>
+                <p className="text-xs font-semibold text-foreground">Agendamento</p>
                 <p className="text-[10px] text-muted-foreground">Automático ✓</p>
               </div>
             </div>
           </motion.div>
 
           <motion.div
-            className="absolute -bottom-4 -left-6 bg-card rounded-2xl p-3 shadow-xl border border-border"
-            animate={{ y: [0, 8, 0], rotate: [0, -3, 0] }}
+            className="absolute -bottom-4 -left-4 bg-card rounded-2xl p-3 shadow-lg border border-border/60"
+            animate={{ y: [0, 8, 0], rotate: [0, -2, 0] }}
             transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           >
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-accent" />
+              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-accent" />
+              </div>
               <div>
-                <p className="text-xs font-bold text-foreground">Resposta</p>
+                <p className="text-xs font-semibold text-foreground">Resposta</p>
                 <p className="text-[10px] text-muted-foreground">Em 2 segundos</p>
               </div>
             </div>

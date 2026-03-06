@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import logo from "@/assets/logo.png";
 
 const LandingFooter = () => (
-  <footer className="border-t border-border py-10 px-4 bg-secondary/20">
+  <footer className="border-t border-border/60 py-10 px-4 bg-background">
     <motion.div
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
@@ -16,13 +16,13 @@ const LandingFooter = () => (
       </div>
       <p>© {new Date().getFullYear()} MagicZap. Todos os direitos reservados.</p>
       <div className="flex items-center gap-4">
-        <Link to="/terms-of-service" className="hover:text-foreground transition-colors">
+        <Link to="/terms-of-service" className="hover:text-foreground transition-colors duration-200">
           Termos de Uso
         </Link>
-        <Link to="/privacy-policy" className="hover:text-foreground transition-colors">
+        <Link to="/privacy-policy" className="hover:text-foreground transition-colors duration-200">
           Privacidade
         </Link>
-        <Link to="/auth" className="hover:text-foreground transition-colors">
+        <Link to="/auth" className="hover:text-foreground transition-colors duration-200">
           Área do Cliente
         </Link>
       </div>

@@ -28,7 +28,7 @@ const listItem = {
 };
 
 const PainSolutionSection = () => (
-  <section id="beneficios" className="py-24 px-4 bg-secondary/30">
+  <section id="beneficios" className="py-24 px-4 bg-secondary/50">
     <div className="max-w-5xl mx-auto">
       <motion.div
         initial="hidden"
@@ -38,7 +38,7 @@ const PainSolutionSection = () => (
         transition={{ duration: 0.5 }}
         className="text-center mb-14"
       >
-        <h2 className="text-3xl sm:text-4xl font-display font-bold mb-3">
+        <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
           Você perde clientes <span className="text-destructive">sem perceber</span>
         </h2>
         <p className="text-muted-foreground text-lg">Compare como é o atendimento sem e com automação</p>
@@ -51,7 +51,7 @@ const PainSolutionSection = () => (
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.6, duration: 0.4 }}
-          className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-14 h-14 rounded-full bg-primary shadow-xl items-center justify-center"
+          className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-14 h-14 rounded-2xl bg-primary shadow-lg shadow-primary/20 items-center justify-center"
         >
           <ArrowRight className="w-6 h-6 text-primary-foreground" />
         </motion.div>
@@ -64,9 +64,9 @@ const PainSolutionSection = () => (
           variants={fadeUp}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Card className="h-full border-2 border-destructive/20 shadow-md hover:shadow-lg transition-shadow">
+          <Card className="h-full rounded-2xl border border-destructive/15 shadow-sm hover:shadow-md transition-shadow duration-300">
             <CardContent className="p-8">
-              <h3 className="font-display font-bold text-xl mb-6 text-destructive">❌ Sem automação</h3>
+              <h3 className="font-bold text-xl mb-6 text-destructive">❌ Sem automação</h3>
               <ul className="space-y-4">
                 {pains.map((p, i) => (
                   <motion.li
@@ -78,7 +78,7 @@ const PainSolutionSection = () => (
                     variants={listItem}
                     className="flex items-start gap-3 text-muted-foreground"
                   >
-                    <XCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
+                    <XCircle className="w-5 h-5 text-destructive/70 mt-0.5 flex-shrink-0" />
                     <span>{p}</span>
                   </motion.li>
                 ))}
@@ -95,9 +95,9 @@ const PainSolutionSection = () => (
           variants={fadeUp}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Card className="h-full border-2 border-primary/30 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-card to-primary/5">
+          <Card className="h-full rounded-2xl border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-300 bg-primary/[0.02]">
             <CardContent className="p-8">
-              <h3 className="font-display font-bold text-xl mb-6 text-primary">✨ Com a Secretária Digital</h3>
+              <h3 className="font-bold text-xl mb-6 text-primary">✨ Com a Secretária Digital</h3>
               <ul className="space-y-4">
                 {solutions.map((s, i) => (
                   <motion.li

@@ -28,7 +28,7 @@ const FaqSection = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-14"
         >
-          <h2 className="text-3xl sm:text-4xl font-display font-bold mb-3">Perguntas Frequentes</h2>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">Perguntas Frequentes</h2>
           <p className="text-muted-foreground text-lg">Tudo que você precisa saber antes de começar</p>
         </motion.div>
         <div className="space-y-3">
@@ -40,13 +40,13 @@ const FaqSection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.3, delay: i * 0.06 }}
             >
-              <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
+              <Card className="rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <CardContent className="p-0">
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="w-full flex items-center justify-between p-5 text-left group"
                   >
-                    <span className="font-semibold text-sm pr-4 group-hover:text-primary transition-colors">
+                    <span className="font-semibold text-sm pr-4 group-hover:text-primary transition-colors duration-200">
                       {faq.q}
                     </span>
                     <motion.div

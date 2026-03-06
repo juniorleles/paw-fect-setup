@@ -57,7 +57,7 @@ const WhatsAppMockup = () => {
   }, [visibleMessages, started]);
 
   return (
-    <section className="py-20 px-4">
+    <section className="py-20 px-4 bg-secondary/50">
       <div className="max-w-2xl mx-auto">
         <motion.div
           initial="hidden"
@@ -67,7 +67,7 @@ const WhatsAppMockup = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <h2 className="text-3xl sm:text-4xl font-display font-bold mb-3">Veja como funciona na prática</h2>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">Veja como funciona na prática</h2>
           <p className="text-muted-foreground text-lg">Uma conversa real no WhatsApp com a Secretária Digital</p>
         </motion.div>
 
@@ -78,7 +78,7 @@ const WhatsAppMockup = () => {
           variants={fadeUp}
           transition={{ duration: 0.6, delay: 0.1 }}
           onAnimationComplete={() => setStarted(true)}
-          className="bg-[hsl(var(--muted))] rounded-2xl overflow-hidden shadow-2xl max-w-md mx-auto border border-border/50"
+          className="bg-secondary rounded-2xl overflow-hidden shadow-lg max-w-md mx-auto border border-border/60"
         >
           {/* Header */}
           <div className="bg-primary px-4 py-3 flex items-center gap-3">
@@ -89,7 +89,7 @@ const WhatsAppMockup = () => {
               <p className="text-primary-foreground font-bold text-sm">Secretária Digital</p>
               <div className="flex items-center gap-1.5">
                 <motion.div
-                  className="w-2 h-2 rounded-full bg-[hsl(var(--success))]"
+                  className="w-2 h-2 rounded-full bg-primary-foreground/70"
                   animate={{ opacity: [1, 0.4, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />

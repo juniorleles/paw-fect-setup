@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 
 const steps = [
-  { icon: Smartphone, title: "Conecte seu WhatsApp", desc: "Vincule seu número em poucos cliques. Sem instalar nada.", color: "from-primary/20 to-primary/5" },
-  { icon: BrainCircuit, title: "Treine a IA com seu negócio", desc: "Informe seus serviços, preços e horários. A IA aprende tudo.", color: "from-accent/20 to-accent/5" },
-  { icon: CalendarCheck, title: "Ela atende e agenda sozinha", desc: "Clientes são atendidos 24h e agendam direto pelo WhatsApp.", color: "from-success/20 to-success/5" },
+  { icon: Smartphone, title: "Conecte seu WhatsApp", desc: "Vincule seu número em poucos cliques. Sem instalar nada." },
+  { icon: BrainCircuit, title: "Treine a IA com seu negócio", desc: "Informe seus serviços, preços e horários. A IA aprende tudo." },
+  { icon: CalendarCheck, title: "Ela atende e agenda sozinha", desc: "Clientes são atendidos 24h e agendam direto pelo WhatsApp." },
 ];
 
 const HowItWorksSection = () => (
@@ -20,14 +20,14 @@ const HowItWorksSection = () => (
         transition={{ duration: 0.5 }}
         className="text-center mb-16"
       >
-        <h2 className="text-3xl sm:text-4xl font-display font-bold mb-3">Comece em 3 passos simples</h2>
+        <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">Comece em 3 passos simples</h2>
         <p className="text-muted-foreground text-lg">Nenhum conhecimento técnico necessário</p>
       </motion.div>
 
       <div className="relative">
         {/* Connecting line */}
         <motion.div
-          className="hidden sm:block absolute top-10 left-[16.67%] right-[16.67%] h-0.5 bg-gradient-to-r from-primary/30 via-accent/30 to-success/30"
+          className="hidden sm:block absolute top-12 left-[16.67%] right-[16.67%] h-px bg-border"
           initial={{ scaleX: 0 }}
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
@@ -39,22 +39,18 @@ const HowItWorksSection = () => (
           {steps.map((step, i) => (
             <motion.div
               key={step.title}
-              initial={{ opacity: 0, y: 40, scale: 0.9 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.2, type: "spring", stiffness: 100 }}
               className="text-center"
             >
-              <motion.div
-                className="relative mx-auto mb-6"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mx-auto shadow-lg`}>
-                  <step.icon className="w-10 h-10 text-foreground" />
+              <div className="relative mx-auto mb-6">
+                <div className="w-24 h-24 rounded-2xl bg-primary/8 border border-primary/10 flex items-center justify-center mx-auto">
+                  <step.icon className="w-10 h-10 text-primary" />
                 </div>
                 <motion.span
-                  className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-accent text-accent-foreground font-bold text-sm flex items-center justify-center shadow-md"
+                  className="absolute -top-2 -right-2 w-8 h-8 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center shadow-md shadow-primary/20"
                   initial={{ scale: 0 }}
                   whileInView={{ scale: 1 }}
                   viewport={{ once: true }}
@@ -62,9 +58,9 @@ const HowItWorksSection = () => (
                 >
                   {i + 1}
                 </motion.span>
-              </motion.div>
-              <h3 className="font-display font-bold text-lg mb-2">{step.title}</h3>
-              <p className="text-muted-foreground text-sm max-w-xs mx-auto">{step.desc}</p>
+              </div>
+              <h3 className="font-bold text-lg mb-2">{step.title}</h3>
+              <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">{step.desc}</p>
             </motion.div>
           ))}
         </div>
