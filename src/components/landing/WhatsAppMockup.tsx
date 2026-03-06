@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import whatsappBg from "@/assets/whatsapp-bg.png";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
+const MAX_USER_MESSAGES = 5;
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 
 const tomorrow = addDays(new Date(), 1);
