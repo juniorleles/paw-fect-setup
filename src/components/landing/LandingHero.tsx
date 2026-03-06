@@ -41,7 +41,7 @@ const heroStats = [
 ];
 
 const LandingHero = () => (
-  <section className="relative pt-24 pb-0 px-4 bg-background">
+  <section className="relative pt-16 pb-0 px-4 bg-background">
     {/* Decorative background (clipped without creating nested scroll) */}
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.3)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.3)_1px,transparent_1px)] bg-[size:64px_64px]" />
