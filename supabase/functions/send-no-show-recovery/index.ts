@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
         .neq("status", "no_show");
 
       const maxConcurrent = Math.min(
-        config.max_concurrent_appointments || 1,
+        Math.max(1, config.max_concurrent_appointments ?? 1),
         sub.plan === "professional" ? 5 : 1
       );
 
