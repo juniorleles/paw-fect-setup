@@ -304,6 +304,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                 </div>
               </>
             )}
+          </div>
         </motion.div>
   );
 
