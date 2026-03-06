@@ -62,7 +62,7 @@ const SCENARIOS = [
   { label: "Cancelar horário", icon: Clock, msg: "Preciso cancelar meu agendamento" },
 ];
 
-const WhatsAppMockup = () => {
+const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
