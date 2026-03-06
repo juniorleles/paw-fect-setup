@@ -267,42 +267,58 @@ const WhatsAppMockup = () => {
 
           {/* Quick scenarios (after first message) + Input */}
           <div className="border-t border-border/50 p-3 space-y-2 bg-card/50">
-            {hasMessages && (
-              <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
-                  <Zap className="w-3 h-3" /> Teste:
-                </span>
-                {SCENARIOS.map((s) => (
-                  <button
-                    key={s.label}
-                    onClick={() => sendMessage(s.msg)}
-                    disabled={loading}
-                    className="text-[10px] px-2.5 py-1 rounded-full border bg-card hover:bg-secondary transition-colors disabled:opacity-50"
-                  >
-                    {s.label}
-                  </button>
-                ))}
+            {limitReached ? (
+              <div className="text-center py-3 space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Você usou suas <span className="font-bold text-foreground">{MAX_USER_MESSAGES} mensagens</span> de teste 🎉
+                </p>
+                <a
+                  href="/auth"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+                >
+                  Crie sua conta grátis para continuar
+                </a>
               </div>
+            ) : (
+              <>
+                {hasMessages && (
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> Teste:
+                    </span>
+                    {SCENARIOS.map((s) => (
+                      <button
+                        key={s.label}
+                        onClick={() => sendMessage(s.msg)}
+                        disabled={loading}
+                        className="text-[10px] px-2.5 py-1 rounded-full border bg-card hover:bg-secondary transition-colors disabled:opacity-50"
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Input
+                    ref={inputRef}
+                    placeholder="Digite uma mensagem..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
+                    disabled={loading}
+                    className="h-10 flex-1 text-sm"
+                  />
+                  <Button
+                    onClick={() => sendMessage(input)}
+                    disabled={!input.trim() || loading}
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              </>
             )}
-            <div className="flex gap-2">
-              <Input
-                ref={inputRef}
-                placeholder="Digite uma mensagem..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-                disabled={loading}
-                className="h-10 flex-1 text-sm"
-              />
-              <Button
-                onClick={() => sendMessage(input)}
-                disabled={!input.trim() || loading}
-                size="icon"
-                className="h-10 w-10 shrink-0"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
           </div>
         </motion.div>
       </div>
