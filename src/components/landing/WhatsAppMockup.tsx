@@ -72,7 +72,13 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    const chatArea = chatAreaRef.current;
+    if (!chatArea) return;
+
+    chatArea.scrollTo({
+      top: chatArea.scrollHeight,
+      behavior: "smooth",
+    });
   }, [messages, loading]);
 
   const userMessageCount = messages.filter(m => m.role === "user").length;
