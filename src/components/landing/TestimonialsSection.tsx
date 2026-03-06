@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Star, TrendingUp, Quote } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -29,7 +28,7 @@ const TestimonialsSection = () => (
         transition={{ duration: 0.5 }}
         className="text-center mb-10"
       >
-        <h2 className="text-3xl sm:text-4xl font-display font-bold mb-3">
+        <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
           Resultados reais de quem usa
         </h2>
         <p className="text-muted-foreground text-lg">Pequenos e médios negócios que transformaram seu atendimento</p>
@@ -44,45 +43,42 @@ const TestimonialsSection = () => (
         transition={{ duration: 0.5, delay: 0.1 }}
         className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-14"
       >
-        {stats.map((s, i) => (
-          <motion.div
+        {stats.map((s) => (
+          <div
             key={s.label}
-            whileHover={{ scale: 1.05, y: -2 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/5 border border-primary/10 text-sm font-semibold"
           >
-            <Badge variant="secondary" className="px-6 py-3 text-base font-bold gap-2 shadow-sm">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              {s.value} {s.label}
-            </Badge>
-          </motion.div>
+            <TrendingUp className="w-4 h-4 text-primary" />
+            <span>{s.value} {s.label}</span>
+          </div>
         ))}
       </motion.div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {TESTIMONIALS.map((t, i) => (
           <motion.div
             key={t.name}
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: i * 0.1 }}
-            whileHover={{ y: -6, transition: { duration: 0.2 } }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
           >
-            <Card className="h-full border-none shadow-md hover:shadow-xl transition-all">
+            <Card className="h-full rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
-                <Quote className="w-8 h-8 text-primary/20 mb-3" />
+                <Quote className="w-7 h-7 text-primary/15 mb-3" />
                 <div className="flex gap-0.5 mb-3">
                   {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-accent text-accent" />
+                    <Star key={j} className="w-4 h-4 fill-primary/80 text-primary/80" />
                   ))}
                 </div>
-                <p className="text-sm text-muted-foreground mb-5 italic leading-relaxed">"{t.text}"</p>
+                <p className="text-sm text-muted-foreground mb-5 leading-relaxed">"{t.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                  <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center text-xs font-bold text-primary">
                     {t.avatar}
                   </div>
                   <div>
-                    <p className="font-bold text-sm">{t.name}</p>
+                    <p className="font-semibold text-sm">{t.name}</p>
                     <p className="text-xs text-muted-foreground">{t.niche}</p>
                   </div>
                 </div>
