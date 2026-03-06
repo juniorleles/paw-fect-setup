@@ -56,7 +56,7 @@ const LandingHero = () => (
           transition={{ duration: 0.5 }}
         >
           <Badge variant="outline" className="mb-6 text-sm px-4 py-1.5 border-primary/30 text-primary bg-primary/5 font-medium rounded-full">
-            <Zap className="w-3.5 h-3.5 mr-1.5" /> Automação inteligente no WhatsApp
+            <Zap className="w-3.5 h-3.5 mr-1.5" /> Feito para barbearias
           </Badge>
         </motion.div>
 
@@ -66,11 +66,11 @@ const LandingHero = () => (
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] mb-6 tracking-tight"
         >
-          Seu WhatsApp{" "}
+          Cliente sumiu, faltou ou{" "}
           <span className="text-primary">
-            vendendo e agendando
+            lotou seu WhatsApp?
           </span>{" "}
-          clientes 24h por dia
+          A IA resolve pra você
         </motion.h1>
 
         <motion.p
@@ -79,7 +79,7 @@ const LandingHero = () => (
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-lg text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed"
         >
-          IA que responde clientes automaticamente, agenda horários e reduz faltas — ideal para negócios que atendem pelo WhatsApp.
+          Chega de perder tempo respondendo "qual o preço do corte?" mil vezes. A IA atende, agenda e confirma horários na sua barbearia — 24h, sem você precisar tocar no celular.
         </motion.p>
 
         <motion.div
