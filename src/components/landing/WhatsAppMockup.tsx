@@ -170,6 +170,8 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                   {SCENARIOS.map((s) => (
                     <button
                       key={s.label}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => sendMessage(s.msg)}
                       className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-secondary hover:border-primary/30 transition-all text-left group"
                     >
