@@ -127,7 +127,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
           <header className="h-12 flex items-center border-b border-border px-4 md:hidden">
             <SidebarTrigger />
           </header>
-          <main className="flex-1 flex flex-col relative">
+          <main className="flex-1 flex flex-col relative overflow-x-hidden">
             {children}
             {location.pathname !== "/support" && (
               <Link
