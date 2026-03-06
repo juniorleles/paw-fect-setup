@@ -304,8 +304,27 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                 </div>
               </>
             )}
-          </div>
         </motion.div>
+  );
+
+  if (embedded) return mockupContent;
+
+  return (
+    <section className="py-20 px-4 bg-secondary/50">
+      <div className="max-w-2xl mx-auto">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={{ once: true }}
+          variants={fadeUp} transition={{ duration: 0.5 }}
+          className="text-center mb-8"
+        >
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
+            Teste a IA agora mesmo
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            Converse com a Secretária Digital e veja como ela atende seus clientes
+          </p>
+        </motion.div>
+        {mockupContent}
       </div>
     </section>
   );
