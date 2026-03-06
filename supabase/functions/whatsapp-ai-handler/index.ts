@@ -549,8 +549,11 @@ function inferServiceFromText(text: string, services: any[]): string | null {
     .replace(/\s+/g, " ")
     .trim();
 
-  const normalizeConnectors = (value: string) =>
-    normalize(value).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+  const normalizeConnectors = (value: string) => {
+    // Preserve + as connector before normalize strips it
+    const preserved = (value || "").replace(/\s*\+\s*/g, " e ");
+    return normalize(preserved).replace(/\b(e)\b/g, "+").replace(/\s*\+\s*/g, " + ");
+  };
 
   const normalizedText = normalize(text || "");
   const connectorText = normalizeConnectors(text || "");
