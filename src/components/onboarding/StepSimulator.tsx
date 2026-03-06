@@ -45,7 +45,7 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [simulatedAppointments, setSimulatedAppointments] = useState<string[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const chatScrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
