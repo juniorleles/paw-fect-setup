@@ -49,9 +49,7 @@ const LandingHero = () => (
     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
     <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />
 
-    <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-12 lg:gap-16 items-center">
-      {/* Left content */}
-      <div className="text-center lg:text-left">
+    <div className="relative max-w-3xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -79,7 +77,7 @@ const LandingHero = () => (
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed"
+          className="text-lg text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed"
         >
           IA que responde clientes automaticamente, agenda horários e reduz faltas — ideal para negócios que atendem pelo WhatsApp.
         </motion.p>
@@ -88,7 +86,7 @@ const LandingHero = () => (
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
+          className="flex flex-col sm:flex-row gap-3 justify-center"
         >
           <a href="/auth?signup=true&plan=free">
             <Button size="lg" className="h-13 px-8 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-200">
@@ -110,15 +108,14 @@ const LandingHero = () => (
         >
           Sem cartão • Configuração em minutos
         </motion.p>
+    </div>
 
-      </div>
-
-      {/* Right: Interactive simulator */}
+    {/* Simulator centered below */}
+    <div className="relative max-w-lg mx-auto mt-12">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 0.3, type: "spring", stiffness: 100 }}
-        className="relative"
       >
         <WhatsAppMockup embedded />
       </motion.div>
