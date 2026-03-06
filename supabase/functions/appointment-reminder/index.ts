@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
     // ─── 24h REMINDERS (all plans) ───
     const { data: appts24h, error: err24h } = await queryAppointmentsInWindow(
       serviceClient, brFormatter, brTimeFormatter, now,
-      24 * 60, 5, "reminder_24h_sent"
+      24 * 60, 2, "reminder_24h_sent"
     );
 
     if (err24h) {
