@@ -241,7 +241,7 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
                 </motion.div>
               )}
 
-              <div ref={scrollRef} />
+              
             </div>
           </ScrollArea>
         </div>
