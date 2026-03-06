@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import LandingNavbar from "@/components/landing/LandingNavbar";
 import LandingHero from "@/components/landing/LandingHero";
-onSection";
+import PainSolutionSection from "@/components/landing/PainSolutionSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import NichesSection from "@/components/landing/NichesSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
@@ -16,7 +16,6 @@ const Landing = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect authenticated users (e.g. from magic link) to dashboard
   useEffect(() => {
     if (!loading && user) {
       navigate("/dashboard", { replace: true });
@@ -27,9 +26,9 @@ const Landing = () => {
     <div className="min-h-screen bg-background font-sans">
       <LandingNavbar />
       <LandingHero />
-      <WhatsAppMockup />
       <PainSolutionSection />
-      <HowItWork<NichesSection />
+      <HowItWorksSection />
+      <NichesSection />
       <TestimonialsSection />
       <PricingSection />
       <FaqSection />
