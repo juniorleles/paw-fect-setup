@@ -691,7 +691,7 @@ const MyAccount = () => {
           </Card>
 
           {/* Essencial */}
-          <Card className={`border-2 transition-all relative overflow-hidden ${(currentPlan === "starter" && isActive) ? "border-primary shadow-xl" : "border-primary/50 shadow-lg"} sm:scale-[1.02]`}>
+          <Card className={`border-2 transition-all relative overflow-hidden ${(currentPlan === "starter" && isActive) ? "border-primary shadow-xl" : "border-primary/50 shadow-lg"}`}>
             <CardContent className="p-4 sm:p-5 flex flex-col h-full">
               <Badge className="w-fit mb-2 bg-primary text-primary-foreground text-xs">
                 <Star className="w-3 h-3 mr-1 fill-current" /> Mais Escolhido
