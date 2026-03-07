@@ -408,8 +408,9 @@ function inferStateFromUserMessage(
     }
   }
 
-  // Fallback 3: keep previously known state service
-  if (!matchedService && currentState.service) {
+  // Fallback 3: keep previously known state service — but ONLY if actively in a booking flow
+  // Do NOT carry over service from post_booking or greeting (prevents stale service like "Sobrancelha" leaking)
+  if (!matchedService && currentState.service && currentState.step !== "greeting" && currentState.step !== "post_booking") {
     matchedService = currentState.service;
   }
 
