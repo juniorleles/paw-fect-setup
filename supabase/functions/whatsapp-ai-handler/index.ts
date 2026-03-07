@@ -291,12 +291,29 @@ async function getConversationState(
 ): Promise<ConversationState> {
   const { data } = await serviceClient
     .from("conversation_state")
-    .select("step, service, date, time, client_name, pet_name, notes, extra")
+    .select("step, service, date, time, client_name, pet_name, notes, extra, updated_at")
     .eq("user_id", userId)
     .eq("phone", phone)
     .maybeSingle();
 
   if (!data) return { ...EMPTY_STATE };
+
+  // If state is older than 2 hours, consider it stale and reset
+  // This prevents old services (e.g. "Sobrancelha") from persisting across sessions
+  const STATE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+  if (data.updated_at) {
+    const stateAge = Date.now() - new Date(data.updated_at).getTime();
+    if (stateAge > STATE_TTL_MS) {
+      console.log(`[State] Stale state detected (${Math.round(stateAge / 60000)}min old). Resetting to greeting. Old service: "${data.service}"`);
+      // Keep client_name for returning customers, but clear booking-specific fields
+      return {
+        ...EMPTY_STATE,
+        client_name: data.client_name,
+        pet_name: data.pet_name,
+      };
+    }
+  }
+
   return {
     step: data.step || "greeting",
     service: data.service,
@@ -391,8 +408,9 @@ function inferStateFromUserMessage(
     }
   }
 
-  // Fallback 3: keep previously known state service
-  if (!matchedService && currentState.service) {
+  // Fallback 3: keep previously known state service — but ONLY if actively in a booking flow
+  // Do NOT carry over service from post_booking or greeting (prevents stale service like "Sobrancelha" leaking)
+  if (!matchedService && currentState.service && currentState.step !== "greeting" && currentState.step !== "post_booking") {
     matchedService = currentState.service;
   }
 
