@@ -118,7 +118,11 @@ function computeAvailableSlots(
     const weekday = dayNames[date.getUTCDay()];
 
     const daySchedule = businessHours.find((h: any) => h.day === weekday);
-    if (!daySchedule || !daySchedule.isOpen) continue;
+    if (!daySchedule || !daySchedule.isOpen) {
+      // Explicitly mark closed days so the AI doesn't confuse "skipped" with "available"
+      lines.push(`${weekday} ${dateStr}: FECHADO`);
+      continue;
+    }
     console.log(`[AVAILABILITY] ${weekday} ${dateStr}: openTime=${daySchedule.openTime}, closeTime=${daySchedule.closeTime}, d=${d}`);
 
     // Build time ranges (supports lunch break with two shifts)
