@@ -2922,13 +2922,48 @@ async function tryDeterministicBooking(
     }
   }
 
-  // Auto-assign attendant for deterministic booking
+  // Auto-assign attendant for deterministic booking (with preference detection)
   const attendantList = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
   let assignedAttendant: string | null = null;
   if (attendantList.length > 0) {
-    const serviceDur = serviceConfig.duration || 30;
-    assignedAttendant = findFreeAttendant(attendantList, appointments || [], shopConfig.services || [], chosenDate, finalTime, serviceDur);
-    console.log(`[DeterministicBooking] Auto-assigned attendant: ${assignedAttendant || "none"}`);
+    // Check if user mentioned a specific attendant name
+    const userLower = (userMessage || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const preferredAttendant = attendantList.find((att: string) => {
+      const attLower = att.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return userLower.includes(attLower);
+    });
+
+    if (preferredAttendant) {
+      // Validate preferred attendant is free
+      const serviceDur = serviceConfig.duration || 30;
+      const timeMin = timeToMinutes(finalTime);
+      const slotsNeeded = Math.max(1, Math.ceil(serviceDur / 30));
+      let isFree = true;
+      for (let i = 0; i < slotsNeeded; i++) {
+        const checkTime = minutesToTime(timeMin + i * 30);
+        const conflict = (appointments || []).find((a: any) => {
+          if (a.date !== chosenDate) return false;
+          if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") return false;
+          if (a.professional_name !== preferredAttendant) return false;
+          const aptStart = timeToMinutes(a.time);
+          const aptDur = getServiceDuration(shopConfig.services || [], a.service);
+          return timeToMinutes(checkTime) >= aptStart && timeToMinutes(checkTime) < aptStart + aptDur;
+        });
+        if (conflict) { isFree = false; break; }
+      }
+      if (isFree) {
+        assignedAttendant = preferredAttendant;
+        console.log(`[DeterministicBooking] Preferred attendant "${preferredAttendant}" is free, assigned`);
+      } else {
+        console.log(`[DeterministicBooking] Preferred attendant "${preferredAttendant}" is busy, auto-assigning`);
+        const serviceDurFallback = serviceConfig.duration || 30;
+        assignedAttendant = findFreeAttendant(attendantList, appointments || [], shopConfig.services || [], chosenDate, finalTime, serviceDurFallback);
+      }
+    } else {
+      const serviceDur = serviceConfig.duration || 30;
+      assignedAttendant = findFreeAttendant(attendantList, appointments || [], shopConfig.services || [], chosenDate, finalTime, serviceDur);
+    }
+    console.log(`[DeterministicBooking] Assigned attendant: ${assignedAttendant || "none"}`);
   }
 
   // Insert appointment
