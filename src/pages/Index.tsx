@@ -276,6 +276,25 @@ const Index = () => {
   };
 
   const handleActivate = async () => {
+    // Final validation: ensure ALL steps are complete (not just current step)
+    const allStepsValid = data.phoneVerified &&
+      data.shopName.trim() &&
+      data.address.trim() &&
+      data.neighborhood.trim() &&
+      data.city.trim() &&
+      data.state &&
+      data.services.length > 0 &&
+      data.services.every(s => s.price && s.duration) &&
+      data.assistantName.trim();
+
+    if (!allStepsValid) {
+      toast({
+        title: "Onboarding incompleto",
+        description: "Complete todas as etapas antes de ativar sua secretária.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!validate()) return;
     if (!acceptedTerms) {
       toast({
