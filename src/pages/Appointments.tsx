@@ -16,6 +16,7 @@ import AppointmentFilters, { type ViewMode } from "@/components/appointments/App
 import AppointmentListView from "@/components/appointments/AppointmentListView";
 import AppointmentCalendarView from "@/components/appointments/AppointmentCalendarView";
 import AvailabilityCard from "@/components/appointments/AvailabilityCard";
+import AttendantScheduleView from "@/components/appointments/AttendantScheduleView";
 import type { DaySchedule } from "@/types/onboarding";
 
 
