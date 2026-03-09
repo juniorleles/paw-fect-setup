@@ -160,6 +160,12 @@ const AppointmentCard = ({ appointment: apt, onStatusChange, onEdit, onDelete, i
             </>
           )}
           <span className="truncate">{apt.service}</span>
+          {apt.professional_name && (
+            <>
+              <span className="text-border">·</span>
+              <span className="truncate text-primary/80 font-medium">{apt.professional_name}</span>
+            </>
+          )}
         </div>
         {apt.notes && !apt.notes.startsWith('{') && !apt.notes.startsWith('[') && (
           <p className="text-xs text-muted-foreground/70 mt-1 truncate">{apt.notes}</p>
