@@ -27,7 +27,9 @@ Deno.serve(async (req) => {
     const appSecret = Deno.env.get("META_APP_SECRET")!;
 
     // Step 1: Exchange the short-lived code for a long-lived token
-    const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}`;
+    // For FB.login with response_type=code, redirect_uri must match the origin
+    const redirectUri = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") || "";
+    const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     const tokenRes = await fetch(tokenUrl);
     const tokenData = await tokenRes.json();
 
