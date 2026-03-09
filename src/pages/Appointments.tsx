@@ -68,6 +68,7 @@ const Appointments = () => {
       if (configs && configs.length > 0) {
         setServices(configs[0].services as unknown as Service[]);
         setBusinessHours(configs[0].business_hours as unknown as DaySchedule[]);
+        setAttendants((configs[0].attendants as unknown as string[]) || []);
         setRawMaxConcurrent((configs[0] as any).max_concurrent_appointments ?? 1);
       }
       setLoadingConfig(false);
