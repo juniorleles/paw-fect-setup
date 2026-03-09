@@ -265,7 +265,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                   Você usou suas <span className="font-bold text-foreground">{MAX_USER_MESSAGES} mensagens</span> de teste 🎉
                 </p>
                 <a
-                  href="/auth"
+                  href="/auth?signup=true&plan=free"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
                 >
                   Crie sua conta grátis para continuar
