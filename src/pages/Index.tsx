@@ -202,6 +202,7 @@ const Index = () => {
       voice_tone: updatedData.voiceTone,
       assistant_name: updatedData.assistantName,
       max_concurrent_appointments: updatedData.maxConcurrentAppointments,
+      attendants: updatedData.attendants as any,
       activated: isActivated,
     };
 
