@@ -42,12 +42,32 @@ Deno.serve(async (req) => {
 
     const instanceName = `user_${user.id.replace(/-/g, "").substring(0, 16)}`;
 
-    // Already connected? Return early
+    // Fetch config and validate onboarding is complete
     const { data: existingConfig } = await serviceClient
       .from("pet_shop_configs")
-      .select("whatsapp_status")
+      .select("whatsapp_status, activated, shop_name, phone, services")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if (!existingConfig) {
+      return new Response(
+        JSON.stringify({ error: "Configuração não encontrada. Complete o onboarding primeiro." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate required onboarding fields
+    const services = existingConfig.services as any[];
+    const hasRequiredData = existingConfig.shop_name?.trim() &&
+      existingConfig.phone?.trim() &&
+      Array.isArray(services) && services.length > 0;
+
+    if (!hasRequiredData) {
+      return new Response(
+        JSON.stringify({ error: "Complete todas as etapas do onboarding antes de ativar." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (existingConfig?.whatsapp_status === "connected") {
       return new Response(

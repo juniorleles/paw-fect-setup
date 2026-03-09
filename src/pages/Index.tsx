@@ -75,7 +75,25 @@ const Index = () => {
         // 1. Sync subscription status
         await refetchSubscription();
 
-        // 2. Save config as activated (use current data state which is loaded from DB)
+        // 2. Validate onboarding is complete before activating
+        const isOnboardingComplete = data.phoneVerified &&
+          data.shopName.trim() &&
+          data.address.trim() &&
+          data.services.length > 0 &&
+          data.assistantName.trim();
+
+        if (!isOnboardingComplete) {
+          setActivatingAfterCheckout(false);
+          setStep(1);
+          toast({
+            title: "Onboarding incompleto",
+            description: "Complete todas as etapas antes de ativar.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // 3. Save config as activated
         if (user) {
           const cId = configId;
           if (cId) {
