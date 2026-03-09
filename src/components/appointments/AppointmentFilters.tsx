@@ -20,6 +20,8 @@ interface Props {
   onStatusFilterChange: (status: string) => void;
   serviceFilter: string;
   onServiceFilterChange: (service: string) => void;
+  professionalFilter: string;
+  onProfessionalFilterChange: (professional: string) => void;
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
   quickDateFilter: string;
@@ -27,6 +29,7 @@ interface Props {
   selectedDate: Date | undefined;
   onClearDate: () => void;
   uniqueServices: string[];
+  uniqueProfessionals: string[];
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
@@ -38,6 +41,8 @@ const AppointmentFilters = ({
   onStatusFilterChange,
   serviceFilter,
   onServiceFilterChange,
+  professionalFilter,
+  onProfessionalFilterChange,
   searchQuery,
   onSearchQueryChange,
   quickDateFilter,
@@ -45,6 +50,7 @@ const AppointmentFilters = ({
   selectedDate,
   onClearDate,
   uniqueServices,
+  uniqueProfessionals,
   hasActiveFilters,
   onClearFilters,
 }: Props) => {
@@ -137,6 +143,20 @@ const AppointmentFilters = ({
             ))}
           </SelectContent>
         </Select>
+
+        {uniqueProfessionals.length > 0 && (
+          <Select value={professionalFilter} onValueChange={onProfessionalFilterChange}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder="Profissional" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os profissionais</SelectItem>
+              {uniqueProfessionals.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {selectedDate && (
           <Badge variant="secondary" className="h-8 px-3 flex items-center gap-1.5 text-xs">

@@ -50,6 +50,7 @@ const Appointments = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [serviceFilter, setServiceFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [professionalFilter, setProfessionalFilter] = useState("all");
   const [quickDateFilter, setQuickDateFilter] = useState("today");
   const [editingApt, setEditingApt] = useState<Appointment | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -107,6 +108,9 @@ const Appointments = () => {
       // Service
       if (serviceFilter !== "all" && apt.service !== serviceFilter) return false;
 
+      // Professional
+      if (professionalFilter !== "all" && apt.professional_name !== professionalFilter) return false;
+
       // Search
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -119,18 +123,23 @@ const Appointments = () => {
 
       return true;
     });
-  }, [appointments, quickDateFilter, selectedDate, statusFilter, serviceFilter, searchQuery]);
+  }, [appointments, quickDateFilter, selectedDate, statusFilter, serviceFilter, professionalFilter, searchQuery]);
 
   const uniqueServices = useMemo(() => {
     return Array.from(new Set(appointments.map((a) => a.service)));
   }, [appointments]);
 
-  const hasActiveFilters = selectedDate !== undefined || statusFilter !== "all" || serviceFilter !== "all" || searchQuery !== "" || quickDateFilter !== "all";
+  const uniqueProfessionals = useMemo(() => {
+    return Array.from(new Set(appointments.map((a) => a.professional_name).filter(Boolean) as string[]));
+  }, [appointments]);
+
+  const hasActiveFilters = selectedDate !== undefined || statusFilter !== "all" || serviceFilter !== "all" || professionalFilter !== "all" || searchQuery !== "" || quickDateFilter !== "all";
 
   const clearFilters = () => {
     setSelectedDate(undefined);
     setStatusFilter("all");
     setServiceFilter("all");
+    setProfessionalFilter("all");
     setSearchQuery("");
     setQuickDateFilter("all");
   };
@@ -195,6 +204,8 @@ const Appointments = () => {
         onStatusFilterChange={setStatusFilter}
         serviceFilter={serviceFilter}
         onServiceFilterChange={setServiceFilter}
+        professionalFilter={professionalFilter}
+        onProfessionalFilterChange={setProfessionalFilter}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         quickDateFilter={quickDateFilter}
@@ -202,6 +213,7 @@ const Appointments = () => {
         selectedDate={selectedDate}
         onClearDate={() => setSelectedDate(undefined)}
         uniqueServices={uniqueServices}
+        uniqueProfessionals={uniqueProfessionals}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={clearFilters}
       />
