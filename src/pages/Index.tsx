@@ -59,6 +59,15 @@ const Index = () => {
     if (checkoutResult !== "success" && !checkoutPending) return;
     // Wait for config to be loaded before activating
     if (!configLoaded) return;
+    // If no config exists in DB, this is a stale localStorage flag — clear it silently
+    if (!configId) {
+      localStorage.removeItem("checkout_pending");
+      localStorage.removeItem("chosen_plan");
+      if (checkoutResult) {
+        window.history.replaceState({}, "", location.pathname);
+      }
+      return;
+    }
 
     // Show full-screen loading immediately
     setActivatingAfterCheckout(true);
