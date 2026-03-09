@@ -108,6 +108,9 @@ const Appointments = () => {
       // Service
       if (serviceFilter !== "all" && apt.service !== serviceFilter) return false;
 
+      // Professional
+      if (professionalFilter !== "all" && apt.professional_name !== professionalFilter) return false;
+
       // Search
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
