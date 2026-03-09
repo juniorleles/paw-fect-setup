@@ -2379,9 +2379,17 @@ REGRA: Se o cliente perguntar sobre "meus agendamentos", "algum agendamento", "q
 CAPACIDADE DE ATENDIMENTO SIMULTÂNEO: ${maxConcurrent} atendente${maxConcurrent > 1 ? "s" : ""} por horário.
 ${(() => {
   const attendantNames = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
-  if (attendantNames.length > 0) {
+  if (attendantNames.length > 1) {
     return `NOMES DOS ATENDENTES: ${attendantNames.join(", ")}
-REGRA DE DISTRIBUIÇÃO: Ao confirmar um agendamento, você DEVE incluir o campo "professional_name" no bloco <action> com o nome do atendente designado. O sistema distribui automaticamente, mas se o cliente pedir um atendente específico, respeite a preferência.`;
+REGRA DE PREFERÊNCIA DE PROFISSIONAL:
+- Se o cliente mencionar o nome de um atendente (ex: "quero com o João", "com a Maria", "prefiro o Carlos"), RESPEITE a preferência e inclua "professional_name" no bloco <action>.
+- Se o cliente NÃO mencionar preferência, o sistema distribui automaticamente — NÃO pergunte proativamente com qual profissional ele quer, apenas confirme normalmente.
+- Se o cliente pedir um profissional que NÃO está na lista acima, informe educadamente os nomes disponíveis.
+- Se o profissional pedido estiver ocupado no horário, informe e sugira horários livres para aquele profissional OU ofereça outro profissional disponível.
+- SEMPRE inclua o campo "professional_name" no <action> — se o cliente escolheu, use o nome dele; senão, deixe vazio que o sistema auto-atribui.`;
+  } else if (attendantNames.length === 1) {
+    return `ATENDENTE: ${attendantNames[0]}
+REGRA: Sempre atribua automaticamente. Inclua "professional_name":"${attendantNames[0]}" no bloco <action>.`;
   }
   return "";
 })()
