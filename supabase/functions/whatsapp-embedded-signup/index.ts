@@ -149,7 +149,23 @@ Deno.serve(async (req) => {
       console.log("[EMBEDDED-SIGNUP] Subscribe result:", JSON.stringify(subscribeData));
     }
 
-    // Step 4: Save the WABA info to the database
+    // Step 4: Exchange short-lived token for a long-lived token (60 days)
+    let finalToken = accessToken;
+    try {
+      const exchangeUrl = `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${accessToken}`;
+      const exchangeRes = await fetch(exchangeUrl);
+      const exchangeData = await exchangeRes.json();
+      if (exchangeData.access_token) {
+        finalToken = exchangeData.access_token;
+        console.log(`[EMBEDDED-SIGNUP] Token exchanged for long-lived token (expires_in: ${exchangeData.expires_in || 'unknown'})`);
+      } else {
+        console.warn("[EMBEDDED-SIGNUP] Token exchange failed, using original token:", JSON.stringify(exchangeData));
+      }
+    } catch (exchangeErr) {
+      console.warn("[EMBEDDED-SIGNUP] Token exchange error, using original:", exchangeErr);
+    }
+
+    // Step 5: Save the WABA info to the database
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -160,7 +176,7 @@ Deno.serve(async (req) => {
       .update({
         meta_waba_id: wabaId,
         meta_phone_number_id: phoneNumberId,
-        meta_access_token: accessToken,
+        meta_access_token: finalToken,
         whatsapp_status: phoneNumberId ? "connected" : "pending",
       })
       .eq("user_id", userId);
