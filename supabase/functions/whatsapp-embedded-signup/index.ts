@@ -44,23 +44,26 @@ Deno.serve(async (req) => {
     }
     
     // Lookup WABA from phone number ID
-    if (action === "lookup_waba" && body.phoneNumberId) {
+    if (action === "lookup_waba") {
       const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
-      // Get the WABA that owns this phone number
-      const url = `https://graph.facebook.com/v21.0/${body.phoneNumberId}?fields=id,display_phone_number,name_status,quality_rating&access_token=${systemToken}`;
-      const res = await fetch(url);
-      const data = await res.json();
+      const results: Record<string, unknown> = {};
       
-      // Also try to get the owner WABA
-      const wabaUrl = `https://graph.facebook.com/v21.0/${body.phoneNumberId}/owner?access_token=${systemToken}`;
-      const wabaRes = await fetch(wabaUrl);
-      const wabaData = await wabaRes.json();
+      if (body.phoneNumberId) {
+        const url = `https://graph.facebook.com/v21.0/${body.phoneNumberId}?fields=id,display_phone_number,name_status,quality_rating&access_token=${systemToken}`;
+        const res = await fetch(url);
+        results.phone = await res.json();
+      }
       
-      console.log(`[EMBEDDED-SIGNUP] Phone data:`, JSON.stringify(data));
-      console.log(`[EMBEDDED-SIGNUP] Owner WABA:`, JSON.stringify(wabaData));
+      // List WABAs owned by business
+      if (body.businessId) {
+        const url = `https://graph.facebook.com/v21.0/${body.businessId}/owned_whatsapp_business_accounts?access_token=${systemToken}`;
+        const res = await fetch(url);
+        results.wabas = await res.json();
+      }
       
+      console.log(`[EMBEDDED-SIGNUP] Lookup:`, JSON.stringify(results));
       return new Response(
-        JSON.stringify({ phone: data, owner: wabaData }),
+        JSON.stringify(results),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
