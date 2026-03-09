@@ -418,7 +418,9 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className={`text-sm font-bold ${whatsappStatus === "connected" ? "text-success" : "text-destructive"}`}>
-                    {whatsappStatus === "connected" ? "Conectado" : "Desconectado"}
+                    {whatsappStatus === "connected"
+                      ? whatsappProvider === "meta" ? "Conectado (Meta)" : "Conectado"
+                      : "Desconectado"}
                   </p>
                   <p className="text-xs text-muted-foreground">WhatsApp</p>
                   {whatsappStatus !== "connected" && (
