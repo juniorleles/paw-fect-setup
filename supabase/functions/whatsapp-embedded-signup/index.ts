@@ -61,6 +61,18 @@ Deno.serve(async (req) => {
         results.wabas = await res.json();
       }
       
+      // List WABAs shared with app
+      const appId = "910231245041925";
+      const appSecret = Deno.env.get("META_APP_SECRET")!;
+      const appToken = `${appId}|${appSecret}`;
+      
+      // Try to get phone number's WABA via the whatsapp_business_account edge
+      if (body.phoneNumberId) {
+        const wabaEdgeUrl = `https://graph.facebook.com/v21.0/${body.phoneNumberId}/whatsapp_business_account?access_token=${systemToken}`;
+        const wabaEdgeRes = await fetch(wabaEdgeUrl);
+        results.phoneWaba = await wabaEdgeRes.json();
+      }
+      
       console.log(`[EMBEDDED-SIGNUP] Lookup:`, JSON.stringify(results));
       return new Response(
         JSON.stringify(results),
