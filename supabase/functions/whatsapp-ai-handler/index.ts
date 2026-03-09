@@ -2836,13 +2836,112 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { instanceName, message, senderPhone } = await req.json();
+    const { instanceName, message: rawMessage, senderPhone } = await req.json();
 
-    if (!instanceName || !message || !senderPhone) {
+    if (!instanceName || !rawMessage || !senderPhone) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // --- Media Message Detection ---
+    // Messages from whatsapp-cloud-webhook may contain JSON with _media flag
+    let message = rawMessage;
+    let mediaContext: { type: string; mediaUrl: string; storagePath: string; mimeType: string; caption: string | null } | null = null;
+
+    try {
+      const parsed = JSON.parse(rawMessage);
+      if (parsed._media) {
+        mediaContext = {
+          type: parsed.type,
+          mediaUrl: parsed.mediaUrl,
+          storagePath: parsed.storagePath,
+          mimeType: parsed.mimeType,
+          caption: parsed.caption,
+        };
+
+        if (parsed.type === "audio") {
+          // Transcribe audio using Lovable AI (Gemini with audio support)
+          console.log(`[MEDIA] Transcribing audio from ${senderPhone}: ${parsed.mediaUrl}`);
+          try {
+            const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+            if (LOVABLE_API_KEY) {
+              // Download audio binary for inline data
+              const serviceClientForMedia = getServiceClient();
+              const { data: audioData, error: audioErr } = await serviceClientForMedia.storage
+                .from("customer-media")
+                .download(parsed.storagePath);
+
+              if (audioErr || !audioData) {
+                console.error("[MEDIA] Audio download error:", audioErr?.message);
+                message = "[O cliente enviou um áudio que não pôde ser processado]";
+              } else {
+                const audioBuffer = await audioData.arrayBuffer();
+                const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+
+                const transcribeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    model: "google/gemini-2.5-flash",
+                    messages: [
+                      {
+                        role: "user",
+                        content: [
+                          {
+                            type: "input_audio",
+                            input_audio: {
+                              data: audioBase64,
+                              format: parsed.mimeType?.includes("ogg") ? "ogg" : "wav",
+                            },
+                          },
+                          {
+                            type: "text",
+                            text: "Transcreva este áudio em português brasileiro. Retorne APENAS o texto transcrito, sem explicações ou formatação adicional.",
+                          },
+                        ],
+                      },
+                    ],
+                    max_completion_tokens: 1024,
+                  }),
+                });
+
+                if (transcribeRes.ok) {
+                  const transcribeData = await transcribeRes.json();
+                  const transcription = transcribeData.choices?.[0]?.message?.content?.trim();
+                  if (transcription && transcription.length > 0) {
+                    message = transcription;
+                    console.log(`[MEDIA] Audio transcribed: "${transcription.substring(0, 200)}"`);
+                  } else {
+                    message = "[O cliente enviou um áudio que não pôde ser transcrito]";
+                  }
+                } else {
+                  const errText = await transcribeRes.text();
+                  console.error("[MEDIA] Transcription error:", transcribeRes.status, errText);
+                  message = "[O cliente enviou um áudio que não pôde ser processado]";
+                }
+              }
+            } else {
+              message = "[O cliente enviou um áudio que não pôde ser processado]";
+            }
+          } catch (transcribeErr) {
+            console.error("[MEDIA] Transcription exception:", transcribeErr);
+            message = "[O cliente enviou um áudio que não pôde ser processado]";
+          }
+        } else if (parsed.type === "image") {
+          // For images: use caption if available, otherwise acknowledge
+          console.log(`[MEDIA] Image received from ${senderPhone}, stored at ${parsed.storagePath}`);
+          message = parsed.caption
+            ? `[O cliente enviou uma imagem com a legenda: "${parsed.caption}"]`
+            : "[O cliente enviou uma imagem]";
+        }
+      }
+    } catch {
+      // Not JSON — regular text message, use as-is
     }
 
     const serviceClient = getServiceClient();
