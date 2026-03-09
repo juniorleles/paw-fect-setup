@@ -260,6 +260,87 @@ function filterAvailableSlotsForService(availableSlots: string, serviceDuration:
   return filteredLines.join("\n");
 }
 
+// Find the first free attendant at a given date/time slot
+function findFreeAttendant(
+  attendants: string[],
+  appointments: any[],
+  services: any[],
+  date: string,
+  time: string,
+  serviceDuration: number,
+  slotInterval = 30
+): string | null {
+  if (!attendants || attendants.length === 0) return null;
+
+  const filledAttendants = attendants.filter(n => n.trim());
+  if (filledAttendants.length === 0) return null;
+
+  const timeMin = timeToMinutes(time);
+  const slotsNeeded = Math.max(1, Math.ceil(serviceDuration / slotInterval));
+
+  // For each attendant, check if they are free during all slots the service would occupy
+  for (const attendant of filledAttendants) {
+    let isFree = true;
+    for (let i = 0; i < slotsNeeded; i++) {
+      const checkTime = minutesToTime(timeMin + i * slotInterval);
+      // Check if this attendant has any overlapping appointment at this slot
+      const conflict = appointments.find((a: any) => {
+        if (a.date !== date) return false;
+        if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") return false;
+        // Only match if explicitly assigned to this attendant
+        if (a.professional_name && a.professional_name !== attendant) return false;
+        // If no professional_name assigned, count against overall capacity
+        if (!a.professional_name) return false;
+        const aptStart = timeToMinutes(a.time);
+        const aptDur = getServiceDuration(services, a.service);
+        const aptEnd = aptStart + aptDur;
+        const checkMin = timeToMinutes(checkTime);
+        return checkMin >= aptStart && checkMin < aptEnd;
+      });
+      if (conflict) {
+        isFree = false;
+        break;
+      }
+    }
+    if (isFree) return attendant;
+  }
+
+  // Fallback: check for attendants not yet assigned (for legacy appointments without professional_name)
+  // Count unassigned appointments at this slot
+  const unassignedAtSlot = appointments.filter((a: any) => {
+    if (a.date !== date) return false;
+    if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") return false;
+    if (a.professional_name) return false;
+    const aptStart = timeToMinutes(a.time);
+    const aptDur = getServiceDuration(services, a.service);
+    const aptEnd = aptStart + aptDur;
+    return timeMin >= aptStart && timeMin < aptEnd;
+  }).length;
+
+  // Find attendants not explicitly booked
+  const explicitlyBooked = new Set(
+    appointments
+      .filter((a: any) => {
+        if (a.date !== date) return false;
+        if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") return false;
+        if (!a.professional_name) return false;
+        const aptStart = timeToMinutes(a.time);
+        const aptDur = getServiceDuration(services, a.service);
+        const aptEnd = aptStart + aptDur;
+        return timeMin >= aptStart && timeMin < aptEnd;
+      })
+      .map((a: any) => a.professional_name)
+  );
+
+  const availableAttendants = filledAttendants.filter(a => !explicitlyBooked.has(a));
+  // Reserve some for unassigned legacy appointments
+  if (availableAttendants.length > unassignedAtSlot) {
+    return availableAttendants[unassignedAtSlot]; // Skip ones "reserved" for unassigned
+  }
+
+  return null; // All attendants busy
+}
+
 function getServiceClient() {
   return createClient(
     Deno.env.get("SUPABASE_URL")!,
