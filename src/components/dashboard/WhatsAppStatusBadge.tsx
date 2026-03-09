@@ -46,7 +46,7 @@ const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; t
 };
 
 const WhatsAppStatusBadge = () => {
-  const status = useWhatsAppStatus();
+  const { status } = useWhatsAppStatus();
   const config = STATUS_CONFIG[status];
   const { toast } = useToast();
   const isMobile = useIsMobile();

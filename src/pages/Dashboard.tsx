@@ -44,7 +44,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { ownerId } = useOwnerId();
   const navigate = useNavigate();
-  const whatsappStatus = useWhatsAppStatus();
+  const { status: whatsappStatus, provider: whatsappProvider } = useWhatsAppStatus();
   const { status: subStatus, trialEndAt, plan: currentPlan } = useSubscription();
 
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
