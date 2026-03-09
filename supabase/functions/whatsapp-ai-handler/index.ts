@@ -1629,6 +1629,9 @@ function calculateHumanDelay(text: string): number {
 }
 
 async function sendComposingPresence(instanceName: string, phone: string): Promise<void> {
+  // Skip composing presence for Meta Cloud API instances
+  if (instanceName.startsWith("meta_")) return;
+
   const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
   const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
   if (!evolutionUrl || !evolutionKey) return;
@@ -1654,19 +1657,55 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
-  const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
-  const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-  if (!evolutionUrl || !evolutionKey) return;
+// Global variable to hold Meta config for the current request (set during config lookup)
+let _currentMetaConfig: { accessToken: string; phoneNumberId: string } | null = null;
 
-  // Send "composing" presence and wait humanized delay
+async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
   const delay = calculateHumanDelay(text);
   console.log(`[TypingDelay] Text length: ${text.length}, delay: ${delay}ms`);
   await sendComposingPresence(instanceName, phone);
   await sleep(delay);
 
-  const baseUrl = evolutionUrl.replace(/\/+$/, "");
   const cleanPhone = phone.replace("@s.whatsapp.net", "");
+
+  // --- Meta Cloud API ---
+  if (instanceName.startsWith("meta_") && _currentMetaConfig) {
+    const { accessToken, phoneNumberId } = _currentMetaConfig;
+    console.log(`[META-SEND] Sending to ${cleanPhone} via Meta Cloud API (phone_number_id: ${phoneNumberId})`);
+
+    const metaRes = await fetch(
+      `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanPhone,
+          type: "text",
+          text: { body: text },
+        }),
+      }
+    );
+
+    const metaBody = await metaRes.text();
+    console.log(`[META-SEND] Response: ${metaRes.status} ${metaBody.substring(0, 300)}`);
+
+    if (!metaRes.ok) {
+      console.error(`[META-SEND] Failed to send message: ${metaRes.status} ${metaBody}`);
+    }
+    return;
+  }
+
+  // --- Evolution API (default) ---
+  const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
+  const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
+  if (!evolutionUrl || !evolutionKey) return;
+
+  const baseUrl = evolutionUrl.replace(/\/+$/, "");
   const res = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
     method: "POST",
     headers: {
