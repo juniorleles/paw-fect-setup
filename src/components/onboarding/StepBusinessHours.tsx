@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OnboardingData, DaySchedule } from "@/types/onboarding";
-import { Clock, Copy, Users, Lock, Coffee } from "lucide-react";
+import { Clock, Copy, Users, Lock, Coffee, Plus, X, Info } from "lucide-react";
 import { STRIPE_PLANS } from "@/config/stripe";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -31,7 +31,32 @@ const DAY_ABBR: Record<string, string> = {
 };
 
 const StepBusinessHours = ({ data, onChange, plan }: Props) => {
-  const maxAllowed = plan === "professional" ? STRIPE_PLANS.professional.maxAttendants : STRIPE_PLANS.starter.maxAttendants;
+  const planKey = plan === "professional" ? "professional" : plan === "starter" ? "starter" : "free";
+  const maxAllowed = STRIPE_PLANS[planKey].maxAttendants;
+  const isUnlimited = maxAllowed === -1;
+
+  const attendants = data.attendants?.length ? data.attendants : [""];
+
+  const updateAttendant = (index: number, value: string) => {
+    const updated = [...attendants];
+    updated[index] = value;
+    onChange({ attendants: updated, maxConcurrentAppointments: updated.filter((n) => n.trim()).length || 1 });
+  };
+
+  const addAttendant = () => {
+    if (!isUnlimited && attendants.length >= maxAllowed) return;
+    const updated = [...attendants, ""];
+    onChange({ attendants: updated });
+  };
+
+  const removeAttendant = (index: number) => {
+    if (attendants.length <= 1) return;
+    const updated = attendants.filter((_, i) => i !== index);
+    onChange({ attendants: updated, maxConcurrentAppointments: updated.filter((n) => n.trim()).length || 1 });
+  };
+
+  const canAddMore = isUnlimited || attendants.length < maxAllowed;
+
   const updateDay = (index: number, updates: Partial<DaySchedule>) => {
     const hours = [...data.businessHours];
     hours[index] = { ...hours[index], ...updates };
@@ -77,29 +102,72 @@ const StepBusinessHours = ({ data, onChange, plan }: Props) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 pt-4">
-        {/* Atendentes simultâneos */}
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Users className="w-5 h-5 text-primary" />
+        {/* Atendentes */}
+        <div className="p-3 rounded-xl bg-secondary space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Users className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <Label className="text-sm font-semibold">Atendentes</Label>
+              <p className="text-xs text-muted-foreground">Adicione os profissionais que atendem</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <Label htmlFor="concurrent" className="text-sm font-semibold">Atendimentos simultâneos</Label>
-            <p className="text-xs text-muted-foreground">Quantos clientes podem ser atendidos ao mesmo tempo?</p>
+
+          <div className="space-y-2">
+            {attendants.map((name, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  placeholder={`Nome do atendente ${i + 1}`}
+                  value={name}
+                  onChange={(e) => updateAttendant(i, e.target.value)}
+                  className="flex-1 h-9 text-sm"
+                />
+                {attendants.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeAttendant(i)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
-          <Input
-            id="concurrent"
-            type="number"
-            min={1}
-            max={maxAllowed}
-            value={Math.min(data.maxConcurrentAppointments, maxAllowed)}
-            onChange={(e) => onChange({ maxConcurrentAppointments: Math.max(1, Math.min(maxAllowed, parseInt(e.target.value) || 1)) })}
-            className="w-20 text-center font-bold"
-          />
+
+          {canAddMore && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addAttendant}
+              className="w-full gap-1.5 text-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Adicionar atendente
+            </Button>
+          )}
+
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 text-xs text-muted-foreground">
+            <Info className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+            <span>
+              {attendants.filter((n) => n.trim()).length || 1} atendente{(attendants.filter((n) => n.trim()).length || 1) > 1 ? "s" : ""} = {attendants.filter((n) => n.trim()).length || 1} atendimento{(attendants.filter((n) => n.trim()).length || 1) > 1 ? "s" : ""} simultâneo{(attendants.filter((n) => n.trim()).length || 1) > 1 ? "s" : ""}
+            </span>
+          </div>
         </div>
-        {maxAllowed <= 1 && (
+
+        {!isUnlimited && !canAddMore && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 text-xs text-muted-foreground">
             <Lock className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-            <span>Plano Free permite apenas 1 atendente. <strong>Faça upgrade para o Essencial</strong> para ter mais atendentes.</span>
+            <span>
+              {planKey === "free"
+                ? <>Plano Free permite até 2 atendentes. <strong>Faça upgrade para o Essencial</strong> para ter até 5.</>
+                : <>Plano Essencial permite até 5 atendentes. <strong>Faça upgrade para o Pro</strong> para ilimitado.</>
+              }
+            </span>
           </div>
         )}
 

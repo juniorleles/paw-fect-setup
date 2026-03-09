@@ -58,6 +58,7 @@ const Settings = () => {
           voiceTone: c.voice_tone as OnboardingData["voiceTone"],
           assistantName: c.assistant_name,
           maxConcurrentAppointments: (c as any).max_concurrent_appointments ?? 1,
+          attendants: (c as any).attendants ?? [""],
         });
       }
       setLoading(false);
@@ -87,10 +88,8 @@ const Settings = () => {
         services: dataToSave.services as any,
         voice_tone: dataToSave.voiceTone,
         assistant_name: dataToSave.assistantName,
-        max_concurrent_appointments: Math.min(
-          dataToSave.maxConcurrentAppointments,
-          subscriptionPlan === "professional" ? STRIPE_PLANS.professional.maxAttendants : STRIPE_PLANS.starter.maxAttendants
-        ),
+        max_concurrent_appointments: dataToSave.maxConcurrentAppointments,
+        attendants: dataToSave.attendants as any,
         campaign_messages: campaignMessages as any,
       } as any)
       .eq("id", configId);

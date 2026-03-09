@@ -427,6 +427,7 @@ export type Database = {
           activated: boolean
           address: string
           assistant_name: string
+          attendants: Json
           business_hours: Json
           campaign_messages: Json
           city: string
@@ -453,6 +454,7 @@ export type Database = {
           activated?: boolean
           address?: string
           assistant_name?: string
+          attendants?: Json
           business_hours?: Json
           campaign_messages?: Json
           city?: string
@@ -479,6 +481,7 @@ export type Database = {
           activated?: boolean
           address?: string
           assistant_name?: string
+          attendants?: Json
           business_hours?: Json
           campaign_messages?: Json
           city?: string

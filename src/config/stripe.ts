@@ -2,6 +2,12 @@
 // Live mode and Test mode price IDs
 
 export const STRIPE_PLANS = {
+  free: {
+    name: "Free",
+    maxAttendants: 2,
+    price: 0,
+    limit: 150,
+  },
   starter: {
     name: "Essencial",
     price_id_live: "price_1T4S0JE3YGO6w5oCBXFikz8v",
@@ -10,7 +16,7 @@ export const STRIPE_PLANS = {
     product_id_test: "prod_U2ZxGxqNGAiwhQ",
     price: 97,
     limit: 800,
-    maxAttendants: 3,
+    maxAttendants: 5,
     trialMessagesLimit: 150,
     trialAppointmentsLimit: 30,
   },
