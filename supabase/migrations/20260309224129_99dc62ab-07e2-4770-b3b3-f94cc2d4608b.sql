@@ -1,0 +1,1 @@
+ALTER TABLE public.pet_shop_configs ADD COLUMN IF NOT EXISTS attendants jsonb NOT NULL DEFAULT '[]'::jsonb;
