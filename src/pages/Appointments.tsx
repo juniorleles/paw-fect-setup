@@ -50,7 +50,7 @@ const Appointments = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [serviceFilter, setServiceFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [quickDateFilter, setQuickDateFilter] = useState("today");
+  const [professionalFilter, setProfessionalFilter] = useState("all");
   const [editingApt, setEditingApt] = useState<Appointment | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
