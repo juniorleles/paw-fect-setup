@@ -3245,7 +3245,7 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split("T")[0];
     const { data: appointments } = await serviceClient
       .from("appointments")
-      .select("date, time, service, status, pet_name, owner_name, owner_phone")
+      .select("date, time, service, status, pet_name, owner_name, owner_phone, professional_name")
       .eq("user_id", shopConfig.user_id)
       .gte("date", today)
       .neq("status", "cancelled")
