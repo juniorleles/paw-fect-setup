@@ -20,6 +20,8 @@ interface Props {
   onStatusFilterChange: (status: string) => void;
   serviceFilter: string;
   onServiceFilterChange: (service: string) => void;
+  professionalFilter: string;
+  onProfessionalFilterChange: (professional: string) => void;
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
   quickDateFilter: string;
@@ -27,6 +29,7 @@ interface Props {
   selectedDate: Date | undefined;
   onClearDate: () => void;
   uniqueServices: string[];
+  uniqueProfessionals: string[];
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
