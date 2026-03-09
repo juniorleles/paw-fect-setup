@@ -25,7 +25,7 @@ import {
 
 const QR_EXPIRY_SECONDS = 45;
 const META_APP_ID = "910231245041925";
-const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "";
+const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "1971865603763858";
 
 const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; textClass: string }> = {
   connected: {
