@@ -20,6 +20,7 @@ export interface OnboardingData {
   // Step 3
   businessHours: DaySchedule[];
   maxConcurrentAppointments: number;
+  attendants: string[];
 
   // Step 4
   services: Service[];

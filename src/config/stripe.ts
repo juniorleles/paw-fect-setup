@@ -5,6 +5,8 @@ export const STRIPE_PLANS = {
   free: {
     name: "Free",
     maxAttendants: 2,
+    price: 0,
+    limit: 150,
   },
   starter: {
     name: "Essencial",
