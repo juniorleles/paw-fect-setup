@@ -100,6 +100,7 @@ const AppointmentFilters = ({
           {([
             { key: "list" as const, icon: List, label: "Lista" },
             { key: "calendar" as const, icon: CalendarDays, label: "Calendário" },
+            { key: "attendants" as const, icon: Users, label: "Atendentes" },
           ]).map((item) => (
             <Button
               key={item.key}
