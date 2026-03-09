@@ -20,6 +20,9 @@ interface PetShopConfig {
   state: string;
   niche: string;
   max_concurrent_appointments?: number;
+  meta_waba_id?: string | null;
+  meta_phone_number_id?: string | null;
+  meta_access_token?: string | null;
 }
 
 // --- Compute Available Slots ---
