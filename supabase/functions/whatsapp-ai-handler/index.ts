@@ -3291,9 +3291,12 @@ Deno.serve(async (req) => {
     const translateStatus = (s: string) => statusPtBr[s] || s;
 
     const existingAppointments = (appointments || [])
-      .map((a: any) => isPetNiche
-        ? `${a.date} ${a.time} - ${a.service} (${a.pet_name}/${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)})`
-        : `${a.date} ${a.time} - ${a.service} (${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)})`)
+      .map((a: any) => {
+        const profLabel = a.professional_name ? `, prof: ${a.professional_name}` : "";
+        return isPetNiche
+          ? `${a.date} ${a.time} - ${a.service} (${a.pet_name}/${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)}${profLabel})`
+          : `${a.date} ${a.time} - ${a.service} (${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)}${profLabel})`;
+      })
       .join("\n");
 
     const customerAppointments = (appointments || []).filter((a: any) => a.owner_phone?.replace(/\D/g, "").endsWith(cleanPhone.slice(-8)));
