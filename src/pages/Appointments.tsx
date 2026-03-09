@@ -123,18 +123,23 @@ const Appointments = () => {
 
       return true;
     });
-  }, [appointments, quickDateFilter, selectedDate, statusFilter, serviceFilter, searchQuery]);
+  }, [appointments, quickDateFilter, selectedDate, statusFilter, serviceFilter, professionalFilter, searchQuery]);
 
   const uniqueServices = useMemo(() => {
     return Array.from(new Set(appointments.map((a) => a.service)));
   }, [appointments]);
 
-  const hasActiveFilters = selectedDate !== undefined || statusFilter !== "all" || serviceFilter !== "all" || searchQuery !== "" || quickDateFilter !== "all";
+  const uniqueProfessionals = useMemo(() => {
+    return Array.from(new Set(appointments.map((a) => a.professional_name).filter(Boolean) as string[]));
+  }, [appointments]);
+
+  const hasActiveFilters = selectedDate !== undefined || statusFilter !== "all" || serviceFilter !== "all" || professionalFilter !== "all" || searchQuery !== "" || quickDateFilter !== "all";
 
   const clearFilters = () => {
     setSelectedDate(undefined);
     setStatusFilter("all");
     setServiceFilter("all");
+    setProfessionalFilter("all");
     setSearchQuery("");
     setQuickDateFilter("all");
   };
