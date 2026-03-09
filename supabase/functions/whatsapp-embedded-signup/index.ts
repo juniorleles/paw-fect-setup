@@ -27,8 +27,12 @@ Deno.serve(async (req) => {
     const appSecret = Deno.env.get("META_APP_SECRET")!;
 
     // Step 1: Exchange the short-lived code for a long-lived token
-    // For FB.login JS SDK popup flow, redirect_uri is NOT needed in the server-side exchange
-    const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}`;
+    // FB JS SDK uses "https://staticxx.facebook.com/x/connect/xd_arbiter/..." internally,
+    // but for response_type=code with Embedded Signup, we must pass redirect_uri matching the page origin + "/dashboard"
+    // Actually for FB.login popup with response_type=code, the redirect_uri is the current page URL
+    const redirectUri = clientOrigin ? `${clientOrigin}/` : "";
+    console.log(`[EMBEDDED-SIGNUP] Using redirect_uri: ${redirectUri}`);
+    const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     const tokenRes = await fetch(tokenUrl);
     const tokenData = await tokenRes.json();
 
