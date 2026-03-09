@@ -106,7 +106,7 @@ const WhatsAppStatusBadge = () => {
             supabase.functions
               .invoke("whatsapp-embedded-signup", {
                 method: "POST",
-                body: { code: response.authResponse.code, userId: user.id },
+                body: { code: response.authResponse.code, userId: user.id, origin: window.location.origin },
               })
               .then(({ data, error }) => {
                 if (error || data?.error) {
