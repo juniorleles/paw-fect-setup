@@ -12,6 +12,7 @@ export interface Appointment {
   created_at: string;
   updated_at: string;
   confirmation_message_sent_at: string | null;
+  professional_name?: string | null;
 }
 
 export type AppointmentInsert = Omit<Appointment, "id" | "created_at" | "updated_at" | "confirmation_message_sent_at">;
