@@ -12,43 +12,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, userId, origin: clientOrigin } = await req.json();
+    const { accessToken, userId } = await req.json();
 
-    if (!code || !userId) {
+    if (!accessToken || !userId) {
       return new Response(
-        JSON.stringify({ error: "Missing 'code' or 'userId'" }),
+        JSON.stringify({ error: "Missing 'accessToken' or 'userId'" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[EMBEDDED-SIGNUP] Exchanging code for token, userId: ${userId}`);
+    console.log(`[EMBEDDED-SIGNUP] Processing token for userId: ${userId}`);
 
     const appId = Deno.env.get("META_APP_ID") || "910231245041925";
     const appSecret = Deno.env.get("META_APP_SECRET")!;
 
-    // Step 1: Exchange the short-lived code for a long-lived token
-    // FB JS SDK uses "https://staticxx.facebook.com/x/connect/xd_arbiter/..." internally,
-    // but for response_type=code with Embedded Signup, we must pass redirect_uri matching the page origin + "/dashboard"
-    // Actually for FB.login popup with response_type=code, the redirect_uri is the current page URL
-    const redirectUri = clientOrigin ? `${clientOrigin}/` : "";
-    console.log(`[EMBEDDED-SIGNUP] Using redirect_uri: ${redirectUri}`);
-    const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData = await tokenRes.json();
-
-    if (tokenData.error) {
-      console.error("[EMBEDDED-SIGNUP] Token exchange error:", tokenData.error);
-      return new Response(
-        JSON.stringify({ error: "Failed to exchange code", details: tokenData.error }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const accessToken = tokenData.access_token;
-    console.log("[EMBEDDED-SIGNUP] Got access token");
-
-    // Step 2: Get the shared WABA ID using the debug_token endpoint or business management API
-    // First, list WABAs shared with this token
+    // Step 1: Get WABA info using debug_token endpoint
     const wabaUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${accessToken}&access_token=${appId}|${appSecret}`;
     const wabaRes = await fetch(wabaUrl);
     const wabaData = await wabaRes.json();
@@ -65,12 +43,11 @@ Deno.serve(async (req) => {
         wabaId = scope.target_ids[0];
       }
       if (scope.scope === "whatsapp_business_messaging" && scope.target_ids?.length > 0) {
-        // This might give us the WABA ID too
         if (!wabaId) wabaId = scope.target_ids[0];
       }
     }
 
-    // Step 3: If we have a WABA ID, get the phone number ID
+    // Step 2: If we have a WABA ID, get the phone number ID
     if (wabaId) {
       const phoneUrl = `https://graph.facebook.com/v21.0/${wabaId}/phone_numbers?access_token=${accessToken}`;
       const phoneRes = await fetch(phoneUrl);
@@ -91,7 +68,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 4: Register the phone number for the webhook (subscribe to messages)
+    // Step 3: Register the phone number for the webhook (subscribe to messages)
     if (phoneNumberId) {
       const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
       const subscribeUrl = `https://graph.facebook.com/v21.0/${wabaId}/subscribed_apps`;
@@ -106,7 +83,7 @@ Deno.serve(async (req) => {
       console.log("[EMBEDDED-SIGNUP] Subscribe result:", JSON.stringify(subscribeData));
     }
 
-    // Step 5: Save the WABA info to the database
+    // Step 4: Save the WABA info to the database
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!

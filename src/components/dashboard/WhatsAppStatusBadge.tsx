@@ -101,12 +101,12 @@ const WhatsAppStatusBadge = () => {
     const launchLogin = () => {
       (window as any).FB.login(
         (response: any) => {
-          if (response.authResponse?.code) {
-            // Exchange the code via our edge function
+          if (response.authResponse?.accessToken) {
+            // Send the access token directly to our edge function
             supabase.functions
               .invoke("whatsapp-embedded-signup", {
                 method: "POST",
-                body: { code: response.authResponse.code, userId: user.id, origin: window.location.origin },
+                body: { accessToken: response.authResponse.accessToken, userId: user.id },
               })
               .then(({ data, error }) => {
                 if (error || data?.error) {
@@ -129,7 +129,7 @@ const WhatsAppStatusBadge = () => {
         },
         {
           config_id: META_CONFIG_ID,
-          response_type: "code",
+          response_type: "token",
           override_default_response_type: true,
           extras: {
             setup: {},
