@@ -21,7 +21,7 @@ import {
 
 const WhatsAppStatusCard = () => {
   const { user } = useAuth();
-  const whatsappStatus = useWhatsAppStatus();
+  const { status: whatsappStatus } = useWhatsAppStatus();
   const [phone, setPhone] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
   const { toast } = useToast();

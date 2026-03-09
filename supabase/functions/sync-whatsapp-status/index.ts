@@ -40,14 +40,63 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get user's instance name
+    // Get user's config including Meta fields
     const { data: config } = await serviceClient
       .from("pet_shop_configs")
-      .select("evolution_instance_name, whatsapp_status")
+      .select("evolution_instance_name, whatsapp_status, meta_waba_id, meta_phone_number_id, meta_access_token")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!config?.evolution_instance_name) {
+    if (!config) {
+      return new Response(JSON.stringify({ status: "disconnected", synced: false }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Meta Cloud API users: validate token by calling Meta API ---
+    if (config.meta_waba_id && config.meta_access_token && config.meta_phone_number_id) {
+      let metaStatus = "connected";
+
+      try {
+        // Quick validation: check if the token is still valid by querying the phone number
+        const metaRes = await fetch(
+          `https://graph.facebook.com/v21.0/${config.meta_phone_number_id}?fields=verified_name,quality_rating`,
+          {
+            headers: { Authorization: `Bearer ${config.meta_access_token}` },
+          }
+        );
+
+        if (metaRes.ok) {
+          metaStatus = "connected";
+        } else {
+          const body = await metaRes.text();
+          console.warn(`[SYNC] Meta token validation failed: ${metaRes.status} ${body.substring(0, 200)}`);
+          // Token expired or invalid — mark as disconnected
+          metaStatus = "disconnected";
+        }
+      } catch (err) {
+        console.warn("[SYNC] Meta API check error:", err);
+        // Network error — keep current status to avoid flapping
+        metaStatus = config.whatsapp_status || "connected";
+      }
+
+      if (metaStatus !== config.whatsapp_status) {
+        await serviceClient
+          .from("pet_shop_configs")
+          .update({ whatsapp_status: metaStatus })
+          .eq("user_id", user.id);
+        console.log(`[SYNC] Meta status: ${config.whatsapp_status} -> ${metaStatus} for user ${user.id}`);
+      }
+
+      return new Response(JSON.stringify({ status: metaStatus, synced: metaStatus !== config.whatsapp_status, provider: "meta" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Evolution API users ---
+    if (!config.evolution_instance_name) {
       return new Response(JSON.stringify({ status: "disconnected", synced: false }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -101,7 +150,7 @@ Deno.serve(async (req) => {
       console.log(`Status synced: ${config.whatsapp_status} -> ${mappedStatus} for user ${user.id}`);
     }
 
-    return new Response(JSON.stringify({ status: mappedStatus, synced: mappedStatus !== config.whatsapp_status }), {
+    return new Response(JSON.stringify({ status: mappedStatus, synced: mappedStatus !== config.whatsapp_status, provider: "evolution" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
