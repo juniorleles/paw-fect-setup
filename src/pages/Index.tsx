@@ -75,7 +75,25 @@ const Index = () => {
         // 1. Sync subscription status
         await refetchSubscription();
 
-        // 2. Save config as activated (use current data state which is loaded from DB)
+        // 2. Validate onboarding is complete before activating
+        const isOnboardingComplete = data.phoneVerified &&
+          data.shopName.trim() &&
+          data.address.trim() &&
+          data.services.length > 0 &&
+          data.assistantName.trim();
+
+        if (!isOnboardingComplete) {
+          setActivatingAfterCheckout(false);
+          setStep(1);
+          toast({
+            title: "Onboarding incompleto",
+            description: "Complete todas as etapas antes de ativar.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // 3. Save config as activated
         if (user) {
           const cId = configId;
           if (cId) {
@@ -276,6 +294,25 @@ const Index = () => {
   };
 
   const handleActivate = async () => {
+    // Final validation: ensure ALL steps are complete (not just current step)
+    const allStepsValid = data.phoneVerified &&
+      data.shopName.trim() &&
+      data.address.trim() &&
+      data.neighborhood.trim() &&
+      data.city.trim() &&
+      data.state &&
+      data.services.length > 0 &&
+      data.services.every(s => s.price && s.duration) &&
+      data.assistantName.trim();
+
+    if (!allStepsValid) {
+      toast({
+        title: "Onboarding incompleto",
+        description: "Complete todas as etapas antes de ativar sua secretária.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!validate()) return;
     if (!acceptedTerms) {
       toast({

@@ -35,7 +35,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
 
       const { data, error } = await supabase
         .from("pet_shop_configs")
-        .select("activated, updated_at")
+        .select("activated, updated_at, shop_name, phone, services")
         .eq("user_id", userId)
         .order("updated_at", { ascending: false })
         .limit(1);
@@ -44,7 +44,19 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
 
-      setCompleted(data?.[0]?.activated === true);
+      const config = data?.[0];
+      if (!config?.activated) {
+        setCompleted(false);
+        return;
+      }
+
+      // Double-check: activated must have real data, not empty fields
+      const services = config.services as any[];
+      const hasData = config.shop_name?.trim() &&
+        config.phone?.trim() &&
+        Array.isArray(services) && services.length > 0;
+
+      setCompleted(hasData === true);
     } catch (error) {
       console.error("fetch onboarding status failed:", error);
       setCompleted(false);
