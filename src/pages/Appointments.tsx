@@ -204,6 +204,8 @@ const Appointments = () => {
         onStatusFilterChange={setStatusFilter}
         serviceFilter={serviceFilter}
         onServiceFilterChange={setServiceFilter}
+        professionalFilter={professionalFilter}
+        onProfessionalFilterChange={setProfessionalFilter}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         quickDateFilter={quickDateFilter}
@@ -211,6 +213,7 @@ const Appointments = () => {
         selectedDate={selectedDate}
         onClearDate={() => setSelectedDate(undefined)}
         uniqueServices={uniqueServices}
+        uniqueProfessionals={uniqueProfessionals}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={clearFilters}
       />
