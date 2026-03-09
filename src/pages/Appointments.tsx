@@ -246,6 +246,15 @@ const Appointments = () => {
         />
       )}
 
+      {viewMode === "attendants" && (
+        <AttendantScheduleView
+          appointments={appointments}
+          attendants={attendants}
+          onEdit={handleEdit}
+          isPetNiche={isPetNiche}
+          businessHours={businessHours}
+        />
+      )}
 
       {/* Load more */}
       {hasMore && (
