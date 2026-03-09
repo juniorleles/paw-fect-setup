@@ -12,7 +12,73 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { accessToken, userId } = await req.json();
+    const body = await req.json();
+    const { accessToken, userId, action, wabaId: manualWabaId } = body;
+
+    // Quick subscribe-only action (admin utility)
+    if (action === "subscribe_waba" && manualWabaId) {
+      const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
+      
+      // If phoneNumberId provided, look up the WABA first
+      if (body.phoneNumberId) {
+        const lookupUrl = `https://graph.facebook.com/v21.0/${body.phoneNumberId}?fields=id,display_phone_number&access_token=${systemToken}`;
+        const lookupRes = await fetch(lookupUrl);
+        const lookupData = await lookupRes.json();
+        console.log(`[EMBEDDED-SIGNUP] Phone lookup:`, JSON.stringify(lookupData));
+      }
+      
+      const subscribeUrl = `https://graph.facebook.com/v21.0/${manualWabaId}/subscribed_apps`;
+      const subscribeRes = await fetch(subscribeUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${systemToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const subscribeData = await subscribeRes.json();
+      console.log(`[EMBEDDED-SIGNUP] Subscribe WABA ${manualWabaId}:`, JSON.stringify(subscribeData));
+      return new Response(
+        JSON.stringify({ success: subscribeData.success ?? false, data: subscribeData }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Lookup WABA from phone number ID
+    if (action === "lookup_waba") {
+      const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
+      const results: Record<string, unknown> = {};
+      
+      if (body.phoneNumberId) {
+        const url = `https://graph.facebook.com/v21.0/${body.phoneNumberId}?fields=id,display_phone_number,name_status,quality_rating&access_token=${systemToken}`;
+        const res = await fetch(url);
+        results.phone = await res.json();
+      }
+      
+      // List WABAs owned by business
+      if (body.businessId) {
+        const url = `https://graph.facebook.com/v21.0/${body.businessId}/owned_whatsapp_business_accounts?access_token=${systemToken}`;
+        const res = await fetch(url);
+        results.wabas = await res.json();
+      }
+      
+      // List WABAs shared with app
+      const appId = "910231245041925";
+      const appSecret = Deno.env.get("META_APP_SECRET")!;
+      const appToken = `${appId}|${appSecret}`;
+      
+      // Try to get phone number's WABA via the whatsapp_business_account edge
+      if (body.phoneNumberId) {
+        const wabaEdgeUrl = `https://graph.facebook.com/v21.0/${body.phoneNumberId}/whatsapp_business_account?access_token=${systemToken}`;
+        const wabaEdgeRes = await fetch(wabaEdgeUrl);
+        results.phoneWaba = await wabaEdgeRes.json();
+      }
+      
+      console.log(`[EMBEDDED-SIGNUP] Lookup:`, JSON.stringify(results));
+      return new Response(
+        JSON.stringify(results),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!accessToken || !userId) {
       return new Response(
