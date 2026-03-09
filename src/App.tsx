@@ -38,6 +38,7 @@ import AdminLogs from "./pages/admin/AdminLogs";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import AdminBlocked from "./pages/admin/AdminBlocked";
+import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
 import AdminLayout from "./components/admin/AdminLayout";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
