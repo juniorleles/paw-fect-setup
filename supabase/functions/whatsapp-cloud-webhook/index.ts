@@ -105,11 +105,124 @@ Deno.serve(async (req) => {
         // --- Handle incoming messages ---
         if (field === "messages" && value?.messages) {
           for (const msg of value.messages) {
-            // Skip status updates
-            if (!msg.from || !msg.text?.body) continue;
+            if (!msg.from) continue;
 
             const senderPhone = msg.from;
-            const textContent = msg.text.body;
+            const msgType = msg.type; // text, audio, image, video, document, etc.
+
+            // Determine content and media info
+            let textContent: string | null = null;
+            let mediaType: string | null = null;
+            let mediaId: string | null = null;
+
+            if (msgType === "text" && msg.text?.body) {
+              textContent = msg.text.body;
+            } else if (msgType === "audio" && msg.audio?.id) {
+              mediaType = "audio";
+              mediaId = msg.audio.id;
+              textContent = "[audio]"; // placeholder for buffer
+            } else if (msgType === "image" && msg.image?.id) {
+              mediaType = "image";
+              mediaId = msg.image.id;
+              textContent = msg.image.caption || "[image]";
+            } else {
+              // Unsupported type (video, document, sticker, etc.) — skip
+              console.log(`[META-WEBHOOK] Unsupported message type: ${msgType}`);
+              continue;
+            }
+
+            // For media messages, check if the business owner has Pro plan
+            if (mediaType) {
+              const { data: subscription } = await serviceClient
+                .from("subscriptions")
+                .select("plan")
+                .eq("user_id", config.user_id)
+                .maybeSingle();
+
+              const plan = subscription?.plan || "free";
+              const isPro = plan === "professional";
+
+              if (!isPro) {
+                console.log(`[META-WEBHOOK] Media message from ${senderPhone} but owner plan is ${plan} — sending fallback`);
+                
+                // Send polite fallback via Meta API
+                const accessToken = config.meta_access_token;
+                const phoneNumberId = config.meta_phone_number_id;
+                if (accessToken && phoneNumberId) {
+                  const fallbackText = "No momento só consigo ler mensagens de texto 😊 Pode me escrever o que precisa?";
+                  await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`,
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      messaging_product: "whatsapp",
+                      recipient_type: "individual",
+                      to: senderPhone,
+                      type: "text",
+                      text: { body: fallbackText },
+                    }),
+                  }).catch((e) => console.error("[META-WEBHOOK] Fallback send error:", e));
+                }
+                continue;
+              }
+
+              // Pro plan: download media from Meta to get a URL
+              console.log(`[META-WEBHOOK] Pro plan — downloading ${mediaType} media ${mediaId}`);
+              try {
+                const accessToken = config.meta_access_token;
+                // Step 1: Get media URL from Meta
+                const mediaInfoRes = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
+                  headers: { Authorization: `Bearer ${accessToken}` },
+                });
+                const mediaInfo = await mediaInfoRes.json();
+                const mediaUrl = mediaInfo.url;
+
+                if (!mediaUrl) {
+                  console.error("[META-WEBHOOK] Could not get media URL:", JSON.stringify(mediaInfo));
+                  continue;
+                }
+
+                // Step 2: Download the actual media binary
+                const mediaBinaryRes = await fetch(mediaUrl, {
+                  headers: { Authorization: `Bearer ${accessToken}` },
+                });
+                const mediaBuffer = await mediaBinaryRes.arrayBuffer();
+                const mimeType = mediaBinaryRes.headers.get("content-type") || (mediaType === "audio" ? "audio/ogg" : "image/jpeg");
+                const ext = mediaType === "audio" ? "ogg" : (mimeType.includes("png") ? "png" : "jpg");
+
+                // Step 3: Upload to storage bucket
+                const storagePath = `${config.user_id}/${senderPhone}/${Date.now()}.${ext}`;
+                const { error: uploadErr } = await serviceClient.storage
+                  .from("customer-media")
+                  .upload(storagePath, mediaBuffer, { contentType: mimeType });
+
+                if (uploadErr) {
+                  console.error("[META-WEBHOOK] Storage upload error:", uploadErr.message);
+                } else {
+                  console.log(`[META-WEBHOOK] Media uploaded to customer-media/${storagePath}`);
+                }
+
+                // Build the internal media URL for the AI handler
+                const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+                const internalMediaUrl = `${supabaseUrl}/storage/v1/object/customer-media/${storagePath}`;
+
+                // Buffer the media message with metadata
+                textContent = JSON.stringify({
+                  _media: true,
+                  type: mediaType,
+                  mediaUrl: internalMediaUrl,
+                  storagePath,
+                  mimeType,
+                  caption: msg.image?.caption || null,
+                  originalMediaId: mediaId,
+                });
+              } catch (mediaErr) {
+                console.error("[META-WEBHOOK] Media processing error:", mediaErr);
+                continue;
+              }
+            }
 
             // Rate limiting
             const rateCheck = isRateLimited(senderPhone);
