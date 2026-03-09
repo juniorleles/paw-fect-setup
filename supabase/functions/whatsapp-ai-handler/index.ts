@@ -2417,7 +2417,17 @@ Para reagendar:
 <action>{"type":"reschedule","old_date":"2026-02-21","old_time":"10:00","new_date":"2026-02-22","new_time":"14:00"}</action>
 
 Para confirmar presença:
-<action>{"type":"confirm","date":"2026-02-21","time":"10:00"}</action>`;
+<action>{"type":"confirm","date":"2026-02-21","time":"10:00"}</action>
+
+MENSAGENS DE MÍDIA:
+- Se a mensagem contiver "[O cliente enviou uma imagem]" ou "[O cliente enviou uma imagem com a legenda: ...]":
+  Agradeça o envio da imagem de forma simpática, confirme que recebeu, e continue o fluxo normalmente por texto.
+  Exemplo: "Recebi a imagem, obrigada! 😊 Como posso te ajudar?"
+  Se houver legenda, use-a como contexto para a resposta.
+- Se a mensagem contiver "[O cliente enviou um áudio que não pôde ser processado]":
+  Peça gentilmente para o cliente enviar a mensagem por texto.
+  Exemplo: "Não consegui ouvir o áudio, pode me escrever o que precisa? 😊"
+- Mensagens transcritas de áudio devem ser tratadas normalmente como texto.`;
 }
 
 // --- Process AI Actions ---
