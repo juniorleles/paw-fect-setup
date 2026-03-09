@@ -2270,9 +2270,11 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
     ? `nome do ${clientLabel}, nome do pet, serviço desejado, data e horário, observações (opcional)`
     : `nome do ${clientLabel}, serviço desejado, data e horário, observações (opcional)`;
   
+  const hasAttendants = ((shopConfig as any).attendants || []).filter((n: string) => n.trim()).length > 1;
+  const profField = hasAttendants ? ',"professional_name":"João"' : '';
   const actionExample = isPetNiche
-    ? `<action>{"type":"create","pet_name":"Rex","owner_name":"João","owner_phone":"${cleanPhone}","service":"Banho","date":"2026-02-21","time":"10:00","notes":"","status":"pending"}</action>`
-    : `<action>{"type":"create","pet_name":"—","owner_name":"Ana","owner_phone":"${cleanPhone}","service":"Escova","date":"2026-02-21","time":"10:00","notes":"","status":"pending"}</action>`;
+    ? `<action>{"type":"create","pet_name":"Rex","owner_name":"João","owner_phone":"${cleanPhone}","service":"Banho","date":"2026-02-21","time":"10:00","notes":"","status":"pending"${profField}}</action>`
+    : `<action>{"type":"create","pet_name":"—","owner_name":"Ana","owner_phone":"${cleanPhone}","service":"Escova","date":"2026-02-21","time":"10:00","notes":"","status":"pending"${profField}}</action>`;
 
   return `Você é ${shopConfig.assistant_name || "a secretária digital"} do ${nicheLabel} "${shopConfig.shop_name}".
 ${toneInstructions[shopConfig.voice_tone] || toneInstructions.friendly}
@@ -2377,9 +2379,17 @@ REGRA: Se o cliente perguntar sobre "meus agendamentos", "algum agendamento", "q
 CAPACIDADE DE ATENDIMENTO SIMULTÂNEO: ${maxConcurrent} atendente${maxConcurrent > 1 ? "s" : ""} por horário.
 ${(() => {
   const attendantNames = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
-  if (attendantNames.length > 0) {
+  if (attendantNames.length > 1) {
     return `NOMES DOS ATENDENTES: ${attendantNames.join(", ")}
-REGRA DE DISTRIBUIÇÃO: Ao confirmar um agendamento, você DEVE incluir o campo "professional_name" no bloco <action> com o nome do atendente designado. O sistema distribui automaticamente, mas se o cliente pedir um atendente específico, respeite a preferência.`;
+REGRA DE PREFERÊNCIA DE PROFISSIONAL:
+- Se o cliente mencionar o nome de um atendente (ex: "quero com o João", "com a Maria", "prefiro o Carlos"), RESPEITE a preferência e inclua "professional_name" no bloco <action>.
+- Se o cliente NÃO mencionar preferência, o sistema distribui automaticamente — NÃO pergunte proativamente com qual profissional ele quer, apenas confirme normalmente.
+- Se o cliente pedir um profissional que NÃO está na lista acima, informe educadamente os nomes disponíveis.
+- Se o profissional pedido estiver ocupado no horário, informe e sugira horários livres para aquele profissional OU ofereça outro profissional disponível.
+- SEMPRE inclua o campo "professional_name" no <action> — se o cliente escolheu, use o nome dele; senão, deixe vazio que o sistema auto-atribui.`;
+  } else if (attendantNames.length === 1) {
+    return `ATENDENTE: ${attendantNames[0]}
+REGRA: Sempre atribua automaticamente. Inclua "professional_name":"${attendantNames[0]}" no bloco <action>.`;
   }
   return "";
 })()
@@ -2587,11 +2597,54 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         return `Preciso de mais algumas informações para completar o agendamento: ${missingFields.join(", ")}. Pode me informar?`;
       }
 
-      // Auto-assign attendant
+      // Auto-assign attendant (or validate preferred)
       const attendantList = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
       let assignedAttendant: string | null = action.professional_name || null;
+      
+      // If client requested a specific attendant, validate they exist and are free
+      if (assignedAttendant && attendantList.length > 0) {
+        const normalizedRequested = assignedAttendant.trim().toLowerCase();
+        const matchedAttendant = attendantList.find((a: string) => a.trim().toLowerCase() === normalizedRequested);
+        if (!matchedAttendant) {
+          // Requested attendant not found — fall back to auto-assign
+          console.log(`[AttendantAssign] Requested "${assignedAttendant}" not found in list, auto-assigning`);
+          assignedAttendant = null;
+        } else {
+          // Check if preferred attendant is free at this slot
+          const { data: dateAppts } = await serviceClient
+            .from("appointments")
+            .select("date, time, service, status, professional_name")
+            .eq("user_id", shopConfig.user_id)
+            .eq("date", action.date)
+            .neq("status", "cancelled")
+            .neq("status", "no_show");
+          const serviceDur = getServiceDuration(shopConfig.services || [], action.service);
+          const timeMin = timeToMinutes(action.time);
+          const slotsNeeded = Math.max(1, Math.ceil(serviceDur / 30));
+          let isFree = true;
+          for (let i = 0; i < slotsNeeded; i++) {
+            const checkTime = minutesToTime(timeMin + i * 30);
+            const conflict = (dateAppts || []).find((a: any) => {
+              if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") return false;
+              if (a.professional_name !== matchedAttendant) return false;
+              const aptStart = timeToMinutes(a.time);
+              const aptDur = getServiceDuration(shopConfig.services || [], a.service);
+              const checkMin = timeToMinutes(checkTime);
+              return checkMin >= aptStart && checkMin < aptStart + aptDur;
+            });
+            if (conflict) { isFree = false; break; }
+          }
+          if (isFree) {
+            assignedAttendant = matchedAttendant;
+            console.log(`[AttendantAssign] Preferred attendant "${matchedAttendant}" is free, assigned`);
+          } else {
+            console.log(`[AttendantAssign] Preferred attendant "${matchedAttendant}" is busy, auto-assigning`);
+            assignedAttendant = findFreeAttendant(attendantList, dateAppts || [], shopConfig.services || [], action.date, action.time, serviceDur);
+          }
+        }
+      }
+      
       if (!assignedAttendant && attendantList.length > 0) {
-        // Need current appointments for this date to find free attendant
         const { data: dateAppts } = await serviceClient
           .from("appointments")
           .select("date, time, service, status, professional_name")
