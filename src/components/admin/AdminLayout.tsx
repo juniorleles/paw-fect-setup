@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 const navItems = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/admin/monitoring", icon: Activity, label: "Monitoramento" },
-  
+  { to: "/admin/whatsapp", icon: Smartphone, label: "WhatsApp" },
   { to: "/admin/clients", icon: UserCheck, label: "Clientes" },
   { to: "/admin/subscriptions", icon: CreditCard, label: "Assinaturas" },
   { to: "/admin/payments", icon: Receipt, label: "Pagamentos" },
