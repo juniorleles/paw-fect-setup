@@ -12,7 +12,27 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { accessToken, userId } = await req.json();
+    const body = await req.json();
+    const { accessToken, userId, action, wabaId: manualWabaId } = body;
+
+    // Quick subscribe-only action (admin utility)
+    if (action === "subscribe_waba" && manualWabaId) {
+      const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
+      const subscribeUrl = `https://graph.facebook.com/v21.0/${manualWabaId}/subscribed_apps`;
+      const subscribeRes = await fetch(subscribeUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${systemToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const subscribeData = await subscribeRes.json();
+      console.log(`[EMBEDDED-SIGNUP] Subscribe WABA ${manualWabaId}:`, JSON.stringify(subscribeData));
+      return new Response(
+        JSON.stringify({ success: subscribeData.success ?? false, data: subscribeData }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!accessToken || !userId) {
       return new Response(
