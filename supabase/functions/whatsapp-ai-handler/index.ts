@@ -2375,6 +2375,14 @@ ${customerApptsText}
 REGRA: Se o cliente perguntar sobre "meus agendamentos", "algum agendamento", "quando vai ser", ou variações similares → liste os agendamentos DESTE CLIENTE acima com serviço, data e horário. NÃO mencione status internos como "pendente", "pendente de confirmação", "confirmado", etc. Esses status são informações INTERNAS do sistema e NÃO devem ser expostos ao cliente. Apenas informe os dados do agendamento de forma natural (ex: "Sua escova está agendada para amanhã, segunda-feira (02/03), às 08:00 😊").
 
 CAPACIDADE DE ATENDIMENTO SIMULTÂNEO: ${maxConcurrent} atendente${maxConcurrent > 1 ? "s" : ""} por horário.
+${(() => {
+  const attendantNames = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
+  if (attendantNames.length > 0) {
+    return `NOMES DOS ATENDENTES: ${attendantNames.join(", ")}
+REGRA DE DISTRIBUIÇÃO: Ao confirmar um agendamento, você DEVE incluir o campo "professional_name" no bloco <action> com o nome do atendente designado. O sistema distribui automaticamente, mas se o cliente pedir um atendente específico, respeite a preferência.`;
+  }
+  return "";
+})()
 
 DURAÇÃO DOS SERVIÇOS — REGRA CRÍTICA:
 Cada serviço tem uma duração definida. Ao verificar disponibilidade, considere que um agendamento OCUPA MÚLTIPLOS SLOTS de 30 minutos consecutivos com base na duração do serviço.
