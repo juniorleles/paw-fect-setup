@@ -1,0 +1,3 @@
+UPDATE pet_shop_configs 
+SET meta_access_token = 'EAAM72boGMQUBQ1mFg8YjmxdaIJZB16tJMCFdCUu8VtzzTtv3ZB9hgjN4THXc2xqW2epejnSEH2eSn7i9BmEL9juUZBFtln3Xw686AfNww8vgPfmnjdJxs6YEuoJ8ZA5ZAO55eWKKIfrRY3FZC5rrQqKnDY1EiVFklCCYpTV6aS1xkcYTXOybxvpfcLiCeOFLwhegZDZD'
+WHERE user_id = '3de71a0a-e878-4b12-a05e-4851212f8bca';
