@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, userId } = await req.json();
+    const { code, userId, origin: clientOrigin } = await req.json();
 
     if (!code || !userId) {
       return new Response(
