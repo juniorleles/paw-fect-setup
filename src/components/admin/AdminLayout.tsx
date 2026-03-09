@@ -18,6 +18,7 @@ import {
   X,
   LogOut,
   Shield,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
