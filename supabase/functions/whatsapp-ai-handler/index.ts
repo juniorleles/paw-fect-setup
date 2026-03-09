@@ -2869,6 +2869,15 @@ async function tryDeterministicBooking(
     }
   }
 
+  // Auto-assign attendant for deterministic booking
+  const attendantList = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
+  let assignedAttendant: string | null = null;
+  if (attendantList.length > 0) {
+    const serviceDur = serviceConfig.duration || 30;
+    assignedAttendant = findFreeAttendant(attendantList, appointments || [], shopConfig.services || [], chosenDate, finalTime, serviceDur);
+    console.log(`[DeterministicBooking] Auto-assigned attendant: ${assignedAttendant || "none"}`);
+  }
+
   // Insert appointment
   const { error: insertErr } = await serviceClient
     .from("appointments")
@@ -2882,6 +2891,7 @@ async function tryDeterministicBooking(
       time: finalTime,
       notes: "",
       status: "pending",
+      professional_name: assignedAttendant,
     });
 
   if (insertErr) {
@@ -2921,6 +2931,7 @@ async function tryDeterministicBooking(
 
   let confirmMsg = `Agendamento confirmado ✅\n\n`;
   confirmMsg += `• Serviço: ${serviceName}\n`;
+  if (assignedAttendant) confirmMsg += `• Profissional: ${assignedAttendant}\n`;
   confirmMsg += `• Data: ${weekday}, ${dateBR}\n`;
   confirmMsg += `• Horário: ${finalTime}\n`;
   if (serviceConfig.price != null) {
