@@ -39,6 +39,7 @@ const Appointments = () => {
 
   const [services, setServices] = useState<Service[]>([]);
   const [businessHours, setBusinessHours] = useState<DaySchedule[]>([]);
+  const [attendants, setAttendants] = useState<string[]>([]);
   const [rawMaxConcurrent, setRawMaxConcurrent] = useState(1);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
