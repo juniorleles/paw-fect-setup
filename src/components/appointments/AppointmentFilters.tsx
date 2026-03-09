@@ -41,6 +41,8 @@ const AppointmentFilters = ({
   onStatusFilterChange,
   serviceFilter,
   onServiceFilterChange,
+  professionalFilter,
+  onProfessionalFilterChange,
   searchQuery,
   onSearchQueryChange,
   quickDateFilter,
@@ -48,6 +50,7 @@ const AppointmentFilters = ({
   selectedDate,
   onClearDate,
   uniqueServices,
+  uniqueProfessionals,
   hasActiveFilters,
   onClearFilters,
 }: Props) => {
