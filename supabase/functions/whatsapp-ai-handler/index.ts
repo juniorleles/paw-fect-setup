@@ -2392,7 +2392,7 @@ REGRA DE PREFERÊNCIA DE PROFISSIONAL:
 REGRA: Sempre atribua automaticamente. Inclua "professional_name":"${attendantNames[0]}" no bloco <action>.`;
   }
   return "";
-})()
+})()}
 
 DURAÇÃO DOS SERVIÇOS — REGRA CRÍTICA:
 Cada serviço tem uma duração definida. Ao verificar disponibilidade, considere que um agendamento OCUPA MÚLTIPLOS SLOTS de 30 minutos consecutivos com base na duração do serviço.
