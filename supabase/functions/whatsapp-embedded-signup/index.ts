@@ -18,6 +18,15 @@ Deno.serve(async (req) => {
     // Quick subscribe-only action (admin utility)
     if (action === "subscribe_waba" && manualWabaId) {
       const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
+      
+      // If phoneNumberId provided, look up the WABA first
+      if (body.phoneNumberId) {
+        const lookupUrl = `https://graph.facebook.com/v21.0/${body.phoneNumberId}?fields=id,display_phone_number&access_token=${systemToken}`;
+        const lookupRes = await fetch(lookupUrl);
+        const lookupData = await lookupRes.json();
+        console.log(`[EMBEDDED-SIGNUP] Phone lookup:`, JSON.stringify(lookupData));
+      }
+      
       const subscribeUrl = `https://graph.facebook.com/v21.0/${manualWabaId}/subscribed_apps`;
       const subscribeRes = await fetch(subscribeUrl, {
         method: "POST",
@@ -30,6 +39,28 @@ Deno.serve(async (req) => {
       console.log(`[EMBEDDED-SIGNUP] Subscribe WABA ${manualWabaId}:`, JSON.stringify(subscribeData));
       return new Response(
         JSON.stringify({ success: subscribeData.success ?? false, data: subscribeData }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Lookup WABA from phone number ID
+    if (action === "lookup_waba" && body.phoneNumberId) {
+      const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
+      // Get the WABA that owns this phone number
+      const url = `https://graph.facebook.com/v21.0/${body.phoneNumberId}?fields=id,display_phone_number,name_status,quality_rating&access_token=${systemToken}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      
+      // Also try to get the owner WABA
+      const wabaUrl = `https://graph.facebook.com/v21.0/${body.phoneNumberId}/owner?access_token=${systemToken}`;
+      const wabaRes = await fetch(wabaUrl);
+      const wabaData = await wabaRes.json();
+      
+      console.log(`[EMBEDDED-SIGNUP] Phone data:`, JSON.stringify(data));
+      console.log(`[EMBEDDED-SIGNUP] Owner WABA:`, JSON.stringify(wabaData));
+      
+      return new Response(
+        JSON.stringify({ phone: data, owner: wabaData }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
