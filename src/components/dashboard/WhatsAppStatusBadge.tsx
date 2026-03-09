@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useWhatsAppStatus, type WhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { Button } from "@/components/ui/button";
-import { Smartphone, RefreshCw, Loader2, Copy, CheckCircle2, Timer, QrCode, Hash } from "lucide-react";
+import { Smartphone, RefreshCw, Loader2, Copy, CheckCircle2, Timer, QrCode, Hash, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,8 @@ import {
 } from "@/components/ui/tooltip";
 
 const QR_EXPIRY_SECONDS = 45;
+const META_APP_ID = "910231245041925";
+const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "";
 
 const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; textClass: string }> = {
   connected: {
@@ -46,6 +50,10 @@ const WhatsAppStatusBadge = () => {
   const config = STATUS_CONFIG[status];
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { plan } = useSubscription();
+  const { user } = useAuth();
+  const isPro = plan === "professional";
+
   const [reconnecting, setReconnecting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -55,6 +63,7 @@ const WhatsAppStatusBadge = () => {
   const [expired, setExpired] = useState(false);
   const [activeTab, setActiveTab] = useState<"pairing" | "qr">("pairing");
   const [loadingQr, setLoadingQr] = useState(false);
+  const [metaConnecting, setMetaConnecting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -83,6 +92,76 @@ const WhatsAppStatusBadge = () => {
   // Cleanup timer on unmount
   useEffect(() => () => clearTimer(), [clearTimer]);
 
+  // --- Meta Embedded Signup (Pro only) ---
+  const handleMetaConnect = useCallback(() => {
+    if (!user?.id) return;
+    setMetaConnecting(true);
+
+    // Load FB SDK if not already loaded
+    const launchLogin = () => {
+      (window as any).FB.login(
+        (response: any) => {
+          if (response.authResponse?.code) {
+            // Exchange the code via our edge function
+            supabase.functions
+              .invoke("whatsapp-embedded-signup", {
+                method: "POST",
+                body: { code: response.authResponse.code, userId: user.id },
+              })
+              .then(({ data, error }) => {
+                if (error || data?.error) {
+                  toast({
+                    title: "Erro ao conectar",
+                    description: data?.error || error?.message,
+                    variant: "destructive",
+                  });
+                } else {
+                  toast({
+                    title: "WhatsApp conectado!",
+                    description: "Conexão oficial da Meta configurada com sucesso.",
+                  });
+                }
+              })
+              .finally(() => setMetaConnecting(false));
+          } else {
+            setMetaConnecting(false);
+          }
+        },
+        {
+          config_id: META_CONFIG_ID,
+          response_type: "code",
+          override_default_response_type: true,
+          extras: {
+            setup: {},
+            featureType: "",
+            sessionInfoVersion: "3",
+          },
+        }
+      );
+    };
+
+    if ((window as any).FB) {
+      launchLogin();
+    } else {
+      // Load SDK
+      (window as any).fbAsyncInit = () => {
+        (window as any).FB.init({
+          appId: META_APP_ID,
+          autoLogAppEvents: true,
+          xfbml: true,
+          version: "v21.0",
+        });
+        launchLogin();
+      };
+      const script = document.createElement("script");
+      script.src = "https://connect.facebook.net/pt_BR/sdk.js";
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, [user, toast]);
+
+  // --- Evolution API (Free/Starter) ---
   const handleReconnect = async (mode: "pairing" | "qr" = "pairing") => {
     setReconnecting(true);
     setQrCode(null);
@@ -177,6 +256,14 @@ const WhatsAppStatusBadge = () => {
 
   const progressPercent = (secondsLeft / QR_EXPIRY_SECONDS) * 100;
 
+  const handleConnectClick = () => {
+    if (isPro) {
+      handleMetaConnect();
+    } else {
+      handleReconnect();
+    }
+  };
+
   return (
     <>
       <div className="flex items-center gap-2">
@@ -189,16 +276,23 @@ const WhatsAppStatusBadge = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleReconnect()}
-            disabled={reconnecting}
+            onClick={handleConnectClick}
+            disabled={reconnecting || metaConnecting}
             className="gap-1.5 text-xs"
           >
-            {reconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            Conectar
+            {reconnecting || metaConnecting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : isPro ? (
+              <Shield className="w-3.5 h-3.5" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+            {isPro ? "Conectar com Meta" : "Conectar"}
           </Button>
         )}
       </div>
 
+      {/* Evolution API Dialog (Free/Starter only) */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
