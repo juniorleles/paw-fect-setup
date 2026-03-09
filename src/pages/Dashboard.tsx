@@ -88,6 +88,7 @@ const Dashboard = () => {
           voiceTone: c.voice_tone as OnboardingData["voiceTone"],
           assistantName: c.assistant_name,
           maxConcurrentAppointments: (c as any).max_concurrent_appointments ?? 1,
+          attendants: (c as any).attendants ?? [""],
         });
 
         // Ensure subscription exists
