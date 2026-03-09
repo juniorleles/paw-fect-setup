@@ -1,0 +1,1 @@
+UPDATE pet_shop_configs SET meta_phone_number_id = '1059775900543726' WHERE user_id = '3de71a0a-e878-4b12-a05e-4851212f8bca';
