@@ -144,6 +144,20 @@ const AppointmentFilters = ({
           </SelectContent>
         </Select>
 
+        {uniqueProfessionals.length > 0 && (
+          <Select value={professionalFilter} onValueChange={onProfessionalFilterChange}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder="Profissional" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os profissionais</SelectItem>
+              {uniqueProfessionals.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
         {selectedDate && (
           <Badge variant="secondary" className="h-8 px-3 flex items-center gap-1.5 text-xs">
             {format(selectedDate, "dd/MM/yyyy")}
