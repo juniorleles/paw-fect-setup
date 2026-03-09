@@ -171,7 +171,8 @@ Deno.serve(async (req) => {
               // Pro plan: download media from Meta to get a URL
               console.log(`[META-WEBHOOK] Pro plan — downloading ${mediaType} media ${mediaId}`);
               try {
-                const accessToken = config.meta_access_token;
+                // Use System User Token (permanent) for media downloads — user tokens expire in ~1h
+                const accessToken = Deno.env.get("META_SYSTEM_USER_TOKEN") || config.meta_access_token;
                 // Step 1: Get media URL from Meta
                 const mediaInfoRes = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
                   headers: { Authorization: `Bearer ${accessToken}` },
