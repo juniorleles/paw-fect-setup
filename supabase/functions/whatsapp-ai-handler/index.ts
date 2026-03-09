@@ -2587,6 +2587,23 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         return `Preciso de mais algumas informações para completar o agendamento: ${missingFields.join(", ")}. Pode me informar?`;
       }
 
+      // Auto-assign attendant
+      const attendantList = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
+      let assignedAttendant: string | null = action.professional_name || null;
+      if (!assignedAttendant && attendantList.length > 0) {
+        // Need current appointments for this date to find free attendant
+        const { data: dateAppts } = await serviceClient
+          .from("appointments")
+          .select("date, time, service, status, professional_name")
+          .eq("user_id", shopConfig.user_id)
+          .eq("date", action.date)
+          .neq("status", "cancelled")
+          .neq("status", "no_show");
+        const serviceDur = getServiceDuration(shopConfig.services || [], action.service);
+        assignedAttendant = findFreeAttendant(attendantList, dateAppts || [], shopConfig.services || [], action.date, action.time, serviceDur);
+        console.log(`[AttendantAssign] Auto-assigned: ${assignedAttendant || "none"} for ${action.service} at ${action.date} ${action.time}`);
+      }
+
       const { error: insertErr } = await serviceClient
         .from("appointments")
         .insert({
@@ -2599,6 +2616,7 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
           time: action.time,
           notes: action.notes || "",
           status: "pending",
+          professional_name: assignedAttendant,
         });
       if (insertErr) {
         console.error("Insert error:", insertErr);
