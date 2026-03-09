@@ -2270,9 +2270,11 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
     ? `nome do ${clientLabel}, nome do pet, serviço desejado, data e horário, observações (opcional)`
     : `nome do ${clientLabel}, serviço desejado, data e horário, observações (opcional)`;
   
+  const hasAttendants = ((shopConfig as any).attendants || []).filter((n: string) => n.trim()).length > 1;
+  const profField = hasAttendants ? ',"professional_name":"João"' : '';
   const actionExample = isPetNiche
-    ? `<action>{"type":"create","pet_name":"Rex","owner_name":"João","owner_phone":"${cleanPhone}","service":"Banho","date":"2026-02-21","time":"10:00","notes":"","status":"pending"}</action>`
-    : `<action>{"type":"create","pet_name":"—","owner_name":"Ana","owner_phone":"${cleanPhone}","service":"Escova","date":"2026-02-21","time":"10:00","notes":"","status":"pending"}</action>`;
+    ? `<action>{"type":"create","pet_name":"Rex","owner_name":"João","owner_phone":"${cleanPhone}","service":"Banho","date":"2026-02-21","time":"10:00","notes":"","status":"pending"${profField}}</action>`
+    : `<action>{"type":"create","pet_name":"—","owner_name":"Ana","owner_phone":"${cleanPhone}","service":"Escova","date":"2026-02-21","time":"10:00","notes":"","status":"pending"${profField}}</action>`;
 
   return `Você é ${shopConfig.assistant_name || "a secretária digital"} do ${nicheLabel} "${shopConfig.shop_name}".
 ${toneInstructions[shopConfig.voice_tone] || toneInstructions.friendly}
