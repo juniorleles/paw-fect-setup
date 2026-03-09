@@ -151,7 +151,7 @@ const Index = () => {
         setConfigId(c.id);
         setData({
           phone: c.phone,
-          phoneVerified: false,
+          phoneVerified: c.phone_verified ?? false,
           niche: (c as any).niche ?? "petshop",
           shopName: c.shop_name,
           address: c.address,
