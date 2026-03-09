@@ -115,6 +115,7 @@ export type Database = {
           owner_name: string
           owner_phone: string
           pet_name: string
+          professional_name: string | null
           recovery_message_sent_at: string | null
           recovery_status: string | null
           reminder_24h_sent: boolean
@@ -136,6 +137,7 @@ export type Database = {
           owner_name: string
           owner_phone?: string
           pet_name: string
+          professional_name?: string | null
           recovery_message_sent_at?: string | null
           recovery_status?: string | null
           reminder_24h_sent?: boolean
@@ -157,6 +159,7 @@ export type Database = {
           owner_name?: string
           owner_phone?: string
           pet_name?: string
+          professional_name?: string | null
           recovery_message_sent_at?: string | null
           recovery_status?: string | null
           reminder_24h_sent?: boolean

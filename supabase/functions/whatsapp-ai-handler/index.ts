@@ -20,6 +20,7 @@ interface PetShopConfig {
   state: string;
   niche: string;
   max_concurrent_appointments?: number;
+  attendants?: string[];
   meta_waba_id?: string | null;
   meta_phone_number_id?: string | null;
   meta_access_token?: string | null;
@@ -257,6 +258,87 @@ function filterAvailableSlotsForService(availableSlots: string, serviceDuration:
   });
 
   return filteredLines.join("\n");
+}
+
+// Find the first free attendant at a given date/time slot
+function findFreeAttendant(
+  attendants: string[],
+  appointments: any[],
+  services: any[],
+  date: string,
+  time: string,
+  serviceDuration: number,
+  slotInterval = 30
+): string | null {
+  if (!attendants || attendants.length === 0) return null;
+
+  const filledAttendants = attendants.filter(n => n.trim());
+  if (filledAttendants.length === 0) return null;
+
+  const timeMin = timeToMinutes(time);
+  const slotsNeeded = Math.max(1, Math.ceil(serviceDuration / slotInterval));
+
+  // For each attendant, check if they are free during all slots the service would occupy
+  for (const attendant of filledAttendants) {
+    let isFree = true;
+    for (let i = 0; i < slotsNeeded; i++) {
+      const checkTime = minutesToTime(timeMin + i * slotInterval);
+      // Check if this attendant has any overlapping appointment at this slot
+      const conflict = appointments.find((a: any) => {
+        if (a.date !== date) return false;
+        if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") return false;
+        // Only match if explicitly assigned to this attendant
+        if (a.professional_name && a.professional_name !== attendant) return false;
+        // If no professional_name assigned, count against overall capacity
+        if (!a.professional_name) return false;
+        const aptStart = timeToMinutes(a.time);
+        const aptDur = getServiceDuration(services, a.service);
+        const aptEnd = aptStart + aptDur;
+        const checkMin = timeToMinutes(checkTime);
+        return checkMin >= aptStart && checkMin < aptEnd;
+      });
+      if (conflict) {
+        isFree = false;
+        break;
+      }
+    }
+    if (isFree) return attendant;
+  }
+
+  // Fallback: check for attendants not yet assigned (for legacy appointments without professional_name)
+  // Count unassigned appointments at this slot
+  const unassignedAtSlot = appointments.filter((a: any) => {
+    if (a.date !== date) return false;
+    if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") return false;
+    if (a.professional_name) return false;
+    const aptStart = timeToMinutes(a.time);
+    const aptDur = getServiceDuration(services, a.service);
+    const aptEnd = aptStart + aptDur;
+    return timeMin >= aptStart && timeMin < aptEnd;
+  }).length;
+
+  // Find attendants not explicitly booked
+  const explicitlyBooked = new Set(
+    appointments
+      .filter((a: any) => {
+        if (a.date !== date) return false;
+        if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") return false;
+        if (!a.professional_name) return false;
+        const aptStart = timeToMinutes(a.time);
+        const aptDur = getServiceDuration(services, a.service);
+        const aptEnd = aptStart + aptDur;
+        return timeMin >= aptStart && timeMin < aptEnd;
+      })
+      .map((a: any) => a.professional_name)
+  );
+
+  const availableAttendants = filledAttendants.filter(a => !explicitlyBooked.has(a));
+  // Reserve some for unassigned legacy appointments
+  if (availableAttendants.length > unassignedAtSlot) {
+    return availableAttendants[unassignedAtSlot]; // Skip ones "reserved" for unassigned
+  }
+
+  return null; // All attendants busy
 }
 
 function getServiceClient() {
@@ -2293,6 +2375,14 @@ ${customerApptsText}
 REGRA: Se o cliente perguntar sobre "meus agendamentos", "algum agendamento", "quando vai ser", ou variações similares → liste os agendamentos DESTE CLIENTE acima com serviço, data e horário. NÃO mencione status internos como "pendente", "pendente de confirmação", "confirmado", etc. Esses status são informações INTERNAS do sistema e NÃO devem ser expostos ao cliente. Apenas informe os dados do agendamento de forma natural (ex: "Sua escova está agendada para amanhã, segunda-feira (02/03), às 08:00 😊").
 
 CAPACIDADE DE ATENDIMENTO SIMULTÂNEO: ${maxConcurrent} atendente${maxConcurrent > 1 ? "s" : ""} por horário.
+${(() => {
+  const attendantNames = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
+  if (attendantNames.length > 0) {
+    return `NOMES DOS ATENDENTES: ${attendantNames.join(", ")}
+REGRA DE DISTRIBUIÇÃO: Ao confirmar um agendamento, você DEVE incluir o campo "professional_name" no bloco <action> com o nome do atendente designado. O sistema distribui automaticamente, mas se o cliente pedir um atendente específico, respeite a preferência.`;
+  }
+  return "";
+})()
 
 DURAÇÃO DOS SERVIÇOS — REGRA CRÍTICA:
 Cada serviço tem uma duração definida. Ao verificar disponibilidade, considere que um agendamento OCUPA MÚLTIPLOS SLOTS de 30 minutos consecutivos com base na duração do serviço.
@@ -2497,6 +2587,23 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         return `Preciso de mais algumas informações para completar o agendamento: ${missingFields.join(", ")}. Pode me informar?`;
       }
 
+      // Auto-assign attendant
+      const attendantList = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
+      let assignedAttendant: string | null = action.professional_name || null;
+      if (!assignedAttendant && attendantList.length > 0) {
+        // Need current appointments for this date to find free attendant
+        const { data: dateAppts } = await serviceClient
+          .from("appointments")
+          .select("date, time, service, status, professional_name")
+          .eq("user_id", shopConfig.user_id)
+          .eq("date", action.date)
+          .neq("status", "cancelled")
+          .neq("status", "no_show");
+        const serviceDur = getServiceDuration(shopConfig.services || [], action.service);
+        assignedAttendant = findFreeAttendant(attendantList, dateAppts || [], shopConfig.services || [], action.date, action.time, serviceDur);
+        console.log(`[AttendantAssign] Auto-assigned: ${assignedAttendant || "none"} for ${action.service} at ${action.date} ${action.time}`);
+      }
+
       const { error: insertErr } = await serviceClient
         .from("appointments")
         .insert({
@@ -2509,6 +2616,7 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
           time: action.time,
           notes: action.notes || "",
           status: "pending",
+          professional_name: assignedAttendant,
         });
       if (insertErr) {
         console.error("Insert error:", insertErr);
@@ -2761,6 +2869,15 @@ async function tryDeterministicBooking(
     }
   }
 
+  // Auto-assign attendant for deterministic booking
+  const attendantList = ((shopConfig as any).attendants || []).filter((n: string) => n.trim());
+  let assignedAttendant: string | null = null;
+  if (attendantList.length > 0) {
+    const serviceDur = serviceConfig.duration || 30;
+    assignedAttendant = findFreeAttendant(attendantList, appointments || [], shopConfig.services || [], chosenDate, finalTime, serviceDur);
+    console.log(`[DeterministicBooking] Auto-assigned attendant: ${assignedAttendant || "none"}`);
+  }
+
   // Insert appointment
   const { error: insertErr } = await serviceClient
     .from("appointments")
@@ -2774,6 +2891,7 @@ async function tryDeterministicBooking(
       time: finalTime,
       notes: "",
       status: "pending",
+      professional_name: assignedAttendant,
     });
 
   if (insertErr) {
@@ -2813,6 +2931,7 @@ async function tryDeterministicBooking(
 
   let confirmMsg = `Agendamento confirmado ✅\n\n`;
   confirmMsg += `• Serviço: ${serviceName}\n`;
+  if (assignedAttendant) confirmMsg += `• Profissional: ${assignedAttendant}\n`;
   confirmMsg += `• Data: ${weekday}, ${dateBR}\n`;
   confirmMsg += `• Horário: ${finalTime}\n`;
   if (serviceConfig.price != null) {
@@ -3155,7 +3274,7 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split("T")[0];
     const { data: appointments } = await serviceClient
       .from("appointments")
-      .select("date, time, service, status, pet_name, owner_name, owner_phone")
+      .select("date, time, service, status, pet_name, owner_name, owner_phone, professional_name")
       .eq("user_id", shopConfig.user_id)
       .gte("date", today)
       .neq("status", "cancelled")
@@ -3172,9 +3291,12 @@ Deno.serve(async (req) => {
     const translateStatus = (s: string) => statusPtBr[s] || s;
 
     const existingAppointments = (appointments || [])
-      .map((a: any) => isPetNiche
-        ? `${a.date} ${a.time} - ${a.service} (${a.pet_name}/${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)})`
-        : `${a.date} ${a.time} - ${a.service} (${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)})`)
+      .map((a: any) => {
+        const profLabel = a.professional_name ? `, prof: ${a.professional_name}` : "";
+        return isPetNiche
+          ? `${a.date} ${a.time} - ${a.service} (${a.pet_name}/${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)}${profLabel})`
+          : `${a.date} ${a.time} - ${a.service} (${a.owner_name}, tel: ${a.owner_phone}, status: ${translateStatus(a.status)}${profLabel})`;
+      })
       .join("\n");
 
     const customerAppointments = (appointments || []).filter((a: any) => a.owner_phone?.replace(/\D/g, "").endsWith(cleanPhone.slice(-8)));
