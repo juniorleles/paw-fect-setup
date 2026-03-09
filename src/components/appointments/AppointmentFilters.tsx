@@ -8,10 +8,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, X, List, CalendarDays, Filter } from "lucide-react";
+import { Search, X, List, CalendarDays, Filter, Users } from "lucide-react";
 import { format } from "date-fns";
 
-export type ViewMode = "list" | "calendar";
+export type ViewMode = "list" | "calendar" | "attendants";
 
 interface Props {
   viewMode: ViewMode;
@@ -100,6 +100,7 @@ const AppointmentFilters = ({
           {([
             { key: "list" as const, icon: List, label: "Lista" },
             { key: "calendar" as const, icon: CalendarDays, label: "Calendário" },
+            { key: "attendants" as const, icon: Users, label: "Atendentes" },
           ]).map((item) => (
             <Button
               key={item.key}

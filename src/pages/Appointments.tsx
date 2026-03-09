@@ -16,6 +16,7 @@ import AppointmentFilters, { type ViewMode } from "@/components/appointments/App
 import AppointmentListView from "@/components/appointments/AppointmentListView";
 import AppointmentCalendarView from "@/components/appointments/AppointmentCalendarView";
 import AvailabilityCard from "@/components/appointments/AvailabilityCard";
+import AttendantScheduleView from "@/components/appointments/AttendantScheduleView";
 import type { DaySchedule } from "@/types/onboarding";
 
 
@@ -38,6 +39,7 @@ const Appointments = () => {
 
   const [services, setServices] = useState<Service[]>([]);
   const [businessHours, setBusinessHours] = useState<DaySchedule[]>([]);
+  const [attendants, setAttendants] = useState<string[]>([]);
   const [rawMaxConcurrent, setRawMaxConcurrent] = useState(1);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
@@ -66,6 +68,7 @@ const Appointments = () => {
       if (configs && configs.length > 0) {
         setServices(configs[0].services as unknown as Service[]);
         setBusinessHours(configs[0].business_hours as unknown as DaySchedule[]);
+        setAttendants((configs[0].attendants as unknown as string[]) || []);
         setRawMaxConcurrent((configs[0] as any).max_concurrent_appointments ?? 1);
       }
       setLoadingConfig(false);
@@ -243,6 +246,15 @@ const Appointments = () => {
         />
       )}
 
+      {viewMode === "attendants" && (
+        <AttendantScheduleView
+          appointments={appointments}
+          attendants={attendants}
+          onEdit={handleEdit}
+          isPetNiche={isPetNiche}
+          businessHours={businessHours}
+        />
+      )}
 
       {/* Load more */}
       {hasMore && (
