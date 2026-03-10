@@ -34,7 +34,7 @@ export const InviteEmail = ({
         <Heading style={h1}>Você foi convidado(a)!</Heading>
         <Text style={text}>
           Você recebeu um convite para a{' '}
-          <Link href={siteUrl} style={link}><strong>Secretária Pet</strong></Link>.
+          <Link href={siteUrl} style={link}><strong>MagicZap</strong></Link>.
           Clique no botão abaixo para aceitar e criar sua conta.
         </Text>
         <Button style={button} href={confirmationUrl}>

@@ -36,7 +36,7 @@ export const SignupEmail = ({
         <Heading style={h1}>Bem-vindo(a)! 🎉</Heading>
         <Text style={text}>
           Obrigado por se cadastrar na{' '}
-          <Link href={siteUrl} style={link}><strong>Secretária Pet</strong></Link>!
+          <Link href={siteUrl} style={link}><strong>MagicZap</strong></Link>!
         </Text>
         <Text style={text}>
           Confirme seu e-mail (<Link href={`mailto:${recipient}`} style={link}>{recipient}</Link>) clicando no botão abaixo:

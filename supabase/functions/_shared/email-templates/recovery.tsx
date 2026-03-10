@@ -30,7 +30,7 @@ export const RecoveryEmail = ({
         <Text style={logo}>✨ MagicZap</Text>
         <Heading style={h1}>Redefinir senha</Heading>
         <Text style={text}>
-          Recebemos um pedido para redefinir a senha da sua conta na Secretária Pet.
+          Recebemos um pedido para redefinir a senha da sua conta na MagicZap.
           Clique no botão abaixo para criar uma nova senha.
         </Text>
         <Button style={button} href={confirmationUrl}>
