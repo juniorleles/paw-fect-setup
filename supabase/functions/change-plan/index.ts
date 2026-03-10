@@ -19,7 +19,7 @@ const PRICE_MAP: Record<string, { live: string; test: string }> = {
     test: "price_1T6tafE3YGO6w5oC8iAWHVQB",
   },
   professional: {
-    live: "price_1T4S1KE3YGO6w5oC23qcdMl3",
+    live: "price_1T9PrHE3YGO6w5oCaPxPCHJt",
     test: "price_1T6tcYE3YGO6w5oCZZ6rAitZ",
   },
 };
