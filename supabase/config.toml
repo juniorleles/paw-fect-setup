@@ -39,3 +39,5 @@ project_id = "kxcqizfxfqzmnhxeaepc"
     verify_jwt = false
   [functions.whatsapp-embedded-signup]
     verify_jwt = false
+  [functions.support-chat]
+    verify_jwt = false
