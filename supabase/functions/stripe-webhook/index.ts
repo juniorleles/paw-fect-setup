@@ -238,7 +238,7 @@ function getPriceMap(stripeKey: string): Record<string, string> {
   const isTest = stripeKey.startsWith("sk_test_") || stripeKey.startsWith("rk_test_");
   return {
     starter: isTest ? "price_1T6tafE3YGO6w5oC8iAWHVQB" : "price_1T4S0JE3YGO6w5oCBXFikz8v",
-    professional: isTest ? "price_1T6tcYE3YGO6w5oCZZ6rAitZ" : "price_1T4S1KE3YGO6w5oC23qcdMl3",
+    professional: isTest ? "price_1T6tcYE3YGO6w5oCZZ6rAitZ" : "price_1T9PrHE3YGO6w5oCaPxPCHJt",
   };
 }
 
@@ -249,7 +249,8 @@ function detectPlanFromSubscription(sub: Stripe.Subscription): string {
     "price_1T4S0JE3YGO6w5oCBXFikz8v": "starter",       // Essencial live
     "price_1T6tafE3YGO6w5oC8iAWHVQB": "starter",       // Essencial test
     "price_1T4UnTE3YGO6w5oCkeqZ4Fbb": "starter",       // Essencial legacy
-    "price_1T4S1KE3YGO6w5oC23qcdMl3": "professional",  // Pro live
+    "price_1T9PrHE3YGO6w5oCaPxPCHJt": "professional",  // Pro live
+    "price_1T4S1KE3YGO6w5oC23qcdMl3": "professional",  // Pro live (legacy)
     "price_1T6tcYE3YGO6w5oCZZ6rAitZ": "professional",  // Pro test
     "price_1T4UniE3YGO6w5oCiWyqqrfG": "professional",  // Pro legacy
   };
