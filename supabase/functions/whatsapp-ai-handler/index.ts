@@ -3879,7 +3879,22 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       if (reply !== before) guardLog("TimeQuestionGuard", "Stripped redundant time question (user already provided time)", before, reply);
     }
 
-    // Track AI usage with latency
+    // Guardrail: MissingNameGuard — if state has service+date+time but no name, and AI didn't ask for it, append name question
+    {
+      const hasAllExceptName = convState.service && convState.date && convState.time && !convState.client_name;
+      const nameQuestionPattern = /(qual\s+(seu|o\s+seu)\s+nome|me\s+diz[a]?\s+(seu|o\s+seu)\s+nome|como\s+voc[eê]\s+se\s+chama|pra\s+eu\s+finalizar.*nome|nome\s+para\s+(eu\s+)?(finalizar|registrar|confirmar)|seu\s+nome\s+para)/i;
+      const alreadyAsksName = nameQuestionPattern.test(reply);
+      const hasAction = /<action>.*?<\/action>/s.test(reply);
+      if (hasAllExceptName && !alreadyAsksName && !hasAction) {
+        const before = reply;
+        // Format the date nicely
+        const [y, m, d] = convState.date!.split("-");
+        const dateStr = `${d}/${m}`;
+        reply = `${reply.trim()}\n\nPara confirmar seu agendamento de ${convState.service} no dia ${dateStr} às ${convState.time}, me diz seu nome, por favor? 😊`;
+        guardLog("MissingNameGuard", "State has service+date+time but no name — appended name question", before, reply);
+      }
+    }
+
     const tokensUsed = aiData.usage?.total_tokens || 0;
     await serviceClient.from("ai_usage").insert({
       user_id: shopConfig.user_id,
