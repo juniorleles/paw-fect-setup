@@ -757,12 +757,24 @@ const MyAccount = () => {
                   "Campanha de retorno",
                   "Upsell pós-atendimento",
                   "Recuperação de faltas",
-                   "Relatório financeiro",
+                  "Relatório financeiro",
                   "Suporte prioritário",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <span>{f}</span>
+                  </li>
+                ))}
+                {[
+                  { label: "Agendamento por voz", tag: "Novo" },
+                  { label: "Conexão Meta Cloud API", tag: "Novo" },
+                ].map((f) => (
+                  <li key={f.label} className="flex items-start gap-2">
+                    <Check className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="flex items-center gap-1">
+                      {f.label}
+                      <Badge variant="secondary" className="text-[8px] px-1 py-0 leading-3 rounded bg-primary/10 text-primary border-primary/20 font-bold">{f.tag}</Badge>
+                    </span>
                   </li>
                 ))}
               </ul>

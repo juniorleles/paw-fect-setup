@@ -164,6 +164,18 @@ const PricingSection = () => (
                     <span>{f}</span>
                   </li>
                 ))}
+                {[
+                  { label: "Agendamento por voz no WhatsApp", tag: "Novo" },
+                  { label: "Conexão oficial via Meta Cloud API", tag: "Novo" },
+                ].map((f) => (
+                  <li key={f.label} className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="flex items-center gap-1.5">
+                      {f.label}
+                      <Badge variant="secondary" className="text-[9px] px-1.5 py-0 leading-4 rounded-md bg-primary/10 text-primary border-primary/20 font-bold">{f.tag}</Badge>
+                    </span>
+                  </li>
+                ))}
               </ul>
               <a href="/auth?signup=true&plan=professional">
                 <Button className="w-full rounded-xl font-bold text-wrap py-3 h-auto leading-snug hover:bg-primary/90">
