@@ -321,15 +321,15 @@ const Auth = () => {
                     </div>
                   )}
                   {isSignUp && selectedPlan && (
-                    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2.5">
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
                         Incluso no plano {selectedPlan.label}:
                       </p>
-                      <ul className="space-y-1">
+                      <ul className="space-y-1.5">
                         {selectedPlan.benefits.map((b) => (
-                          <li key={b} className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <li key={b} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                            <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                             {b}
                           </li>
                         ))}
