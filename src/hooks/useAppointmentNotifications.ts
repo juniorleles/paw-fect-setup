@@ -139,7 +139,7 @@ export const useAppointmentNotifications = () => {
           playNotificationSound();
 
           toast({
-            title: "🐾 Novo Agendamento!",
+            title: "📅 Novo Agendamento!",
             description: `${apt.pet_name} — ${apt.service} em ${apt.date} às ${apt.time?.slice(0, 5)}`,
           });
 

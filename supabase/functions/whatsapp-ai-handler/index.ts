@@ -3768,7 +3768,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     if (isSimpleGreeting && /agendamento\s+confirmado/i.test(reply)) {
       const originalReply = reply;
       if (isFarewell) {
-        const nicheEmojiMap4: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+        const nicheEmojiMap4: Record<string, string> = { petshop: "🐶", veterinaria: "🩺", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
         reply = `Por nada! Qualquer coisa é só chamar ${nicheEmojiMap4[shopConfig.niche] || "😊"}`;
       } else {
         reply = reply.replace(/agendamento\s+confirmado.*$/gis, "").trim();
