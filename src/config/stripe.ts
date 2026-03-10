@@ -22,7 +22,7 @@ export const STRIPE_PLANS = {
   },
   professional: {
     name: "Pro",
-    price_id_live: "price_1T4S1KE3YGO6w5oC23qcdMl3",
+    price_id_live: "price_1T9PrHE3YGO6w5oCaPxPCHJt",
     price_id_test: "price_1T6tcYE3YGO6w5oCZZ6rAitZ",
     product_id_live: "prod_U2X5te6HQ2va2l",
     product_id_test: "prod_U2ZxFgQ7HaugUf",
