@@ -561,12 +561,15 @@ function inferStateFromUserMessage(
 }
 
 // After successful booking, mark state as post_booking
+// Clear client_name too so next booking asks for the name again (allows booking for a different person)
 function stateAfterBooking(): Partial<ConversationState> {
   return {
     step: "post_booking",
     service: null,
     date: null,
     time: null,
+    client_name: null,
+    pet_name: null,
     notes: null,
   };
 }
