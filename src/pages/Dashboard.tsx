@@ -316,10 +316,10 @@ const Dashboard = () => {
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Resumo do dia</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { value: todayApts.length, label: "Atendimentos hoje", icon: CalendarDays, color: "text-primary", bg: "bg-primary/10" },
+            { value: allTodayApts.length, label: "Total", icon: CalendarDays, color: "text-primary", bg: "bg-primary/10" },
             { value: confirmedToday, label: "Confirmados", icon: CheckCircle2, color: "text-success", bg: "bg-success/10" },
             { value: pendingToday, label: "Pendentes", icon: Clock, color: "text-accent", bg: "bg-accent/10" },
-            { value: cancelledToday, label: "Faltas", icon: UserX, color: "text-destructive", bg: "bg-destructive/10", alert: cancelledToday > 0 },
+            { value: faltasToday, label: "Faltas", icon: UserX, color: "text-destructive", bg: "bg-destructive/10", alert: faltasToday > 0 },
           ].map((stat) => (
             <Card
               key={stat.label}
