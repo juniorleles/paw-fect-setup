@@ -3444,7 +3444,18 @@ USE ESSAS INFORMAÇÕES para personalizar o atendimento:
       }
     }
 
-    const maxConcurrent = Math.max(1, (shopConfig as any).max_concurrent_appointments ?? 1);
+    // Apply plan-based limit to max concurrent (free=2, essential=5, professional=unlimited)
+    const rawMaxConcurrent = Math.max(1, (shopConfig as any).max_concurrent_appointments ?? 1);
+    const { data: subData } = await serviceClient
+      .from("subscriptions")
+      .select("plan")
+      .eq("user_id", shopConfig.user_id)
+      .maybeSingle();
+    const userPlan = subData?.plan || "free";
+    const planLimit = userPlan === "professional" ? 999 : userPlan === "essential" ? 5 : 2;
+    const maxConcurrent = Math.min(rawMaxConcurrent, planLimit);
+    console.log(`[PLAN_LIMIT] plan=${userPlan}, rawMax=${rawMaxConcurrent}, planLimit=${planLimit}, effective=${maxConcurrent}`);
+
     const availableSlots = computeAvailableSlots(
       shopConfig.business_hours,
       appointments || [],
