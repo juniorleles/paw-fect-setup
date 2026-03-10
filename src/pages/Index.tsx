@@ -415,11 +415,8 @@ const Index = () => {
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Briefcase className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-display font-bold text-foreground">
-              Secretária <span className="text-primary">Digital</span>
-            </h1>
+          <div className="flex justify-center mb-2">
+            <img src={logo} alt="MagicZap" className="h-16" />
           </div>
           <p className="text-muted-foreground">Configure sua secretária digital em minutos</p>
           <button
