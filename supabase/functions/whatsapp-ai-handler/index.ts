@@ -3655,7 +3655,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       });
 
       // Send a graceful fallback instead of exposing the error
-      const nicheEmojiMap2: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+      const nicheEmojiMap2: Record<string, string> = { petshop: "🐶", veterinaria: "🩺", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
       const fallbackEmoji2 = nicheEmojiMap2[shopConfig.niche] || nicheEmojiMap2.outros;
       const fallbackMsg = `Olá! Estou com uma instabilidade temporária, mas já já volto! Tente novamente em alguns minutinhos ${fallbackEmoji2}`;
       await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
