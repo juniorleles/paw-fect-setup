@@ -169,7 +169,12 @@ Deno.serve(async (req) => {
 
       await serviceClient
         .from("pet_shop_configs")
-        .update({ whatsapp_status: "disconnected" })
+        .update({
+          whatsapp_status: "disconnected",
+          meta_waba_id: null,
+          meta_phone_number_id: null,
+          meta_access_token: null,
+        })
         .eq("user_id", user.id);
 
       return new Response(
