@@ -689,6 +689,16 @@ function inferServiceFromText(text: string, services: any[]): string | null {
 
   if (found?.original) return found.original;
 
+  // Fuzzy preposition matching: "corte com tesoura" → "Corte na tesoura"
+  // Normalize prepositions (com/na/no/de/do/da/em) to a common token for comparison
+  const normalizePrepositions = (text: string) =>
+    text.replace(/\b(com|na|no|de|do|da|em)\b/g, "_PREP_");
+  const textWithPreps = normalizePrepositions(normalizedText);
+  const fuzzyFound = serviceList.find((s: any) =>
+    textWithPreps.includes(normalizePrepositions(s.normalized))
+  );
+  if (fuzzyFound?.original) return fuzzyFound.original;
+
   // Heuristic for barbershop combined requests like "barba e cabelo"
   const mentionsBarba = /\bbarba\b/.test(normalizedText);
   const mentionsHair = /\b(cabelo|corte)\b/.test(normalizedText);
@@ -3908,16 +3918,42 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     {
       const noServiceKnown = !convState.service;
       if (noServiceKnown) {
-        const falseConfirmation = /(reservei|agendamento\s+confirmado|j[aá]\s+reserv|combinado.*reserv|agendei|marquei|confirmado\s*✅)/i.test(reply);
         const hasAction = /<action>.*?<\/action>/s.test(reply);
-        if (falseConfirmation || hasAction) {
-          const before = reply;
-          const serviceNames = (shopConfig.services as any[]).map((s: any) => s.name).filter(Boolean);
-          const serviceList = serviceNames.length > 0
-            ? `\n\nTemos: ${serviceNames.join(", ")}.`
-            : "";
-          reply = `Para qual serviço você gostaria de agendar?${serviceList} 😊`;
-          guardLog("MissingServiceGuard", "AI confirmed booking without service selected — replaced with service question", before, reply);
+        // If AI included an action block, check if it identified a valid service inside
+        let actionHasValidService = false;
+        if (hasAction) {
+          try {
+            const actionContent = reply.match(/<action>(.*?)<\/action>/s)?.[1];
+            if (actionContent) {
+              const actionData = JSON.parse(actionContent);
+              const actionServiceName = actionData?.service;
+              if (actionServiceName) {
+                const validService = (shopConfig.services as any[]).find((s: any) =>
+                  (s.name || "").toLowerCase() === actionServiceName.toLowerCase()
+                );
+                if (validService) {
+                  actionHasValidService = true;
+                  // Update convState with the service the AI identified
+                  convState.service = validService.name;
+                  await updateConversationState(serviceClient, shopConfig.user_id, cleanPhone, { service: validService.name });
+                  console.log(`[MissingServiceGuard] AI identified valid service "${validService.name}" in action — allowing confirmation`);
+                }
+              }
+            }
+          } catch { /* ignore parse errors */ }
+        }
+
+        if (!actionHasValidService) {
+          const falseConfirmation = /(reservei|agendamento\s+confirmado|j[aá]\s+reserv|combinado.*reserv|agendei|marquei|confirmado\s*✅)/i.test(reply);
+          if (falseConfirmation || hasAction) {
+            const before = reply;
+            const serviceNames = (shopConfig.services as any[]).map((s: any) => s.name).filter(Boolean);
+            const svcList = serviceNames.length > 0
+              ? `\n\nTemos: ${serviceNames.join(", ")}.`
+              : "";
+            reply = `Para qual serviço você gostaria de agendar?${svcList} 😊`;
+            guardLog("MissingServiceGuard", "AI confirmed booking without service selected — replaced with service question", before, reply);
+          }
         }
       }
     }
