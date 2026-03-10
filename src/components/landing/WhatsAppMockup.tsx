@@ -222,7 +222,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                 <div className="bg-card border rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Luna está digitando...
+                    Ana está digitando...
                   </div>
                 </div>
               </motion.div>
