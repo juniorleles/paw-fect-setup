@@ -1642,12 +1642,8 @@ function enforceKnownServiceNoRedundantQuestion(
   }
 
   if (!matchedService) {
-    if ((asksForServiceAgain || listsServiceOptions) && dateCorrectionOnly) {
-      console.log("[ServiceGuard] No service matched, but date/time correction context detected. Stripping redundant service question.");
-    } else {
-      console.log("[ServiceGuard] No service matched in message or history");
-      return reply;
-    }
+    console.log("[ServiceGuard] No service matched in message or history — preserving reply as-is");
+    return reply;
   }
 
   if (!asksForServiceAgain && !listsServiceOptions) {
