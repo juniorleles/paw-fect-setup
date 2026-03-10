@@ -27,14 +27,14 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Você foi convidado(a) para a Secretária Pet 🐾</Preview>
+    <Preview>Você foi convidado(a) para a MagicZap ✨</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>🐾 Secretária Pet</Text>
+        <Text style={logo}>✨ MagicZap</Text>
         <Heading style={h1}>Você foi convidado(a)!</Heading>
         <Text style={text}>
           Você recebeu um convite para a{' '}
-          <Link href={siteUrl} style={link}><strong>Secretária Pet</strong></Link>.
+          <Link href={siteUrl} style={link}><strong>MagicZap</strong></Link>.
           Clique no botão abaixo para aceitar e criar sua conta.
         </Text>
         <Button style={button} href={confirmationUrl}>

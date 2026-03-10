@@ -2241,8 +2241,8 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
     .join("\n");
 
   const nicheEmojis: Record<string, string> = {
-    petshop: "🐾🐶🐱",
-    veterinaria: "🐾🩺🐕",
+    petshop: "🐶🐱✨",
+    veterinaria: "🩺🐕✨",
     salao: "💇‍♀️💅✨",
     barbearia: "💈✂️🪒",
     estetica: "🧖‍♀️✨💆‍♀️",
@@ -3605,7 +3605,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
       // Send a graceful fallback message instead of exposing the error
-      const nicheEmojiMap: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+      const nicheEmojiMap: Record<string, string> = { petshop: "🐶", veterinaria: "🩺", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
       const fallbackEmoji = nicheEmojiMap[shopConfig.niche] || nicheEmojiMap.outros;
       const fallbackMsg = `Olá! No momento estou com uma instabilidade temporária. Por favor, tente novamente em alguns minutinhos! ${fallbackEmoji}`;
       await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
@@ -3655,7 +3655,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       });
 
       // Send a graceful fallback instead of exposing the error
-      const nicheEmojiMap2: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+      const nicheEmojiMap2: Record<string, string> = { petshop: "🐶", veterinaria: "🩺", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
       const fallbackEmoji2 = nicheEmojiMap2[shopConfig.niche] || nicheEmojiMap2.outros;
       const fallbackMsg = `Olá! Estou com uma instabilidade temporária, mas já já volto! Tente novamente em alguns minutinhos ${fallbackEmoji2}`;
       await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
@@ -3752,7 +3752,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       reply = reply.replace(/<action>.*?<\/action>/gs, "").trim();
       if (!reply || reply.length < 5 || /agendamento\s+confirmado/i.test(reply)) {
         if (isFarewell) {
-          const nicheEmojiMap3: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+          const nicheEmojiMap3: Record<string, string> = { petshop: "🐶", veterinaria: "🩺", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
           const emoji = nicheEmojiMap3[shopConfig.niche] || "😊";
           reply = `Por nada! Qualquer coisa é só chamar ${emoji}`;
         } else {
@@ -3768,7 +3768,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     if (isSimpleGreeting && /agendamento\s+confirmado/i.test(reply)) {
       const originalReply = reply;
       if (isFarewell) {
-        const nicheEmojiMap4: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+        const nicheEmojiMap4: Record<string, string> = { petshop: "🐶", veterinaria: "🩺", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
         reply = `Por nada! Qualquer coisa é só chamar ${nicheEmojiMap4[shopConfig.niche] || "😊"}`;
       } else {
         reply = reply.replace(/agendamento\s+confirmado.*$/gis, "").trim();

@@ -39,8 +39,8 @@ const STAGES = [
 // Niche-specific emoji maps
 const nicheEmoji: Record<string, string> = {
   barbearia: "💈",
-  petshop: "🐾",
-  veterinaria: "🐾",
+  petshop: "🐶",
+  veterinaria: "🩺",
   salao: "💇‍♀️",
   estetica: "✨",
   clinica: "🏥",

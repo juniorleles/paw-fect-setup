@@ -73,7 +73,7 @@ function playNotificationSound() {
 
 function showBrowserNotification(petName: string, service: string) {
   if ("Notification" in window && Notification.permission === "granted") {
-    new Notification("🐾 Novo Agendamento!", {
+    new Notification("📅 Novo Agendamento!", {
       body: `${petName} — ${service}`,
       icon: "/favicon.ico",
     });
@@ -139,7 +139,7 @@ export const useAppointmentNotifications = () => {
           playNotificationSound();
 
           toast({
-            title: "🐾 Novo Agendamento!",
+            title: "📅 Novo Agendamento!",
             description: `${apt.pet_name} — ${apt.service} em ${apt.date} às ${apt.time?.slice(0, 5)}`,
           });
 

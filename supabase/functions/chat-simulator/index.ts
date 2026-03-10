@@ -60,8 +60,8 @@ function buildSimulatorPrompt(config: SimulatorConfig, simulatedAppointments: st
     .join("\n");
 
   const nicheEmojis: Record<string, string> = {
-    petshop: "🐾🐶🐱",
-    veterinaria: "🐾🩺🐕",
+    petshop: "🐶🐱✨",
+    veterinaria: "🩺🐕✨",
     salao: "💇‍♀️💅✨",
     barbearia: "💈✂️🪒",
     estetica: "🧖‍♀️✨💆‍♀️",

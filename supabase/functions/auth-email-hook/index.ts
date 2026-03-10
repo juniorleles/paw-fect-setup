@@ -16,12 +16,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirme seu e-mail na Secretária Pet 🐾',
-  invite: 'Você foi convidado(a) para a Secretária Pet 🐾',
-  magiclink: 'Seu link de acesso à Secretária Pet 🐾',
-  recovery: 'Redefinir sua senha na Secretária Pet 🐾',
-  email_change: 'Confirme a alteração do seu e-mail 🐾',
-  reauthentication: 'Seu código de verificação 🐾',
+  signup: 'Confirme seu e-mail na MagicZap ✨',
+  invite: 'Você foi convidado(a) para a MagicZap ✨',
+  magiclink: 'Seu link de acesso à MagicZap ✨',
+  recovery: 'Redefinir sua senha na MagicZap ✨',
+  email_change: 'Confirme a alteração do seu e-mail ✨',
+  reauthentication: 'Seu código de verificação ✨',
 }
 
 // Template mapping
