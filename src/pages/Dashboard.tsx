@@ -208,6 +208,7 @@ const Dashboard = () => {
   const planLimit = STRIPE_PLANS[planKey].limit;
   const planName = subStatus === "active" ? STRIPE_PLANS[planKey].name : subStatus === "cancelled" ? "Cancelado" : "Sem plano";
   const messagesPercent = planLimit > 0 ? (totalMessagesMonth / planLimit) * 100 : 0;
+  const isFreePlan = currentPlan === "free" || (!currentPlan && subStatus !== "active");
 
   // Trial quota info from subscription context
   const {
