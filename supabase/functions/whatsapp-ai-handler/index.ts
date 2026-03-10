@@ -936,14 +936,23 @@ function removeRepeatedQuestion(reply: string): string {
   return "Como posso te ajudar hoje? 😊";
 }
 
-function isBookingFlowContext(userMessage: string, reply: string): boolean {
+function isBookingFlowContext(userMessage: string, reply: string, services?: any[]): boolean {
   const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage || "");
   // Detect standalone date/time references and corrections (e.g. "amanhã", "ops amanhã", "segunda", "10h")
   const dateTimeReference = /\b(amanh[aã]|hoje|segunda|terça|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}[h:]|\d{1,2}:\d{2})\b/i.test(userMessage || "") || /[àa]s\s+\d{1,2}/i.test((userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
   const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
   // Detect if the reply asks for the client's name (part of booking flow)
   const askingName = /(qual\s+(seu|o\s+seu)\s+nome|me\s+diz\s+(seu|o\s+seu)\s+nome|como\s+voc[eê]\s+se\s+chama|pra\s+eu\s+finalizar.*nome)/i.test(reply || "");
-  return bookingIntent || dateTimeReference || schedulingReply || askingName;
+  // Detect if user message is a service selection (answering a disambiguation question)
+  let isServiceSelection = false;
+  if (services && services.length > 0) {
+    const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    isServiceSelection = services.some((s: any) => {
+      const svcNorm = ((s?.name || "")).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      return svcNorm.length > 2 && (userNorm.includes(svcNorm) || svcNorm.includes(userNorm));
+    });
+  }
+  return bookingIntent || dateTimeReference || schedulingReply || askingName || isServiceSelection;
 }
 
 function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
