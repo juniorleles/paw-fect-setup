@@ -689,9 +689,12 @@ function inferServiceFromText(text: string, services: any[]): string | null {
   }
 
   // Heuristic: "corte de cabelo" should resolve to a haircut-only service (not combo with barba)
+  // BUT only if there's exactly ONE matching service — if multiple, return null (ambiguous)
   if (mentionsHair && !mentionsBarba) {
-    const hairOnly = serviceList.find((s: any) => /\b(corte|cabelo)\b/.test(s.normalized) && !/\bbarba\b/.test(s.normalized));
-    if (hairOnly?.original) return hairOnly.original;
+    const hairOnlyMatches = serviceList.filter((s: any) => /\b(corte|cabelo)\b/.test(s.normalized) && !/\bbarba\b/.test(s.normalized));
+    if (hairOnlyMatches.length === 1 && hairOnlyMatches[0]?.original) return hairOnlyMatches[0].original;
+    // Multiple matches (e.g. Corte Masculino, Corte na tesoura, Corte infantil) → ambiguous, let AI disambiguate
+    if (hairOnlyMatches.length > 1) return null;
   }
 
   // Heuristic: "barba" should prefer beard-only service (not combo with corte)
