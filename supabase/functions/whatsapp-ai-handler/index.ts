@@ -936,14 +936,23 @@ function removeRepeatedQuestion(reply: string): string {
   return "Como posso te ajudar hoje? 😊";
 }
 
-function isBookingFlowContext(userMessage: string, reply: string): boolean {
+function isBookingFlowContext(userMessage: string, reply: string, services?: any[]): boolean {
   const bookingIntent = /(agendar|agendamento|marcar|quero\s+(fazer|cortar|agendar|marcar|manicure|pedicure|escova|banho|tosa)|gostaria\s+de\s+agendar|quero\s+\w+\s+(segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo|amanh[aã]|hoje))/i.test(userMessage || "");
   // Detect standalone date/time references and corrections (e.g. "amanhã", "ops amanhã", "segunda", "10h")
   const dateTimeReference = /\b(amanh[aã]|hoje|segunda|terça|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo|\d{1,2}[h:]|\d{1,2}:\d{2})\b/i.test(userMessage || "") || /[àa]s\s+\d{1,2}/i.test((userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
   const schedulingReply = /(hor[aá]rios?\s+dispon[ií]veis?|qual\s+hor[aá]rio\s+voc[eê]\s+prefere|pra\s+qual\s+dia\s+e\s+hor[aá]rio|qual\s+dia\s+e\s+hor[aá]rio)/i.test(reply || "");
   // Detect if the reply asks for the client's name (part of booking flow)
   const askingName = /(qual\s+(seu|o\s+seu)\s+nome|me\s+diz\s+(seu|o\s+seu)\s+nome|como\s+voc[eê]\s+se\s+chama|pra\s+eu\s+finalizar.*nome)/i.test(reply || "");
-  return bookingIntent || dateTimeReference || schedulingReply || askingName;
+  // Detect if user message is a service selection (answering a disambiguation question)
+  let isServiceSelection = false;
+  if (services && services.length > 0) {
+    const userNorm = (userMessage || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    isServiceSelection = services.some((s: any) => {
+      const svcNorm = ((s?.name || "")).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      return svcNorm.length > 2 && (userNorm.includes(svcNorm) || svcNorm.includes(userNorm));
+    });
+  }
+  return bookingIntent || dateTimeReference || schedulingReply || askingName || isServiceSelection;
 }
 
 function enforceBookingDateTimeQuestion(userMessage: string, reply: string): string {
@@ -3870,7 +3879,22 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       if (reply !== before) guardLog("TimeQuestionGuard", "Stripped redundant time question (user already provided time)", before, reply);
     }
 
-    // Track AI usage with latency
+    // Guardrail: MissingNameGuard — if state has service+date+time but no name, and AI didn't ask for it, append name question
+    {
+      const hasAllExceptName = convState.service && convState.date && convState.time && !convState.client_name;
+      const nameQuestionPattern = /(qual\s+(seu|o\s+seu)\s+nome|me\s+diz[a]?\s+(seu|o\s+seu)\s+nome|como\s+voc[eê]\s+se\s+chama|pra\s+eu\s+finalizar.*nome|nome\s+para\s+(eu\s+)?(finalizar|registrar|confirmar)|seu\s+nome\s+para)/i;
+      const alreadyAsksName = nameQuestionPattern.test(reply);
+      const hasAction = /<action>.*?<\/action>/s.test(reply);
+      if (hasAllExceptName && !alreadyAsksName && !hasAction) {
+        const before = reply;
+        // Format the date nicely
+        const [y, m, d] = convState.date!.split("-");
+        const dateStr = `${d}/${m}`;
+        reply = `${reply.trim()}\n\nPara confirmar seu agendamento de ${convState.service} no dia ${dateStr} às ${convState.time}, me diz seu nome, por favor? 😊`;
+        guardLog("MissingNameGuard", "State has service+date+time but no name — appended name question", before, reply);
+      }
+    }
+
     const tokensUsed = aiData.usage?.total_tokens || 0;
     await serviceClient.from("ai_usage").insert({
       user_id: shopConfig.user_id,
@@ -3897,7 +3921,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     );
 
     // Preserve scheduling questions (service choice + date/time) in booking flows
-    const isBookingFlowMessage = isBookingFlowContext(message, reply);
+    const isBookingFlowMessage = isBookingFlowContext(message, reply, shopConfig.services || []);
 
     // Guardrail 1: never send more than one question in a single message
     if (!isBookingFlowMessage) {
