@@ -18,7 +18,7 @@ import { STRIPE_PLANS, type StripePlanKey } from "@/config/stripe";
 const PLAN_DISPLAY: Record<string, { label: string; benefits: string[]; color: string }> = {
   free: {
     label: "Free",
-    benefits: ["30 agendamentos/mês", "150 mensagens/mês", "1 profissional"],
+    benefits: ["Até 30 agendamentos por mês", "Até 150 mensagens por mês", "2 profissionais"],
     color: "bg-muted text-muted-foreground",
   },
   starter: {
@@ -31,6 +31,20 @@ const PLAN_DISPLAY: Record<string, { label: string; benefits: string[]; color: s
     benefits: ["Agendamentos ilimitados", "1.500 mensagens/mês", "Profissionais ilimitados"],
     color: "bg-primary text-primary-foreground",
   },
+};
+
+const getPasswordStrength = (password: string): { label: string; color: string; width: string } => {
+  if (password.length === 0) return { label: "", color: "", width: "0%" };
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 1) return { label: "Fraca", color: "bg-red-500", width: "33%" };
+  if (score <= 3) return { label: "Média", color: "bg-yellow-500", width: "66%" };
+  return { label: "Forte", color: "bg-green-500", width: "100%" };
 };
 
 const translateAuthError = (msg: string): string => {
@@ -256,7 +270,7 @@ const Auth = () => {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
+                        placeholder="Crie uma senha"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -272,9 +286,27 @@ const Auth = () => {
                       </button>
                     </div>
                     {isSignUp && (
-                      <p className="text-xs text-muted-foreground">
-                        Mínimo 8 caracteres. Use uma senha única que não tenha sido vazada em outros sites.
-                      </p>
+                      <div className="space-y-2">
+                        {password.length > 0 && (() => {
+                          const strength = getPasswordStrength(password);
+                          return (
+                            <div className="space-y-1">
+                              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${strength.color}`}
+                                  style={{ width: strength.width }}
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Força da senha: <span className="font-medium">{strength.label}</span>
+                              </p>
+                            </div>
+                          );
+                        })()}
+                        <p className="text-xs text-muted-foreground">
+                          Use pelo menos 8 caracteres. Recomendamos uma senha única.
+                        </p>
+                      </div>
                     )}
                   </div>
                   {!isSignUp && (
@@ -289,15 +321,15 @@ const Auth = () => {
                     </div>
                   )}
                   {isSignUp && selectedPlan && (
-                    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2.5">
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
                         Incluso no plano {selectedPlan.label}:
                       </p>
-                      <ul className="space-y-1">
+                      <ul className="space-y-1.5">
                         {selectedPlan.benefits.map((b) => (
-                          <li key={b} className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <li key={b} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                            <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                             {b}
                           </li>
                         ))}
