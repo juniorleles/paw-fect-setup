@@ -128,7 +128,7 @@ const Dashboard = () => {
   );
   const confirmedToday = todayApts.filter((a) => a.status === "confirmed" || a.status === "completed").length;
   const pendingToday = todayApts.filter((a) => a.status === "pending").length;
-  const cancelledToday = appointments.filter((a) => a.date === todayStr && a.status === "cancelled").length;
+  const cancelledToday = appointments.filter((a) => a.date === todayStr && (a.status === "cancelled" || a.status === "no_show")).length;
 
   // Revenue
   const priceMap = useMemo(() => new Map(data.services.map((s) => [s.name, s.price])), [data.services]);
