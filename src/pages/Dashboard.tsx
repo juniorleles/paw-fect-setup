@@ -39,6 +39,7 @@ import WhatsAppStatusBadge from "@/components/dashboard/WhatsAppStatusBadge";
 import InactiveClientsCard from "@/components/dashboard/InactiveClientsCard";
 import NoShowMetricsCard from "@/components/dashboard/NoShowMetricsCard";
 import WinbackMetricsCard from "@/components/dashboard/WinbackMetricsCard";
+import LockedFeatureOverlay from "@/components/dashboard/LockedFeatureOverlay";
 
 const Dashboard = () => {
   const { user } = useAuth();
