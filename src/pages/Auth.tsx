@@ -18,7 +18,7 @@ import { STRIPE_PLANS, type StripePlanKey } from "@/config/stripe";
 const PLAN_DISPLAY: Record<string, { label: string; benefits: string[]; color: string }> = {
   free: {
     label: "Free",
-    benefits: ["30 agendamentos/mês", "150 mensagens/mês", "1 profissional"],
+    benefits: ["Até 30 agendamentos por mês", "Até 150 mensagens por mês", "2 profissionais"],
     color: "bg-muted text-muted-foreground",
   },
   starter: {
@@ -31,6 +31,20 @@ const PLAN_DISPLAY: Record<string, { label: string; benefits: string[]; color: s
     benefits: ["Agendamentos ilimitados", "1.500 mensagens/mês", "Profissionais ilimitados"],
     color: "bg-primary text-primary-foreground",
   },
+};
+
+const getPasswordStrength = (password: string): { label: string; color: string; width: string } => {
+  if (password.length === 0) return { label: "", color: "", width: "0%" };
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 1) return { label: "Fraca", color: "bg-red-500", width: "33%" };
+  if (score <= 3) return { label: "Média", color: "bg-yellow-500", width: "66%" };
+  return { label: "Forte", color: "bg-green-500", width: "100%" };
 };
 
 const translateAuthError = (msg: string): string => {
