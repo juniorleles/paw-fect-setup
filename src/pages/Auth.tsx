@@ -272,9 +272,10 @@ const Auth = () => {
                         type={showPassword ? "text" : "password"}
                         placeholder="Crie uma senha"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => setPassword(e.target.value.slice(0, 64))}
                         required
                         minLength={8}
+                        maxLength={64}
                         className="h-11 pr-10"
                       />
                       <button
