@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef, createContext, useContext, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -39,6 +39,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [trialMessagesLimit, setTrialMessagesLimit] = useState(250);
   const [nextPlan, setNextPlan] = useState<string | null>(null);
   const [nextPlanEffectiveAt, setNextPlanEffectiveAt] = useState<string | null>(null);
+  const initialLoadDone = useRef(false);
+
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
       setStatus("none");
@@ -49,10 +51,14 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setTrialAppointmentsLimit(30);
       setTrialMessagesLimit(150);
       setLoading(false);
+      initialLoadDone.current = true;
       return;
     }
 
-    setLoading(true);
+    // Only show loading spinner on initial load, not on polling refreshes
+    if (!initialLoadDone.current) {
+      setLoading(true);
+    }
 
     try {
       const { data, error } = await supabase
@@ -88,6 +94,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setTrialMessagesLimit(150);
     } finally {
       setLoading(false);
+      initialLoadDone.current = true;
     }
   }, [userId]);
 
