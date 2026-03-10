@@ -220,11 +220,7 @@ const Dashboard = () => {
   const messagesPercent = planLimit > 0 ? (totalMessagesMonth / planLimit) * 100 : 0;
   const isFreePlan = currentPlan === "free" || (!currentPlan && subStatus !== "active");
 
-  // Trial quota info from subscription context
-  const {
-    trialAppointmentsUsed, trialAppointmentsLimit,
-    trialMessagesUsed, trialMessagesLimit,
-  } = useSubscription();
+  // Trial quota info already destructured above
 
   if (loadingConfig || loadingApts) {
     return (
