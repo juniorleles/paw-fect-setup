@@ -537,7 +537,13 @@ function inferStateFromUserMessage(
   const parsedTime = parseFlexibleTimeFromMessage(userMessage || "");
   if (parsedTime) {
     updates.time = parsedTime;
-    updates.step = "name_collection";
+    // Only advance to name_collection if service is already known;
+    // otherwise stay at service_selection so the AI asks for the service first
+    if (currentState.service || updates.service) {
+      updates.step = "name_collection";
+    } else {
+      updates.step = "service_selection";
+    }
   }
 
   // Detect name (simple heuristic: short message after AI asked for name)
