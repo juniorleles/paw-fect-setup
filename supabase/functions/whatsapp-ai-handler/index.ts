@@ -3906,7 +3906,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     );
 
     // Preserve scheduling questions (service choice + date/time) in booking flows
-    const isBookingFlowMessage = isBookingFlowContext(message, reply);
+    const isBookingFlowMessage = isBookingFlowContext(message, reply, shopConfig.services || []);
 
     // Guardrail 1: never send more than one question in a single message
     if (!isBookingFlowMessage) {
