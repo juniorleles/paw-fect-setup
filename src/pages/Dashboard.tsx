@@ -437,41 +437,85 @@ const Dashboard = () => {
       </section>
 
       {/* ─── 4. Bloco Financeiro ─── */}
-      <section>
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Financeiro</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { value: formatCurrency(revenueToday), label: "Faturamento hoje", icon: DollarSign, color: "text-success", bg: "bg-success/10" },
-            { value: formatCurrency(revenueMonth), label: "Faturamento do mês", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
-            { value: formatCurrency(ticketMedio), label: "Ticket médio", icon: Users, color: "text-accent", bg: "bg-accent/10" },
-            ...(cancelledMonthValue > 0
-              ? [{ value: formatCurrency(cancelledMonthValue), label: "Perdido com faltas", icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10", alert: true }]
-              : []),
-          ].map((stat) => (
-            <Card
-              key={stat.label}
-              className={`border-none shadow-md ${stat.alert ? "ring-1 ring-destructive/20 bg-destructive/5" : "bg-card"}`}
-            >
-              <CardContent className="pt-4 pb-3">
-                <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-2`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
-                <p className={`text-lg font-bold ${stat.alert ? "text-destructive" : ""}`}>{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {isFreePlan ? (
+        <LockedFeatureOverlay title="Acompanhe seu faturamento em tempo real" planLabel="Essencial">
+          <section>
+            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Financeiro</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { value: "R$ 350,00", label: "Faturamento hoje", icon: DollarSign, color: "text-success", bg: "bg-success/10" },
+                { value: "R$ 4.850,00", label: "Faturamento do mês", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
+                { value: "R$ 85,00", label: "Ticket médio", icon: Users, color: "text-accent", bg: "bg-accent/10" },
+                { value: "R$ 420,00", label: "Perdido com faltas", icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10" },
+              ].map((stat) => (
+                <Card key={stat.label} className="border-none shadow-md bg-card">
+                  <CardContent className="pt-4 pb-3">
+                    <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-2`}>
+                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                    </div>
+                    <p className="text-lg font-bold">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        </LockedFeatureOverlay>
+      ) : (
+        <section>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Financeiro</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { value: formatCurrency(revenueToday), label: "Faturamento hoje", icon: DollarSign, color: "text-success", bg: "bg-success/10" },
+              { value: formatCurrency(revenueMonth), label: "Faturamento do mês", icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
+              { value: formatCurrency(ticketMedio), label: "Ticket médio", icon: Users, color: "text-accent", bg: "bg-accent/10" },
+              ...(cancelledMonthValue > 0
+                ? [{ value: formatCurrency(cancelledMonthValue), label: "Perdido com faltas", icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10", alert: true }]
+                : []),
+            ].map((stat) => (
+              <Card
+                key={stat.label}
+                className={`border-none shadow-md ${(stat as any).alert ? "ring-1 ring-destructive/20 bg-destructive/5" : "bg-card"}`}
+              >
+                <CardContent className="pt-4 pb-3">
+                  <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-2`}>
+                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                  </div>
+                  <p className={`text-lg font-bold ${(stat as any).alert ? "text-destructive" : ""}`}>{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ─── No-Show Recovery ─── */}
-      <NoShowMetricsCard />
+      {isFreePlan ? (
+        <LockedFeatureOverlay title="Recupere clientes que faltaram automaticamente" planLabel="Essencial">
+          <NoShowMetricsCard />
+        </LockedFeatureOverlay>
+      ) : (
+        <NoShowMetricsCard />
+      )}
 
       {/* ─── Win-back Campaign (Pro only) ─── */}
-      <WinbackMetricsCard />
+      {isFreePlan ? (
+        <LockedFeatureOverlay title="Reative clientes inativos com campanhas automáticas" planLabel="Pro">
+          <WinbackMetricsCard />
+        </LockedFeatureOverlay>
+      ) : (
+        <WinbackMetricsCard />
+      )}
 
       {/* ─── Clientes Inativos ─── */}
-      <InactiveClientsCard />
+      {isFreePlan ? (
+        <LockedFeatureOverlay title="Veja quais clientes estão sumidos e reconquiste-os" planLabel="Essencial">
+          <InactiveClientsCard />
+        </LockedFeatureOverlay>
+      ) : (
+        <InactiveClientsCard />
+      )}
 
       {/* ─── 5. Cotas disponíveis (hidden for professionals) ─── */}
       {ownerId === user?.id && (
