@@ -93,6 +93,10 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchSubscription();
+
+    // Re-fetch every 30s to keep quota counters fresh
+    const interval = setInterval(fetchSubscription, 30_000);
+    return () => clearInterval(interval);
   }, [fetchSubscription]);
 
   const cancel = async (): Promise<{ error?: string }> => {
