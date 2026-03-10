@@ -3605,7 +3605,7 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
       // Send a graceful fallback message instead of exposing the error
-      const nicheEmojiMap: Record<string, string> = { petshop: "🐾", veterinaria: "🐾", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
+      const nicheEmojiMap: Record<string, string> = { petshop: "🐶", veterinaria: "🩺", salao: "💇‍♀️", barbearia: "💈", estetica: "✨", clinica: "🏥", escritorio: "📋", outros: "😊" };
       const fallbackEmoji = nicheEmojiMap[shopConfig.niche] || nicheEmojiMap.outros;
       const fallbackMsg = `Olá! No momento estou com uma instabilidade temporária. Por favor, tente novamente em alguns minutinhos! ${fallbackEmoji}`;
       await sendWhatsAppMessage(instanceName, senderPhone, fallbackMsg);
