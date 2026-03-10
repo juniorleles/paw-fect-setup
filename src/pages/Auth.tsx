@@ -286,9 +286,27 @@ const Auth = () => {
                       </button>
                     </div>
                     {isSignUp && (
-                      <p className="text-xs text-muted-foreground">
-                        Mínimo 8 caracteres. Use uma senha única que não tenha sido vazada em outros sites.
-                      </p>
+                      <div className="space-y-2">
+                        {password.length > 0 && (() => {
+                          const strength = getPasswordStrength(password);
+                          return (
+                            <div className="space-y-1">
+                              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${strength.color}`}
+                                  style={{ width: strength.width }}
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Força da senha: <span className="font-medium">{strength.label}</span>
+                              </p>
+                            </div>
+                          );
+                        })()}
+                        <p className="text-xs text-muted-foreground">
+                          Use pelo menos 8 caracteres. Recomendamos uma senha única.
+                        </p>
+                      </div>
                     )}
                   </div>
                   {!isSignUp && (
