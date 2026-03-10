@@ -541,9 +541,9 @@ function inferStateFromUserMessage(
   }
 
   // Detect name (simple heuristic: short message after AI asked for name)
-  const namePatterns = userMessage.match(/(?:meu nome [eé]|me chamo|sou o|sou a|pode me chamar de)\s+(\w+)/i);
+  const namePatterns = userMessage.match(/(?:meu nome [eé]|me chamo|sou o|sou a|pode me chamar de)\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu);
   if (namePatterns) {
-    updates.client_name = namePatterns[1];
+    updates.client_name = namePatterns[1].trim();
     updates.step = "confirming";
   }
 
