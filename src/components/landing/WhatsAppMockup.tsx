@@ -33,7 +33,7 @@ const nowTime = () => {
 
 const DEMO_CONFIG = {
   shopName: "Barbearia Demo",
-  assistantName: "Luna",
+  assistantName: "Ana",
   voiceTone: "friendly",
   niche: "barbearia",
   services: [
