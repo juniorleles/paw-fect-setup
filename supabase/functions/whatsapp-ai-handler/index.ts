@@ -2241,8 +2241,8 @@ function buildSystemPrompt(shopConfig: PetShopConfig, cleanPhone: string, existi
     .join("\n");
 
   const nicheEmojis: Record<string, string> = {
-    petshop: "🐾🐶🐱",
-    veterinaria: "🐾🩺🐕",
+    petshop: "🐶🐱✨",
+    veterinaria: "🩺🐕✨",
     salao: "💇‍♀️💅✨",
     barbearia: "💈✂️🪒",
     estetica: "🧖‍♀️✨💆‍♀️",
