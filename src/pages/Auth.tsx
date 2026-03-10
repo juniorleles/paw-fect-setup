@@ -270,7 +270,7 @@ const Auth = () => {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
+                        placeholder="Crie uma senha"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
