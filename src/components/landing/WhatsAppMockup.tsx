@@ -203,7 +203,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
                     {msg.role === "assistant" && (
                       <div className="flex items-center gap-1.5 mb-1">
                         <Bot className="w-3 h-3 text-primary" />
-                        <span className="text-xs font-semibold text-primary">Luna</span>
+                        <span className="text-xs font-semibold text-primary">Ana</span>
                         <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-primary/30 text-primary">IA</Badge>
                       </div>
                     )}
