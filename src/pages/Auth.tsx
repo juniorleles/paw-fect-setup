@@ -50,7 +50,7 @@ const getPasswordStrength = (password: string): { label: string; color: string; 
 const translateAuthError = (msg: string): string => {
   const map: Record<string, string> = {
     "Password is known to be weak and easy to guess, please choose a different one.":
-      "Essa senha é muito fraca e fácil de adivinhar. Por favor, escolha outra.",
+      "Essa senha já apareceu em vazamentos de dados. Por segurança, escolha outra.",
     "Invalid login credentials":
       "E-mail ou senha incorretos.",
     "Email not confirmed":
