@@ -689,6 +689,16 @@ function inferServiceFromText(text: string, services: any[]): string | null {
 
   if (found?.original) return found.original;
 
+  // Fuzzy preposition matching: "corte com tesoura" → "Corte na tesoura"
+  // Normalize prepositions (com/na/no/de/do/da/em) to a common token for comparison
+  const normalizePrepositions = (text: string) =>
+    text.replace(/\b(com|na|no|de|do|da|em)\b/g, "_PREP_");
+  const textWithPreps = normalizePrepositions(normalizedText);
+  const fuzzyFound = serviceList.find((s: any) =>
+    textWithPreps.includes(normalizePrepositions(s.normalized))
+  );
+  if (fuzzyFound?.original) return fuzzyFound.original;
+
   // Heuristic for barbershop combined requests like "barba e cabelo"
   const mentionsBarba = /\bbarba\b/.test(normalizedText);
   const mentionsHair = /\b(cabelo|corte)\b/.test(normalizedText);
