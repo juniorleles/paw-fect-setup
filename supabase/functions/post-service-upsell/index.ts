@@ -45,8 +45,8 @@ const upsellMap: Record<string, string[]> = {
 
 const nicheEmoji: Record<string, string> = {
   barbearia: "💈",
-  petshop: "🐾",
-  veterinaria: "🐾",
+  petshop: "🐶",
+  veterinaria: "🩺",
   salao: "💇‍♀️",
   estetica: "✨",
   clinica: "🏥",
