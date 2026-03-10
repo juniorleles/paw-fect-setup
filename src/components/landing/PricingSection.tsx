@@ -140,7 +140,7 @@ const PricingSection = () => (
               <Badge className="w-fit mb-3 bg-primary/8 text-primary border-primary/20 rounded-lg" variant="outline">🚀 Para Quem Quer Crescer</Badge>
               <h3 className="font-bold text-xl mb-1">Pro</h3>
               <div className="mb-1">
-                <span className="text-4xl font-extrabold">R$ 127</span>
+                <span className="text-4xl font-extrabold">R$ 157</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
               <p className="text-xs text-primary font-semibold mb-2">Automação inteligente para aumentar faturamento todo mês.</p>
