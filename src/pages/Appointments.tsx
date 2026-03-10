@@ -43,8 +43,8 @@ const Appointments = () => {
   const [rawMaxConcurrent, setRawMaxConcurrent] = useState(1);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
-  // Clamp maxConcurrent based on subscription plan
-  const planLimit = plan === "professional" ? 5 : 1;
+  // Clamp maxConcurrent based on subscription plan: free=2, essential=5, professional=unlimited
+  const planLimit = plan === "professional" ? 999 : plan === "essential" ? 5 : 2;
   const maxConcurrent = Math.min(rawMaxConcurrent, planLimit);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
