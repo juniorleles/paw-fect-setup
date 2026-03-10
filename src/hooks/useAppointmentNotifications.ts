@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -6,9 +6,41 @@ import { useToast } from "@/hooks/use-toast";
 const NOTIFICATION_SOUND_FREQ = 880;
 const NOTIFICATION_SOUND_DURATION = 0.15;
 
-function playNotificationSound() {
+// Shared AudioContext — unlocked once via user gesture
+let sharedAudioCtx: AudioContext | null = null;
+
+function getOrCreateAudioContext(): AudioContext | null {
   try {
-    const ctx = new AudioContext();
+    if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
+      sharedAudioCtx = new AudioContext();
+    }
+    return sharedAudioCtx;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resume the shared AudioContext from a user-gesture context.
+ * Must be called from a click/touch handler to unlock on mobile.
+ */
+function unlockAudioContext() {
+  const ctx = getOrCreateAudioContext();
+  if (ctx && ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
+}
+
+function playNotificationSound() {
+  const ctx = getOrCreateAudioContext();
+  if (!ctx) return;
+
+  // If suspended (no user gesture yet), try resume — may fail silently on mobile
+  if (ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
+
+  try {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -52,6 +84,28 @@ export const useAppointmentNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const initializedRef = useRef(false);
+  const unlockListenerRef = useRef(false);
+
+  // Unlock AudioContext on first user interaction (required for mobile)
+  useEffect(() => {
+    if (unlockListenerRef.current) return;
+    unlockListenerRef.current = true;
+
+    const handler = () => {
+      unlockAudioContext();
+      // Remove after first interaction — only needs to happen once
+      document.removeEventListener("click", handler, true);
+      document.removeEventListener("touchstart", handler, true);
+    };
+
+    document.addEventListener("click", handler, true);
+    document.addEventListener("touchstart", handler, true);
+
+    return () => {
+      document.removeEventListener("click", handler, true);
+      document.removeEventListener("touchstart", handler, true);
+    };
+  }, []);
 
   // Request notification permission on mount
   useEffect(() => {
