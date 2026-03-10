@@ -8,8 +8,8 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const SUPPORT_EMAIL = "suporte@secretariadigital.com.br";
-const SUPPORT_WHATSAPP = "5511999999999";
+const SUPPORT_EMAIL = "contato@magiczap.io";
+const SUPPORT_WHATSAPP = "5511980912272";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
