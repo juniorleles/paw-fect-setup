@@ -1,48 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, MessageSquare, CalendarDays, Zap, Users, Clock, TrendingUp } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
 import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
 
-const AnimatedCounter = ({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) => {
-  const [value, setValue] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const [hasAnimated, setHasAnimated] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated) {
-          setHasAnimated(true);
-          const start = performance.now();
-          const step = (now: number) => {
-            const progress = Math.min((now - start) / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            setValue(Math.round(eased * target));
-            if (progress < 1) requestAnimationFrame(step);
-          };
-          requestAnimationFrame(step);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [target, duration, hasAnimated]);
-
-  return <span ref={ref}>{value.toLocaleString("pt-BR")}{suffix}</span>;
-};
-
-const heroStats = [
-  { icon: Users, value: 5000, suffix: "+", label: "Atendimentos/mês" },
-  { icon: Clock, value: 24, suffix: "h", label: "Disponibilidade" },
-  { icon: TrendingUp, value: 80, suffix: "%", label: "Menos faltas" },
+const benefits = [
+  "Teste grátis",
+  "Sem cartão",
+  "Configuração em minutos",
 ];
 
 const LandingHero = () => (
-  <section className="relative pt-16 pb-0 px-4 bg-background">
-    {/* Decorative background (clipped without creating nested scroll) */}
+  <section className="relative pt-20 pb-0 px-4 bg-background">
+    {/* Decorative background */}
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.3)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.3)_1px,transparent_1px)] bg-[size:64px_64px]" />
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
@@ -50,76 +20,88 @@ const LandingHero = () => (
     </div>
 
     <div className="relative max-w-3xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Badge variant="outline" className="mb-6 text-sm px-4 py-1.5 border-primary/30 text-primary bg-primary/5 font-medium rounded-full">
-            <Zap className="w-3.5 h-3.5 mr-1.5" /> Feito para barbearias
-          </Badge>
-        </motion.div>
+      {/* Badge */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Badge variant="outline" className="mb-6 text-sm px-4 py-1.5 border-primary/30 text-primary bg-primary/5 font-medium rounded-full">
+          💈 Automação de WhatsApp para barbearias
+        </Badge>
+      </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] mb-6 tracking-tight"
-        >
-          Cliente sumiu, faltou ou{" "}
-          <span className="text-primary">
-            lotou seu WhatsApp?
-          </span>{" "}
-          A IA resolve pra você
-        </motion.h1>
+      {/* Headline */}
+      <motion.h1
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+        className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] mb-6 tracking-tight"
+      >
+        Automatize o WhatsApp da sua barbearia com{" "}
+        <span className="text-primary">IA</span>
+      </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-lg text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed"
-        >
-          Chega de perder tempo respondendo "qual o preço do corte?" mil vezes. A IA atende, agenda e confirma horários na sua barbearia — 24h, sem você precisar tocar no celular.
-        </motion.p>
+      {/* Subheadline */}
+      <motion.p
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="text-lg text-muted-foreground max-w-xl mx-auto mb-8 leading-relaxed"
+      >
+        A IA responde clientes, agenda horários e recupera clientes que sumiram — automaticamente no seu WhatsApp.
+      </motion.p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-col sm:flex-row gap-3 justify-center"
-        >
-          <a href="/auth?signup=true&plan=free">
-            <Button size="lg" className="h-13 px-8 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-200">
-              Testar grátis no meu WhatsApp <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </a>
-          <a href="#como-funciona">
-            <Button variant="outline" size="lg" className="h-13 px-8 text-base rounded-xl border-border hover:bg-secondary transition-colors duration-200">
-              Como Funciona
-            </Button>
-          </a>
-        </motion.div>
+      {/* CTA */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="flex justify-center"
+      >
+        <a href="/auth?signup=true&plan=free">
+          <Button size="lg" className="h-14 px-10 text-base font-bold rounded-xl bg-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,40%)] text-white shadow-lg shadow-[hsl(142,70%,45%)/0.3] hover:shadow-[hsl(142,70%,45%)/0.4] hover:scale-[1.02] transition-all duration-200">
+            Testar grátis agora <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+        </a>
+      </motion.div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="text-sm text-muted-foreground mt-4"
-        >
-          Sem cartão • Configuração em minutos
-        </motion.p>
+      {/* Benefits */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.55 }}
+        className="flex flex-wrap justify-center gap-x-5 gap-y-1 mt-5"
+      >
+        {benefits.map((b) => (
+          <span key={b} className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Check className="w-4 h-4 text-primary" /> {b}
+          </span>
+        ))}
+      </motion.div>
+
+      {/* Niche callout */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.65 }}
+        className="text-sm font-semibold text-primary mt-6"
+      >
+        💈 Criado especialmente para barbearias
+      </motion.p>
     </div>
 
-    {/* Simulator centered below */}
+    {/* Demo simulator */}
     <div className="relative max-w-lg mx-auto mt-12 text-center">
-      <motion.p
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.5 }}
-        className="text-sm font-semibold text-primary mb-3"
+        className="mb-3"
       >
-        👇 Experimente agora — converse com a IA como se fosse um cliente real
-      </motion.p>
+        <p className="text-base font-bold text-foreground">👉 Teste a IA agora</p>
+        <p className="text-sm text-muted-foreground">Simule um cliente falando com sua barbearia.</p>
+      </motion.div>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
