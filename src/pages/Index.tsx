@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { STRIPE_PLANS, type StripePlanKey } from "@/config/stripe";
+import logo from "@/assets/logo.png";
 
 const Index = () => {
   const { user, signOut } = useAuth();
