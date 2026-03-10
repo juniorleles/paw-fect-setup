@@ -24,10 +24,10 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Redefinir sua senha na Secretária Pet 🐾</Preview>
+    <Preview>Redefinir sua senha na MagicZap ✨</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>🐾 Secretária Pet</Text>
+        <Text style={logo}>✨ MagicZap</Text>
         <Heading style={h1}>Redefinir senha</Heading>
         <Text style={text}>
           Recebemos um pedido para redefinir a senha da sua conta na Secretária Pet.

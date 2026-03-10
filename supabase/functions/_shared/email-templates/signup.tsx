@@ -29,10 +29,10 @@ export const SignupEmail = ({
 }: SignupEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Confirme seu e-mail na Secretária Pet 🐾</Preview>
+    <Preview>Confirme seu e-mail na MagicZap ✨</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>🐾 Secretária Pet</Text>
+        <Text style={logo}>✨ MagicZap</Text>
         <Heading style={h1}>Bem-vindo(a)! 🎉</Heading>
         <Text style={text}>
           Obrigado por se cadastrar na{' '}

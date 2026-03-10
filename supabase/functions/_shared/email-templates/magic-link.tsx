@@ -24,10 +24,10 @@ export const MagicLinkEmail = ({
 }: MagicLinkEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Seu link de login na Secretária Pet 🐾</Preview>
+    <Preview>Seu link de login na MagicZap ✨</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>🐾 Secretária Pet</Text>
+        <Text style={logo}>✨ MagicZap</Text>
         <Heading style={h1}>Seu link de acesso</Heading>
         <Text style={text}>
           Clique no botão abaixo para entrar na Secretária Pet. Este link expira em breve.

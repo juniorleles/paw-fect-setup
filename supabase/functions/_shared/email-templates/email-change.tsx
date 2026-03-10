@@ -29,10 +29,10 @@ export const EmailChangeEmail = ({
 }: EmailChangeEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Confirme a alteração do seu e-mail na Secretária Pet 🐾</Preview>
+    <Preview>Confirme a alteração do seu e-mail na MagicZap ✨</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>🐾 Secretária Pet</Text>
+        <Text style={logo}>✨ MagicZap</Text>
         <Heading style={h1}>Alteração de e-mail</Heading>
         <Text style={text}>
           Você solicitou a alteração do seu e-mail de{' '}
