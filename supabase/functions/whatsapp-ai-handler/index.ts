@@ -3907,6 +3907,25 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
+    // Guardrail: MissingServiceGuard — if AI confirms/reserves a booking but no service is selected,
+    // strip the false confirmation and ask for the service instead
+    {
+      const noServiceKnown = !convState.service;
+      if (noServiceKnown) {
+        const falseConfirmation = /(reservei|agendamento\s+confirmado|j[aá]\s+reserv|combinado.*reserv|agendei|marquei|confirmado\s*✅)/i.test(reply);
+        const hasAction = /<action>.*?<\/action>/s.test(reply);
+        if (falseConfirmation || hasAction) {
+          const before = reply;
+          const serviceNames = (shopConfig.services as any[]).map((s: any) => s.name).filter(Boolean);
+          const serviceList = serviceNames.length > 0
+            ? `\n\nTemos: ${serviceNames.join(", ")}.`
+            : "";
+          reply = `Para qual serviço você gostaria de agendar?${serviceList} 😊`;
+          guardLog("MissingServiceGuard", "AI confirmed booking without service selected — replaced with service question", before, reply);
+        }
+      }
+    }
+
     const tokensUsed = aiData.usage?.total_tokens || 0;
     await serviceClient.from("ai_usage").insert({
       user_id: shopConfig.user_id,
