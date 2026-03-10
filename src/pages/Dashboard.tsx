@@ -122,13 +122,19 @@ const Dashboard = () => {
   const firstName = user?.user_metadata?.full_name?.split(" ")[0] || data.shopName || "Usuário";
 
   // ──── Stats ────
-  const todayApts = useMemo(
-    () => appointments.filter((a) => a.date === todayStr && a.status !== "cancelled"),
+  const allTodayApts = useMemo(
+    () => appointments.filter((a) => a.date === todayStr),
     [appointments, todayStr]
+  );
+  const todayApts = useMemo(
+    () => allTodayApts.filter((a) => a.status !== "cancelled" && a.status !== "no_show"),
+    [allTodayApts]
   );
   const confirmedToday = todayApts.filter((a) => a.status === "confirmed" || a.status === "completed").length;
   const pendingToday = todayApts.filter((a) => a.status === "pending").length;
-  const cancelledToday = appointments.filter((a) => a.date === todayStr && (a.status === "cancelled" || a.status === "no_show")).length;
+  const noShowToday = allTodayApts.filter((a) => a.status === "no_show").length;
+  const cancelledToday = allTodayApts.filter((a) => a.status === "cancelled").length;
+  const faltasToday = noShowToday + cancelledToday;
 
   // Revenue
   const priceMap = useMemo(() => new Map(data.services.map((s) => [s.name, s.price])), [data.services]);
