@@ -46,7 +46,11 @@ const Dashboard = () => {
   const { ownerId } = useOwnerId();
   const navigate = useNavigate();
   const { status: whatsappStatus, provider: whatsappProvider } = useWhatsAppStatus();
-  const { status: subStatus, trialEndAt, plan: currentPlan } = useSubscription();
+  const {
+    status: subStatus, trialEndAt, plan: currentPlan,
+    trialAppointmentsUsed, trialAppointmentsLimit,
+    trialMessagesUsed, trialMessagesLimit,
+  } = useSubscription();
 
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -216,11 +220,7 @@ const Dashboard = () => {
   const messagesPercent = planLimit > 0 ? (totalMessagesMonth / planLimit) * 100 : 0;
   const isFreePlan = currentPlan === "free" || (!currentPlan && subStatus !== "active");
 
-  // Trial quota info from subscription context
-  const {
-    trialAppointmentsUsed, trialAppointmentsLimit,
-    trialMessagesUsed, trialMessagesLimit,
-  } = useSubscription();
+  // Trial quota info already destructured above
 
   if (loadingConfig || loadingApts) {
     return (

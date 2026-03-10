@@ -13,7 +13,7 @@ const LockedFeatureOverlay = ({ children, title, planLabel = "Essencial" }: Lock
   const navigate = useNavigate();
 
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden rounded-lg">
       {/* Blurred content */}
       <div className="pointer-events-none select-none filter blur-[6px] opacity-60">
         {children}
