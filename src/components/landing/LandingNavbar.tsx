@@ -27,7 +27,7 @@ const LandingNavbar = () => {
             <a
               key={link.href}
               href={link.href}
-              className="hover:text-foreground transition-colors duration-200"
+              className="hover:text-white transition-colors duration-200"
             >
               {link.label}
             </a>
