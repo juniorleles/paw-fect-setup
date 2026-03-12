@@ -417,7 +417,7 @@ const Index = () => {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex justify-center mb-2">
-            <img src={logo} alt="MagicZap" className="h-16" />
+            <img src={logo} alt="MagicZap" className="h-20" />
           </div>
           <p className="text-muted-foreground">Configure sua secretária digital em minutos</p>
           <button
