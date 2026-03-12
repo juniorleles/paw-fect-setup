@@ -17,7 +17,7 @@ const LandingNavbar = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border/60">
+    <nav className="sticky top-0 z-50 bg-dark-section backdrop-blur-xl border-b border-dark-section-foreground/10">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="flex items-center gap-2">
           <img src={logo} alt="MagicZap" className="h-14 w-auto" />
