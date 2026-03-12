@@ -48,7 +48,7 @@ const LandingNavbar = () => {
             </Button>
           </a>
         </div>
-        <button className="md:hidden" onClick={() => setMobileMenu(!mobileMenu)}>
+        <button className="md:hidden text-dark-section-foreground" onClick={() => setMobileMenu(!mobileMenu)}>
           {mobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
