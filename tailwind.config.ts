@@ -26,6 +26,7 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -46,6 +47,11 @@ export default {
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
+        },
+        glow: "hsl(var(--glow))",
+        "dark-section": {
+          DEFAULT: "hsl(var(--dark-section))",
+          foreground: "hsl(var(--dark-section-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
