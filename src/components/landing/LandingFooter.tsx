@@ -3,13 +3,13 @@ import { motion } from "framer-motion";
 import logo from "@/assets/logo.png";
 
 const LandingFooter = () => (
-  <footer className="border-t border-border/60 py-10 px-4 bg-background">
+  <footer className="border-t border-dark-section-foreground/10 py-10 px-4 bg-dark-section">
     <motion.div
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground"
+      className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-dark-section-foreground/60"
     >
       <div className="flex items-center gap-2">
         <img src={logo} alt="MagicZap" className="h-12 w-auto" />
