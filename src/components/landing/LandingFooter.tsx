@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import logo from "@/assets/logo.png";
+import logoLight from "@/assets/logo-light.png";
 
 const LandingFooter = () => (
   <footer className="border-t border-dark-section-foreground/10 py-10 px-4 bg-dark-section">
