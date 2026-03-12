@@ -22,7 +22,7 @@ const LandingNavbar = () => {
         <button onClick={() => navigate("/")} className="flex items-center gap-2">
           <img src={logo} alt="MagicZap" className="h-14 w-auto" />
         </button>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-dark-section-foreground/70">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
