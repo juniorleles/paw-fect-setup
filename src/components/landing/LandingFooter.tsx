@@ -16,13 +16,13 @@ const LandingFooter = () => (
       </div>
       <p className="text-dark-section-foreground/50">© {new Date().getFullYear()} MagicZap. Todos os direitos reservados.</p>
       <div className="flex items-center gap-4">
-        <Link to="/terms-of-service" className="hover:text-foreground transition-colors duration-200">
+        <Link to="/terms-of-service" className="hover:text-white transition-colors duration-200">
           Termos de Uso
         </Link>
-        <Link to="/privacy-policy" className="hover:text-foreground transition-colors duration-200">
+        <Link to="/privacy-policy" className="hover:text-white transition-colors duration-200">
           Privacidade
         </Link>
-        <Link to="/auth" className="hover:text-foreground transition-colors duration-200">
+        <Link to="/auth" className="hover:text-white transition-colors duration-200">
           Área do Cliente
         </Link>
       </div>

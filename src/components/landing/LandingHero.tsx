@@ -60,7 +60,7 @@ const LandingHero = () => (
         className="flex justify-center"
       >
         <a href="/auth?signup=true&plan=free">
-          <Button size="lg" className="h-14 px-10 text-base font-bold rounded-xl bg-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,40%)] text-white shadow-lg shadow-[hsl(142,70%,45%)/0.3] hover:shadow-[hsl(142,70%,45%)/0.4] hover:scale-[1.02] transition-all duration-200">
+          <Button size="lg" className="h-14 px-10 text-base font-bold rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:scale-[1.02] transition-all duration-200">
             Testar grátis agora <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </a>

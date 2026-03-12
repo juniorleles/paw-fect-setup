@@ -60,7 +60,7 @@ const LandingNavbar = () => {
             </a>
           ))}
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" size="sm" className="flex-1 rounded-lg" onClick={() => { setMobileMenu(false); navigate("/auth"); }}>
+            <Button variant="outline" size="sm" className="flex-1 rounded-lg border-dark-section-foreground/20 text-dark-section-foreground hover:bg-white/10" onClick={() => { setMobileMenu(false); navigate("/auth"); }}>
               Entrar
             </Button>
             <a href="/auth?signup=true&plan=free" className="flex-1" onClick={() => setMobileMenu(false)}>
