@@ -53,9 +53,9 @@ const LandingNavbar = () => {
         </button>
       </div>
       {mobileMenu && (
-        <div className="md:hidden border-t border-border/60 bg-background px-4 py-4 space-y-3">
+        <div className="md:hidden border-t border-dark-section-foreground/10 bg-dark-section px-4 py-4 space-y-3">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} onClick={() => setMobileMenu(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <a key={link.href} href={link.href} onClick={() => setMobileMenu(false)} className="block text-sm font-medium text-dark-section-foreground/70 hover:text-white transition-colors">
               {link.label}
             </a>
           ))}
