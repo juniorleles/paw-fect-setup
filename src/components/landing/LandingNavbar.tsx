@@ -17,17 +17,17 @@ const LandingNavbar = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border/60">
+    <nav className="sticky top-0 z-50 bg-dark-section backdrop-blur-xl border-b border-dark-section-foreground/10">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="flex items-center gap-2">
           <img src={logo} alt="MagicZap" className="h-14 w-auto" />
         </button>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-dark-section-foreground/70">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="hover:text-foreground transition-colors duration-200"
+              className="hover:text-white transition-colors duration-200"
             >
               {link.label}
             </a>
@@ -37,7 +37,7 @@ const LandingNavbar = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground font-medium"
+            className="text-dark-section-foreground/70 hover:text-white hover:bg-white/10 font-medium"
             onClick={() => navigate("/auth")}
           >
             Entrar
@@ -48,19 +48,19 @@ const LandingNavbar = () => {
             </Button>
           </a>
         </div>
-        <button className="md:hidden" onClick={() => setMobileMenu(!mobileMenu)}>
+        <button className="md:hidden text-dark-section-foreground" onClick={() => setMobileMenu(!mobileMenu)}>
           {mobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
       {mobileMenu && (
-        <div className="md:hidden border-t border-border/60 bg-background px-4 py-4 space-y-3">
+        <div className="md:hidden border-t border-dark-section-foreground/10 bg-dark-section px-4 py-4 space-y-3">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} onClick={() => setMobileMenu(false)} className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <a key={link.href} href={link.href} onClick={() => setMobileMenu(false)} className="block text-sm font-medium text-dark-section-foreground/70 hover:text-white transition-colors">
               {link.label}
             </a>
           ))}
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" size="sm" className="flex-1 rounded-lg" onClick={() => { setMobileMenu(false); navigate("/auth"); }}>
+            <Button variant="outline" size="sm" className="flex-1 rounded-lg border-dark-section-foreground/20 text-dark-section-foreground hover:bg-white/10" onClick={() => { setMobileMenu(false); navigate("/auth"); }}>
               Entrar
             </Button>
             <a href="/auth?signup=true&plan=free" className="flex-1" onClick={() => setMobileMenu(false)}>
