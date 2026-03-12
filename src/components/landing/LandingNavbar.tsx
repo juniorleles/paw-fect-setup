@@ -20,7 +20,7 @@ const LandingNavbar = () => {
     <nav className="sticky top-0 z-50 bg-dark-section backdrop-blur-xl border-b border-dark-section-foreground/10">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <button onClick={() => navigate("/")} className="flex items-center gap-2">
-          <img src={logo} alt="MagicZap" className="h-14 w-auto" />
+          <img src={logo} alt="MagicZap" className="h-20 w-auto" />
         </button>
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-dark-section-foreground/70">
           {NAV_LINKS.map((link) => (
