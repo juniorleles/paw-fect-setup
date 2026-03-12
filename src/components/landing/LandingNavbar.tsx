@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import logoLight from "@/assets/logo-light.png";
 
 const NAV_LINKS = [
   { href: "#beneficios", label: "Benefícios" },
