@@ -37,7 +37,7 @@ const LandingNavbar = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground font-medium"
+            className="text-dark-section-foreground/70 hover:text-white hover:bg-white/10 font-medium"
             onClick={() => navigate("/auth")}
           >
             Entrar
