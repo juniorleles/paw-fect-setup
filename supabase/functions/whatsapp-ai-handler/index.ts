@@ -3857,6 +3857,36 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
       }
     }
 
+    // Guardrail 0b: DisambiguationActionGuard — if AI asks to choose between services
+    // but also includes an <action> block, strip the action (AI shouldn't book without user choice)
+    {
+      const hasAction = /<action>.*?<\/action>/s.test(reply);
+      if (hasAction) {
+        const replyNormForDisambig = (reply || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        // Detect disambiguation patterns: "qual desses", "qual voce prefere", listing multiple services with "ou"
+        const isDisambiguating = /(qual\s+desse|qual\s+voce\s+prefere|qual\s+deles|qual\s+dessas|qual\s+delas)/i.test(replyNormForDisambig);
+        // Also detect when reply lists 3+ service names (service disambiguation)
+        const serviceNames = (shopConfig.services as any[]).map((s: any) => (s.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()).filter(Boolean);
+        const servicesInReply = serviceNames.filter(sn => replyNormForDisambig.includes(sn));
+        const listsMultipleServices = servicesInReply.length >= 3;
+
+        if (isDisambiguating || listsMultipleServices) {
+          const before = reply;
+          reply = reply.replace(/<action>.*?<\/action>/gs, "").trim();
+          // Also remove "Agendamento confirmado" text that shouldn't be there
+          reply = reply.replace(/agendamento\s+confirmado\s*✅?/gi, "").trim();
+          // Clean up double line breaks
+          reply = reply.replace(/\n{3,}/g, "\n\n").trim();
+          if (reply.length < 10) {
+            // If stripping left almost nothing, rebuild disambiguation question
+            const svcList = (shopConfig.services as any[]).map((s: any) => `${s.name} (R$${s.price || '?'})`).join(", ");
+            reply = `Temos algumas opções: ${svcList}. Qual desses você prefere? 😊`;
+          }
+          guardLog("DisambiguationActionGuard", `AI asked to choose service but also included action block — stripped action. Services in reply: ${servicesInReply.join(", ")}`, before, reply);
+        }
+      }
+    }
+
     // Deterministic safeguards for booking flow — with structured observability
     console.log(`[GUARD_PIPELINE] Starting guardrail pipeline for message: "${(message || "").substring(0, 60)}"`);
     const aiRawReply = reply; // preserve original AI reply for logging
