@@ -3962,11 +3962,28 @@ Mantenha o mesmo serviço (${rec.service}) a menos que o cliente peça para muda
                   (s.name || "").toLowerCase() === actionServiceName.toLowerCase()
                 );
                 if (validService) {
-                  actionHasValidService = true;
-                  // Update convState with the service the AI identified
-                  convState.service = validService.name;
-                  await updateConversationState(serviceClient, shopConfig.user_id, cleanPhone, { service: validService.name });
-                  console.log(`[MissingServiceGuard] AI identified valid service "${validService.name}" in action — allowing confirmation`);
+                  // Extra check: was the user's message ambiguous (generic term matching multiple services)?
+                  // If so, the AI shouldn't auto-pick a service — it should ask the user
+                  const userInferredService = inferServiceFromText(message, shopConfig.services || []);
+                  if (userInferredService === null) {
+                    // Check if user's message has a generic booking term (corte, cabelo, etc.)
+                    const userNormForAmbig = (message || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                    const hasGenericServiceTerm = /\b(corte|cabelo|barba|manicure|pedicure|escova|banho|tosa|unha|sobrancelha)\b/.test(userNormForAmbig);
+                    if (hasGenericServiceTerm) {
+                      console.log(`[MissingServiceGuard] AI picked "${validService.name}" but user message was ambiguous — blocking auto-pick`);
+                      // Don't set actionHasValidService = true; let it fall through to ask
+                    } else {
+                      actionHasValidService = true;
+                      convState.service = validService.name;
+                      await updateConversationState(serviceClient, shopConfig.user_id, cleanPhone, { service: validService.name });
+                      console.log(`[MissingServiceGuard] AI identified valid service "${validService.name}" in action — allowing confirmation`);
+                    }
+                  } else {
+                    actionHasValidService = true;
+                    convState.service = validService.name;
+                    await updateConversationState(serviceClient, shopConfig.user_id, cleanPhone, { service: validService.name });
+                    console.log(`[MissingServiceGuard] AI identified valid service "${validService.name}" in action — allowing confirmation`);
+                  }
                 }
               }
             }
