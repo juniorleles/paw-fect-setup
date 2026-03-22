@@ -190,7 +190,8 @@ const App = () => (
                   <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
                   <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
                   <Route path="/admin/blocked" element={<AdminRoute><AdminBlocked /></AdminRoute>} />
-                  {/* Legal pages */}
+                  {/* Institutional & Legal pages */}
+                  <Route path="/sobre" element={<About />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="*" element={<NotFound />} />

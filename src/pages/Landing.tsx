@@ -28,6 +28,7 @@ const Landing = () => {
     <div className="min-h-screen bg-background font-sans overflow-x-hidden">
       <LandingNavbar />
       <LandingHero />
+      <AboutSection />
       <AgendaPreviewSection />
       <PainSolutionSection />
       <HowItWorksSection />
