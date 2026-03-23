@@ -14,6 +14,11 @@ const LandingFooter = () => (
     >
       <div className="flex flex-col items-center sm:items-start gap-2">
         <img src={logoLight} alt="MagicZap" className="h-16 w-auto" />
+        <p className="text-xs text-dark-section-foreground/40 leading-relaxed">
+          Marca operada por SYNC SOLUCOES EM TECNOLOGIA LTDA
+          <br />
+          CNPJ: 11.565.823/0001-80
+        </p>
         <div className="flex items-center gap-4 text-xs text-dark-section-foreground/40">
           <a href="mailto:contato@magiczap.io" className="flex items-center gap-1 hover:text-white transition-colors">
             <Mail className="w-3 h-3" /> contato@magiczap.io
