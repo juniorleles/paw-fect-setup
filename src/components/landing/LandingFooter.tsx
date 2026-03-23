@@ -14,18 +14,17 @@ const LandingFooter = () => (
     >
       <div className="flex flex-col items-center sm:items-start gap-2">
         <img src={logoLight} alt="MagicZap" className="h-16 w-auto" />
-        <p className="text-xs text-dark-section-foreground/40 leading-relaxed">
-          Marca operada por SYNC SOLUCOES EM TECNOLOGIA LTDA
-          <br />
-          CNPJ: 11.565.823/0001-80
-        </p>
-        <div className="flex items-center gap-4 text-xs text-dark-section-foreground/40">
-          <a href="mailto:contato@magiczap.io" className="flex items-center gap-1 hover:text-white transition-colors">
-            <Mail className="w-3 h-3" /> contato@magiczap.io
-          </a>
-          <a href="https://www.magiczap.io" className="flex items-center gap-1 hover:text-white transition-colors">
-            <Globe className="w-3 h-3" /> www.magiczap.io
-          </a>
+        <div className="text-xs text-dark-section-foreground/40 leading-relaxed space-y-1">
+          <p>MagicZap é uma marca da SYNC SOLUCOES EM TECNOLOGIA LTDA.</p>
+          <p>CNPJ: 11.565.823/0001-80</p>
+          <p className="flex items-center gap-1">
+            <Mail className="w-3 h-3" /> Email:{" "}
+            <a href="mailto:contato@magiczap.io" className="hover:text-white transition-colors">contato@magiczap.io</a>
+          </p>
+          <p className="flex items-center gap-1">
+            <Globe className="w-3 h-3" /> Site:{" "}
+            <a href="https://www.magiczap.io" className="hover:text-white transition-colors">www.magiczap.io</a>
+          </p>
         </div>
       </div>
       <p className="text-dark-section-foreground/50">© {new Date().getFullYear()} MagicZap. Todos os direitos reservados.</p>
