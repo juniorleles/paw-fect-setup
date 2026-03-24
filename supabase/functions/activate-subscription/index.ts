@@ -145,17 +145,26 @@ Deno.serve(async (req) => {
       .update({ evolution_instance_name: instanceName, whatsapp_status: "pending" })
       .eq("user_id", user.id);
 
-    // Ensure subscription exists and is active
-    const { data: existingSub } = await supabase
+    // Ensure subscription exists and is active (use serviceClient to bypass RLS)
+    const { data: existingSub } = await serviceClient
       .from("subscriptions")
       .select("id, status")
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (!existingSub) {
-      await supabase.from("subscriptions").insert({ user_id: user.id, status: "active", plan: "free" });
+      await serviceClient.from("subscriptions").insert({
+        user_id: user.id,
+        status: "active",
+        plan: "free",
+        trial_appointments_limit: 30,
+        trial_messages_limit: 150,
+        trial_appointments_used: 0,
+        trial_messages_used: 0,
+        trial_end_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      });
     } else if (existingSub.status !== "active") {
-      await supabase
+      await serviceClient
         .from("subscriptions")
         .update({ status: "active", cancelled_at: null })
         .eq("id", existingSub.id);
