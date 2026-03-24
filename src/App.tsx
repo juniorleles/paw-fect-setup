@@ -87,9 +87,10 @@ const OnboardingGuard = ({ children }: { children: React.ReactNode }) => {
 
 const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  const { status, loading } = useSubscription();
+  const { status, loading, refetch } = useSubscription();
   const { phase, showUpgradeRequired, loading: trialLoading } = useTrialStatus();
   const [isProfessional, setIsProfessional] = useState<boolean | null>(null);
+  const [creatingSubscription, setCreatingSubscription] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -98,7 +99,24 @@ const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
     });
   }, [user]);
 
-  if (loading || trialLoading || isProfessional === null) {
+  // Auto-create subscription for authenticated users with no subscription record
+  useEffect(() => {
+    if (loading || !user || status !== "none" || creatingSubscription) return;
+    const createSub = async () => {
+      setCreatingSubscription(true);
+      try {
+        await supabase.functions.invoke("activate-subscription", { method: "POST" });
+        await refetch();
+      } catch (e) {
+        console.error("Auto-create subscription failed:", e);
+      } finally {
+        setCreatingSubscription(false);
+      }
+    };
+    createSub();
+  }, [loading, user, status, creatingSubscription, refetch]);
+
+  if (loading || trialLoading || isProfessional === null || creatingSubscription) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
