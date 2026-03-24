@@ -36,9 +36,30 @@ const StepWhatsApp = ({ data, onChange }: Props) => {
       return;
     }
     setVerifying(true);
-    await new Promise((r) => setTimeout(r, 2000));
-    setVerifying(false);
-    onChange({ phoneVerified: true });
+    setError("");
+
+    try {
+      const { data: existing, error: queryError } = await supabase
+        .from("pet_shop_configs")
+        .select("id")
+        .eq("phone", digits)
+        .limit(1);
+
+      if (queryError) throw queryError;
+
+      if (existing && existing.length > 0) {
+        setError("Este número já está cadastrado em outra conta. Use um número diferente.");
+        setVerifying(false);
+        return;
+      }
+
+      setVerifying(false);
+      onChange({ phoneVerified: true });
+    } catch (err) {
+      console.error("Erro ao verificar telefone:", err);
+      setError("Erro ao verificar o número. Tente novamente.");
+      setVerifying(false);
+    }
   };
 
   return (
