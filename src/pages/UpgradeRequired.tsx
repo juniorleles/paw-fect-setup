@@ -26,12 +26,19 @@ import { useToast } from "@/hooks/use-toast";
 const UpgradeRequired = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { phase, daysOverdue } = useTrialStatus();
+  const { phase, daysOverdue, loading: trialLoading } = useTrialStatus();
   const { toast } = useToast();
 
   const [stats, setStats] = useState({ messages: 0, appointments: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  // If trial is actually active, redirect back to dashboard
+  useEffect(() => {
+    if (!trialLoading && (phase === "trial_active" || phase === "trial_expiring" || phase === "active")) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [phase, trialLoading, navigate]);
 
   useEffect(() => {
     if (!user) return;

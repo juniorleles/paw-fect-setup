@@ -116,7 +116,8 @@ const SubscriptionGuard = ({ children }: { children: React.ReactNode }) => {
     createSub();
   }, [loading, user, status, creatingSubscription, refetch]);
 
-  if (loading || trialLoading || isProfessional === null || creatingSubscription) {
+  // Show spinner while loading OR while auto-creating subscription (status="none" race condition)
+  if (loading || trialLoading || isProfessional === null || creatingSubscription || status === "none") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
