@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { OnboardingData } from "@/types/onboarding";
 import { Phone, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Phone, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
 
 interface Props {
   data: OnboardingData;
