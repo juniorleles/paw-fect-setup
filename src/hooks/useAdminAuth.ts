@@ -64,7 +64,7 @@ export const useAdminAuth = () => {
       const result = await Promise.race([
         supabaseAdmin.auth.signInWithPassword({ email, password }),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Login timeout")), 10000)
+          setTimeout(() => reject(new Error("Login timeout")), 30000)
         ),
       ]);
       return result;
