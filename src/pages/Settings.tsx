@@ -108,30 +108,35 @@ const Settings = () => {
 
   // Auto-save with debounce — only after user actually changes something
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Also track campaignMessages changes for auto-save
+  // Also track campaignMessages and handoffTriggers changes for auto-save
   const campaignRef = useRef<string>("{}");
+  const handoffRef = useRef<string>('{"tags":[],"custom_rules":""}');
   useEffect(() => {
     if (!loading && configId) {
       campaignRef.current = JSON.stringify(campaignMessages);
+      handoffRef.current = JSON.stringify(handoffTriggers);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, configId]);
 
   useEffect(() => {
     if (loading || !configId) return;
-    if (JSON.stringify(campaignMessages) === campaignRef.current) return;
+    const campaignChanged = JSON.stringify(campaignMessages) !== campaignRef.current;
+    const handoffChanged = JSON.stringify(handoffTriggers) !== handoffRef.current;
+    if (!campaignChanged && !handoffChanged) return;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       saveToDb(data);
       loadedDataRef.current = JSON.stringify(data);
       campaignRef.current = JSON.stringify(campaignMessages);
+      handoffRef.current = JSON.stringify(handoffTriggers);
     }, 1500);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [campaignMessages, data, configId, loading, saveToDb]);
+  }, [campaignMessages, handoffTriggers, data, configId, loading, saveToDb]);
 
   const loadedDataRef = useRef<string | null>(null);
 
