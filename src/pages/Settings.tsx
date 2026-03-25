@@ -11,6 +11,7 @@ import StepBusinessHours from "@/components/onboarding/StepBusinessHours";
 import StepServices from "@/components/onboarding/StepServices";
 import StepPersonalization from "@/components/onboarding/StepPersonalization";
 import StepCampaigns, { CampaignMessages } from "@/components/settings/StepCampaigns";
+import { HumanHandoffTriggers } from "@/components/settings/HumanHandoffConfig";
 import { Loader2, Save, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
