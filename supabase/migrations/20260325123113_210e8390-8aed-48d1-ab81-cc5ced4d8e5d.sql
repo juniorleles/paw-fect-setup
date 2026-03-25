@@ -1,0 +1,1 @@
+ALTER TABLE public.pet_shop_configs ADD COLUMN IF NOT EXISTS human_handoff_triggers jsonb NOT NULL DEFAULT '{"tags":[],"custom_rules":""}'::jsonb;
