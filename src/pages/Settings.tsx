@@ -45,6 +45,7 @@ const Settings = () => {
         setConfigId(c.id);
         setNiche((c as any).niche ?? "petshop");
         setCampaignMessages((c as any).campaign_messages ?? {});
+        setHandoffTriggers((c as any).human_handoff_triggers ?? { tags: [], custom_rules: "" });
         setData({
           phone: c.phone,
           phoneVerified: c.phone_verified,
