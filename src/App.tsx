@@ -216,6 +216,7 @@ const App = () => (
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                <InstallPWABanner />
               </BrowserRouter>
             </SubscriptionProvider>
           </OnboardingProvider>
