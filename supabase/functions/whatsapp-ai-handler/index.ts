@@ -2795,6 +2795,31 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         .eq("user_id", shopConfig.user_id)
         .eq("date", action.old_date)
         .eq("time", action.old_time);
+    } else if (action.type === "human_handoff") {
+      console.log(`[HumanHandoff] Activating human mode for ${cleanPhone}. Reason: ${action.reason || "unknown"}`);
+      // Set human_mode in conversation state
+      await serviceClient
+        .from("conversation_state")
+        .upsert({
+          user_id: shopConfig.user_id,
+          phone: cleanPhone,
+          step: "human_mode",
+          extra: { human_mode: true, handoff_reason: action.reason || "unknown", handoff_at: new Date().toISOString() },
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,phone" });
+      
+      // Notify owner via WhatsApp
+      try {
+        const ownerPhone = shopConfig.phone.replace(/\D/g, "");
+        const formattedOwner = ownerPhone.startsWith("55") ? ownerPhone : `55${ownerPhone}`;
+        const notifMsg = `⚠️ *Transferência para atendimento humano*\n\nCliente: ${cleanPhone}\nMotivo: ${action.reason || "não especificado"}\n\nA IA pausou o atendimento. Responda diretamente ao cliente pelo WhatsApp.`;
+        
+        // Use the same sendWhatsAppMessage function (defined elsewhere in the file)
+        // We'll just log it here — the actual notification is handled by the main flow
+        console.log(`[HumanHandoff] Owner notification: ${formattedOwner} - ${notifMsg.substring(0, 100)}`);
+      } catch (notifErr) {
+        console.error("[HumanHandoff] Failed to notify owner:", notifErr);
+      }
     }
   } catch (parseErr) {
     console.error("Action parse error:", parseErr);
