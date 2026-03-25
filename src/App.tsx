@@ -46,6 +46,7 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Support from "./pages/Support";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import Install from "./pages/Install";
 import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
