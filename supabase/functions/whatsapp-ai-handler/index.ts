@@ -2555,7 +2555,45 @@ MENSAGENS DE MÍDIA:
 - Se a mensagem contiver "[O cliente enviou um áudio que não pôde ser processado]":
   Peça gentilmente para o cliente enviar a mensagem por texto.
   Exemplo: "Não consegui ouvir o áudio, pode me escrever o que precisa? 😊"
-- Mensagens transcritas de áudio devem ser tratadas normalmente como texto.`;
+- Mensagens transcritas de áudio devem ser tratadas normalmente como texto.
+
+${(() => {
+  const triggers = shopConfig.human_handoff_triggers;
+  if (!triggers) return "";
+  const tags = triggers.tags || [];
+  const custom = triggers.custom_rules || "";
+  if (tags.length === 0 && !custom) return "";
+
+  const tagLabels: Record<string, string> = {
+    reclamacao: "reclamações ou insatisfação do cliente",
+    negociacao: "pedidos de desconto ou negociação de preço",
+    duvida_complexa: "dúvidas que você não sabe responder",
+    emergencia: "situações urgentes ou de emergência",
+    reembolso: "solicitações de reembolso ou estorno",
+    elogio: "elogios ou quando o cliente quer falar com o responsável",
+    outro_assunto: "assuntos fora do seu escopo de atendimento",
+  };
+
+  const activeScenarios = tags.map(t => tagLabels[t] || t).filter(Boolean);
+  let handoffBlock = `TRANSFERÊNCIA PARA ATENDENTE HUMANO — REGRA OBRIGATÓRIA:
+Quando você detectar qualquer um dos cenários abaixo, você DEVE:
+1. Informar o cliente que vai transferir para um atendente humano.
+2. Incluir o bloco <action>{"type":"human_handoff","reason":"[motivo]"}</action> na sua resposta.
+3. NÃO tente resolver sozinha — transfira imediatamente.
+
+Cenários de transferência:
+${activeScenarios.map(s => `- ${s}`).join("\n")}`;
+
+  if (custom) {
+    handoffBlock += `\n\nRegras adicionais do proprietário:\n${custom}`;
+  }
+
+  handoffBlock += `\n\nExemplo de resposta ao transferir:
+"Entendo! Vou te transferir para nosso atendente para te ajudar melhor com isso. Um momento! 😊
+<action>{"type":"human_handoff","reason":"reclamação do cliente"}</action>"`;
+
+  return handoffBlock;
+})()}`;
 }
 
 // --- Process AI Actions ---
