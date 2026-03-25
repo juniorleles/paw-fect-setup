@@ -212,6 +212,7 @@ const App = () => (
                   <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
                   <Route path="/admin/blocked" element={<AdminRoute><AdminBlocked /></AdminRoute>} />
                   {/* Institutional & Legal pages */}
+                  <Route path="/install" element={<Install />} />
                   <Route path="/sobre" element={<About />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
