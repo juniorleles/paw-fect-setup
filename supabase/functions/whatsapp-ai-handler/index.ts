@@ -24,6 +24,7 @@ interface PetShopConfig {
   meta_waba_id?: string | null;
   meta_phone_number_id?: string | null;
   meta_access_token?: string | null;
+  human_handoff_triggers?: { tags?: string[]; custom_rules?: string };
 }
 
 // --- Compute Available Slots ---
