@@ -3,11 +3,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OnboardingData } from "@/types/onboarding";
 import { Bot, Briefcase, Heart, PartyPopper } from "lucide-react";
+import HumanHandoffConfig, { HumanHandoffTriggers } from "@/components/settings/HumanHandoffConfig";
 
 interface Props {
   data: OnboardingData;
   onChange: (data: Partial<OnboardingData>) => void;
   errors: Record<string, string>;
+  humanHandoffTriggers?: HumanHandoffTriggers;
+  onHandoffChange?: (triggers: HumanHandoffTriggers) => void;
 }
 
 const tones = [
