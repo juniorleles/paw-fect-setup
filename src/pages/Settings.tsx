@@ -93,6 +93,7 @@ const Settings = () => {
         max_concurrent_appointments: dataToSave.maxConcurrentAppointments,
         attendants: dataToSave.attendants as any,
         campaign_messages: campaignMessages as any,
+        human_handoff_triggers: handoffTriggers as any,
       } as any)
       .eq("id", configId);
     setSaving(false);
