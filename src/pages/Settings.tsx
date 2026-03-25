@@ -26,6 +26,7 @@ const Settings = () => {
   const { toast } = useToast();
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [campaignMessages, setCampaignMessages] = useState<CampaignMessages>({});
+  const [handoffTriggers, setHandoffTriggers] = useState<HumanHandoffTriggers>({ tags: [], custom_rules: "" });
   const [niche, setNiche] = useState("petshop");
   const [configId, setConfigId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
