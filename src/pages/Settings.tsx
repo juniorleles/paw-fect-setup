@@ -215,7 +215,7 @@ const Settings = () => {
           <StepServices data={data} onChange={updateData} errors={noErrors} showTip={false} />
         </TabsContent>
         <TabsContent value="ai" className="mt-6">
-          <StepPersonalization data={data} onChange={updateData} errors={noErrors} />
+          <StepPersonalization data={data} onChange={updateData} errors={noErrors} humanHandoffTriggers={handoffTriggers} onHandoffChange={setHandoffTriggers} />
         </TabsContent>
         <TabsContent value="campaigns" className="mt-6">
           <StepCampaigns
