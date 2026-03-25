@@ -40,70 +40,80 @@ const tones = [
   },
 ];
 
-const StepPersonalization = ({ data, onChange, errors }: Props) => {
+const StepPersonalization = ({ data, onChange, errors, humanHandoffTriggers, onHandoffChange }: Props) => {
   const activeTone = tones.find((t) => t.key === data.voiceTone);
 
   return (
-    <Card className="border-none shadow-xl bg-card">
-      <CardHeader className="text-center pb-2">
-        <div className="mx-auto w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-3">
-          <Bot className="w-8 h-8 text-accent" />
-        </div>
-        <CardTitle className="text-2xl font-display">Personalizar IA</CardTitle>
-        <CardDescription className="text-base">
-          Defina a personalidade da sua secretária digital
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6 pt-4">
-        {/* Voice tone */}
-        <div className="space-y-3">
-          <Label className="font-semibold">Tom de voz</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {tones.map((tone) => {
-              const Icon = tone.icon;
-              const isActive = data.voiceTone === tone.key;
-              return (
-                <button
-                  key={tone.key}
-                  onClick={() => onChange({ voiceTone: tone.key })}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    isActive ? tone.activeColor : tone.color
-                  } hover:scale-[1.02]`}
-                >
-                  <Icon className="w-6 h-6 mb-2" />
-                  <p className="font-bold text-sm">{tone.label}</p>
-                  <p className="text-xs mt-1 opacity-80 leading-relaxed">"{tone.example}"</p>
-                </button>
-              );
-            })}
+    <div className="space-y-6">
+      <Card className="border-none shadow-xl bg-card">
+        <CardHeader className="text-center pb-2">
+          <div className="mx-auto w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-3">
+            <Bot className="w-8 h-8 text-accent" />
           </div>
-        </div>
-
-        {/* Assistant name */}
-        <div className="space-y-2">
-          <Label htmlFor="assistantName" className="font-semibold">Nome da secretária *</Label>
-          <Input
-            id="assistantName"
-            placeholder="Ex: Luna, Mel, Flora..."
-            value={data.assistantName}
-            onChange={(e) => onChange({ assistantName: e.target.value })}
-            className="h-11"
-          />
-          {errors.assistantName && <p className="text-sm text-destructive">{errors.assistantName}</p>}
-        </div>
-
-        {/* Preview */}
-        {data.assistantName && activeTone && (
-          <div className="p-4 rounded-2xl bg-secondary space-y-2">
-            <Label className="font-semibold text-xs text-muted-foreground">PREVIEW NO WHATSAPP</Label>
-            <div className="bg-card rounded-xl p-3 shadow-sm">
-              <p className="text-sm font-bold text-primary">{data.assistantName}</p>
-              <p className="text-sm mt-1">{activeTone.example.replace("nosso estabelecimento", data.shopName || "nosso estabelecimento")}</p>
+          <CardTitle className="text-2xl font-display">Personalizar IA</CardTitle>
+          <CardDescription className="text-base">
+            Defina a personalidade da sua secretária digital
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6 pt-4">
+          {/* Voice tone */}
+          <div className="space-y-3">
+            <Label className="font-semibold">Tom de voz</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {tones.map((tone) => {
+                const Icon = tone.icon;
+                const isActive = data.voiceTone === tone.key;
+                return (
+                  <button
+                    key={tone.key}
+                    onClick={() => onChange({ voiceTone: tone.key })}
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      isActive ? tone.activeColor : tone.color
+                    } hover:scale-[1.02]`}
+                  >
+                    <Icon className="w-6 h-6 mb-2" />
+                    <p className="font-bold text-sm">{tone.label}</p>
+                    <p className="text-xs mt-1 opacity-80 leading-relaxed">"{tone.example}"</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Assistant name */}
+          <div className="space-y-2">
+            <Label htmlFor="assistantName" className="font-semibold">Nome da secretária *</Label>
+            <Input
+              id="assistantName"
+              placeholder="Ex: Luna, Mel, Flora..."
+              value={data.assistantName}
+              onChange={(e) => onChange({ assistantName: e.target.value })}
+              className="h-11"
+            />
+            {errors.assistantName && <p className="text-sm text-destructive">{errors.assistantName}</p>}
+          </div>
+
+          {/* Preview */}
+          {data.assistantName && activeTone && (
+            <div className="p-4 rounded-2xl bg-secondary space-y-2">
+              <Label className="font-semibold text-xs text-muted-foreground">PREVIEW NO WHATSAPP</Label>
+              <div className="bg-card rounded-xl p-3 shadow-sm">
+                <p className="text-sm font-bold text-primary">{data.assistantName}</p>
+                <p className="text-sm mt-1">{activeTone.example.replace("nosso estabelecimento", data.shopName || "nosso estabelecimento")}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Human Handoff Config */}
+      {humanHandoffTriggers && onHandoffChange && (
+        <HumanHandoffConfig
+          triggers={humanHandoffTriggers}
+          onChange={onHandoffChange}
+        />
+      )}
+    </div>
   );
 };
 
