@@ -11,6 +11,7 @@ import StepBusinessHours from "@/components/onboarding/StepBusinessHours";
 import StepServices from "@/components/onboarding/StepServices";
 import StepPersonalization from "@/components/onboarding/StepPersonalization";
 import StepCampaigns, { CampaignMessages } from "@/components/settings/StepCampaigns";
+import { HumanHandoffTriggers } from "@/components/settings/HumanHandoffConfig";
 import { Loader2, Save, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,7 @@ const Settings = () => {
   const { toast } = useToast();
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [campaignMessages, setCampaignMessages] = useState<CampaignMessages>({});
+  const [handoffTriggers, setHandoffTriggers] = useState<HumanHandoffTriggers>({ tags: [], custom_rules: "" });
   const [niche, setNiche] = useState("petshop");
   const [configId, setConfigId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +46,7 @@ const Settings = () => {
         setConfigId(c.id);
         setNiche((c as any).niche ?? "petshop");
         setCampaignMessages((c as any).campaign_messages ?? {});
+        setHandoffTriggers((c as any).human_handoff_triggers ?? { tags: [], custom_rules: "" });
         setData({
           phone: c.phone,
           phoneVerified: c.phone_verified,
@@ -91,6 +94,7 @@ const Settings = () => {
         max_concurrent_appointments: dataToSave.maxConcurrentAppointments,
         attendants: dataToSave.attendants as any,
         campaign_messages: campaignMessages as any,
+        human_handoff_triggers: handoffTriggers as any,
       } as any)
       .eq("id", configId);
     setSaving(false);
@@ -104,30 +108,35 @@ const Settings = () => {
 
   // Auto-save with debounce — only after user actually changes something
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Also track campaignMessages changes for auto-save
+  // Also track campaignMessages and handoffTriggers changes for auto-save
   const campaignRef = useRef<string>("{}");
+  const handoffRef = useRef<string>('{"tags":[],"custom_rules":""}');
   useEffect(() => {
     if (!loading && configId) {
       campaignRef.current = JSON.stringify(campaignMessages);
+      handoffRef.current = JSON.stringify(handoffTriggers);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, configId]);
 
   useEffect(() => {
     if (loading || !configId) return;
-    if (JSON.stringify(campaignMessages) === campaignRef.current) return;
+    const campaignChanged = JSON.stringify(campaignMessages) !== campaignRef.current;
+    const handoffChanged = JSON.stringify(handoffTriggers) !== handoffRef.current;
+    if (!campaignChanged && !handoffChanged) return;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       saveToDb(data);
       loadedDataRef.current = JSON.stringify(data);
       campaignRef.current = JSON.stringify(campaignMessages);
+      handoffRef.current = JSON.stringify(handoffTriggers);
     }, 1500);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [campaignMessages, data, configId, loading, saveToDb]);
+  }, [campaignMessages, handoffTriggers, data, configId, loading, saveToDb]);
 
   const loadedDataRef = useRef<string | null>(null);
 
@@ -211,7 +220,7 @@ const Settings = () => {
           <StepServices data={data} onChange={updateData} errors={noErrors} showTip={false} />
         </TabsContent>
         <TabsContent value="ai" className="mt-6">
-          <StepPersonalization data={data} onChange={updateData} errors={noErrors} />
+          <StepPersonalization data={data} onChange={updateData} errors={noErrors} humanHandoffTriggers={handoffTriggers} onHandoffChange={setHandoffTriggers} />
         </TabsContent>
         <TabsContent value="campaigns" className="mt-6">
           <StepCampaigns

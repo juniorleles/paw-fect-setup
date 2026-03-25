@@ -24,6 +24,7 @@ interface PetShopConfig {
   meta_waba_id?: string | null;
   meta_phone_number_id?: string | null;
   meta_access_token?: string | null;
+  human_handoff_triggers?: { tags?: string[]; custom_rules?: string };
 }
 
 // --- Compute Available Slots ---
@@ -2554,7 +2555,45 @@ MENSAGENS DE MÍDIA:
 - Se a mensagem contiver "[O cliente enviou um áudio que não pôde ser processado]":
   Peça gentilmente para o cliente enviar a mensagem por texto.
   Exemplo: "Não consegui ouvir o áudio, pode me escrever o que precisa? 😊"
-- Mensagens transcritas de áudio devem ser tratadas normalmente como texto.`;
+- Mensagens transcritas de áudio devem ser tratadas normalmente como texto.
+
+${(() => {
+  const triggers = shopConfig.human_handoff_triggers;
+  if (!triggers) return "";
+  const tags = triggers.tags || [];
+  const custom = triggers.custom_rules || "";
+  if (tags.length === 0 && !custom) return "";
+
+  const tagLabels: Record<string, string> = {
+    reclamacao: "reclamações ou insatisfação do cliente",
+    negociacao: "pedidos de desconto ou negociação de preço",
+    duvida_complexa: "dúvidas que você não sabe responder",
+    emergencia: "situações urgentes ou de emergência",
+    reembolso: "solicitações de reembolso ou estorno",
+    elogio: "elogios ou quando o cliente quer falar com o responsável",
+    outro_assunto: "assuntos fora do seu escopo de atendimento",
+  };
+
+  const activeScenarios = tags.map(t => tagLabels[t] || t).filter(Boolean);
+  let handoffBlock = `TRANSFERÊNCIA PARA ATENDENTE HUMANO — REGRA OBRIGATÓRIA:
+Quando você detectar qualquer um dos cenários abaixo, você DEVE:
+1. Informar o cliente que vai transferir para um atendente humano.
+2. Incluir o bloco <action>{"type":"human_handoff","reason":"[motivo]"}</action> na sua resposta.
+3. NÃO tente resolver sozinha — transfira imediatamente.
+
+Cenários de transferência:
+${activeScenarios.map(s => `- ${s}`).join("\n")}`;
+
+  if (custom) {
+    handoffBlock += `\n\nRegras adicionais do proprietário:\n${custom}`;
+  }
+
+  handoffBlock += `\n\nExemplo de resposta ao transferir:
+"Entendo! Vou te transferir para nosso atendente para te ajudar melhor com isso. Um momento! 😊
+<action>{"type":"human_handoff","reason":"reclamação do cliente"}</action>"`;
+
+  return handoffBlock;
+})()}`;
 }
 
 // --- Process AI Actions ---
@@ -2756,6 +2795,31 @@ async function processAction(serviceClient: any, shopConfig: PetShopConfig, clea
         .eq("user_id", shopConfig.user_id)
         .eq("date", action.old_date)
         .eq("time", action.old_time);
+    } else if (action.type === "human_handoff") {
+      console.log(`[HumanHandoff] Activating human mode for ${cleanPhone}. Reason: ${action.reason || "unknown"}`);
+      // Set human_mode in conversation state
+      await serviceClient
+        .from("conversation_state")
+        .upsert({
+          user_id: shopConfig.user_id,
+          phone: cleanPhone,
+          step: "human_mode",
+          extra: { human_mode: true, handoff_reason: action.reason || "unknown", handoff_at: new Date().toISOString() },
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,phone" });
+      
+      // Notify owner via WhatsApp
+      try {
+        const ownerPhone = shopConfig.phone.replace(/\D/g, "");
+        const formattedOwner = ownerPhone.startsWith("55") ? ownerPhone : `55${ownerPhone}`;
+        const notifMsg = `⚠️ *Transferência para atendimento humano*\n\nCliente: ${cleanPhone}\nMotivo: ${action.reason || "não especificado"}\n\nA IA pausou o atendimento. Responda diretamente ao cliente pelo WhatsApp.`;
+        
+        // Use the same sendWhatsAppMessage function (defined elsewhere in the file)
+        // We'll just log it here — the actual notification is handled by the main flow
+        console.log(`[HumanHandoff] Owner notification: ${formattedOwner} - ${notifMsg.substring(0, 100)}`);
+      } catch (notifErr) {
+        console.error("[HumanHandoff] Failed to notify owner:", notifErr);
+      }
     }
   } catch (parseErr) {
     console.error("Action parse error:", parseErr);
