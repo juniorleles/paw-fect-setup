@@ -29,7 +29,7 @@ A MagicZap é uma plataforma SaaS que automatiza o atendimento e agendamento de 
 - Ideal para testar a plataforma
 
 ### Plano Essencial
-- Preço: R$ 97/mês
+- Preço: R$ 67/mês
 - Agendamentos ilimitados
 - Mensagens IA ilimitadas
 - Até 3 profissionais
