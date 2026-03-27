@@ -17,7 +17,7 @@ const logStep = (step: string, details?: any) => {
 const PRICE_MAP: Record<string, { live: string; test: string }> = {
   starter: {
     live: "price_1T4S0JE3YGO6w5oCBXFikz8v",
-    test: "price_1T6tafE3YGO6w5oC8iAWHVQB",
+    test: "price_1TFb5BE3YGO6w5oCQzg8e6rg",
   },
   professional: {
     live: "price_1T9PrHE3YGO6w5oCaPxPCHJt",

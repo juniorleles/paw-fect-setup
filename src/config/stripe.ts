@@ -11,7 +11,7 @@ export const STRIPE_PLANS = {
   starter: {
     name: "Essencial",
     price_id_live: "price_1T4S0JE3YGO6w5oCBXFikz8v",
-    price_id_test: "price_1T6tafE3YGO6w5oC8iAWHVQB",
+    price_id_test: "price_1TFb5BE3YGO6w5oCQzg8e6rg",
     product_id_live: "prod_U2X4v8ah9uiCN0",
     product_id_test: "prod_U2ZxGxqNGAiwhQ",
     price: 67,
