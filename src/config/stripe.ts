@@ -14,7 +14,7 @@ export const STRIPE_PLANS = {
     price_id_test: "price_1T6tafE3YGO6w5oC8iAWHVQB",
     product_id_live: "prod_U2X4v8ah9uiCN0",
     product_id_test: "prod_U2ZxGxqNGAiwhQ",
-    price: 97,
+    price: 67,
     limit: 800,
     maxAttendants: 5,
     trialMessagesLimit: 150,

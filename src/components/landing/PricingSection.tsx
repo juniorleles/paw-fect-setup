@@ -95,7 +95,7 @@ const PricingSection = () => (
               </Badge>
               <h3 className="font-bold text-xl mb-1">Essencial</h3>
               <div className="mb-1">
-                <span className="text-4xl font-extrabold">R$ 97</span>
+                <span className="text-4xl font-extrabold">R$ 67</span>
                 <span className="text-muted-foreground text-sm">/mês</span>
               </div>
               <p className="text-xs text-primary font-semibold mb-2">Automação completa para reduzir faltas e aumentar faturamento.</p>
