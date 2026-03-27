@@ -1,0 +1,1 @@
+UPDATE subscriptions SET trial_messages_limit = 800, trial_appointments_limit = -1 WHERE user_id = 'ca6005b4-b3cd-4f38-97b8-32bf5cd6eaab' AND plan = 'starter';
