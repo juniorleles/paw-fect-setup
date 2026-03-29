@@ -100,7 +100,7 @@ const LandingHero = () => (
         className="mb-3"
       >
         <p className="text-base font-bold text-foreground">👉 Teste a IA agora</p>
-        <p className="text-sm text-muted-foreground">Simule um cliente falando com sua barbearia.</p>
+        <p className="text-sm text-muted-foreground">Simule um cliente falando com seu negócio.</p>
       </motion.div>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
