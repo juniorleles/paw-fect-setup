@@ -7,9 +7,9 @@ const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 
 const FAQ_ITEMS = [
   { q: "Preciso de conhecimento técnico?", a: "Não! A configuração é guiada em poucos passos e leva menos de 10 minutos. Você cadastra seus serviços, horários e pronto — a IA já começa a atender." },
-  { q: "Como funciona o atendimento pelo WhatsApp?", a: "Seu cliente manda mensagem no WhatsApp da barbearia e a IA responde na hora: informa preços, mostra horários disponíveis, agenda o corte e envia lembrete automático antes do horário." },
+  { q: "Como funciona o atendimento pelo WhatsApp?", a: "Seu cliente manda mensagem no WhatsApp do seu negócio e a IA responde na hora: informa preços, mostra horários disponíveis, agenda o atendimento e envia lembrete automático antes do horário." },
   { q: "O atendimento é realmente automático?", a: "100%. A IA responde perguntas, informa preços dos serviços, agenda horários e envia lembretes — tudo sem você precisar tocar no celular." },
-  { q: "Posso personalizar as respostas da IA?", a: "Sim! Você escolhe o nome da assistente, o tom de voz (formal, descontraído, etc.) e cadastra seus serviços com preços e duração. As respostas se adaptam à sua barbearia." },
+  { q: "Posso personalizar as respostas da IA?", a: "Sim! Você escolhe o nome da assistente, o tom de voz (formal, descontraído, etc.) e cadastra seus serviços com preços e duração. As respostas se adaptam ao seu negócio." },
   { q: "E se o cliente faltar?", a: "O sistema detecta automaticamente no-shows e pode enviar mensagens de recuperação para remarcar o horário, reduzindo drasticamente as faltas." },
   { q: "Posso cancelar a qualquer momento?", a: "Sim, sem multa e sem burocracia. Cancele direto pelo painel em poucos cliques." },
   { q: "Funciona fora do horário comercial?", a: "Sim! A IA atende 24 horas, inclusive de madrugada e nos finais de semana. Seu cliente agenda quando quiser, sem esperar você responder." },

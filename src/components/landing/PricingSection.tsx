@@ -119,7 +119,7 @@ const PricingSection = () => (
               </ul>
               <a href="/auth?signup=true&plan=starter">
                 <Button className="w-full rounded-xl shadow-md shadow-primary/15 font-bold text-wrap py-3 h-auto leading-snug">
-                  Quero Automatizar Minha Barbearia
+                  Quero Automatizar Meu Negócio
                 </Button>
               </a>
             </CardContent>

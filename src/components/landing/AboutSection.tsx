@@ -15,8 +15,8 @@ const AboutSection = () => (
         <h2 className="text-xl font-bold text-foreground">Sobre a MagicZap</h2>
       </div>
       <p className="text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-        A MagicZap é uma plataforma de automação de WhatsApp focada em barbearias.
-        Nossa solução ajuda empresas a automatizar atendimentos, agendamentos e
+        A MagicZap é uma plataforma de automação de WhatsApp para diversos segmentos.
+        Nossa solução ajuda negócios a automatizar atendimentos, agendamentos e
         recuperação de clientes de forma simples e eficiente.
       </p>
       <div className="flex flex-wrap justify-center gap-6 mt-8">
