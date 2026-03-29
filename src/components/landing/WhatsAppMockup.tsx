@@ -32,14 +32,14 @@ const nowTime = () => {
 };
 
 const DEMO_CONFIG = {
-  shopName: "Barbearia Demo",
+  shopName: "Meu Negócio Demo",
   assistantName: "Ana",
   voiceTone: "friendly",
-  niche: "barbearia",
+  niche: "geral",
   services: [
-    { name: "Corte Masculino", price: 45, duration: 30 },
-    { name: "Barba", price: 30, duration: 20 },
-    { name: "Corte + Barba", price: 65, duration: 50 },
+    { name: "Atendimento Padrão", price: 80, duration: 30 },
+    { name: "Atendimento Premium", price: 120, duration: 45 },
+    { name: "Consulta Rápida", price: 50, duration: 20 },
   ],
   businessHours: [
     { day: "segunda", isOpen: true, openTime: "09:00", closeTime: "19:00" },
@@ -57,9 +57,9 @@ const DEMO_CONFIG = {
 };
 
 const SCENARIOS = [
-  { label: "Agendar corte", icon: Scissors, msg: "Quero marcar um corte masculino para amanhã às 14h" },
+  { label: "Agendar horário", icon: CalendarCheck, msg: "Quero marcar um atendimento para amanhã às 14h" },
   { label: "Ver preços", icon: DollarSign, msg: "Quais serviços vocês oferecem e quanto custa cada um?" },
-  { label: "Horários livres", icon: CalendarCheck, msg: "Quais horários disponíveis para amanhã?" },
+  { label: "Horários livres", icon: Clock, msg: "Quais horários disponíveis para amanhã?" },
   { label: "Cancelar horário", icon: Clock, msg: "Preciso cancelar meu agendamento" },
 ];
 
