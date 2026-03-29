@@ -8,7 +8,7 @@ import AboutSection from "@/components/landing/AboutSection";
 import AgendaPreviewSection from "@/components/landing/AgendaPreviewSection";
 import PainSolutionSection from "@/components/landing/PainSolutionSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
-
+import NichesSection from "@/components/landing/NichesSection";
 import MetricsSection from "@/components/landing/TestimonialsSection";
 import PricingSection from "@/components/landing/PricingSection";
 import FaqSection from "@/components/landing/FaqSection";
