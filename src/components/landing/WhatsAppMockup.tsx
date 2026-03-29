@@ -140,7 +140,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
               <Bot className="w-5 h-5 text-primary-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-primary-foreground font-bold text-sm">Ana • Barbearia Demo</p>
+              <p className="text-primary-foreground font-bold text-sm">Ana • Meu Negócio Demo</p>
               <div className="flex items-center gap-1.5">
                 <motion.div
                   className="w-2 h-2 rounded-full bg-primary-foreground/70"
