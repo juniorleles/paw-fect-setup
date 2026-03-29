@@ -102,6 +102,46 @@ export const NICHE_SUGGESTIONS: Record<BusinessNiche, Omit<Service, "id">[]> = {
     { name: "Sobrancelha", price: 20, duration: 30, category: "Acabamento" },
     { name: "Hidratação", price: 40, duration: 30, category: "Tratamento" },
   ],
+  salao: [
+    { name: "Corte Feminino", price: 80, duration: 45, category: "Corte" },
+    { name: "Escova", price: 60, duration: 45, category: "Escova" },
+    { name: "Coloração", price: 150, duration: 90, category: "Coloração" },
+    { name: "Manicure", price: 35, duration: 30, category: "Unhas" },
+    { name: "Pedicure", price: 40, duration: 40, category: "Unhas" },
+  ],
+  estetica: [
+    { name: "Limpeza de Pele", price: 120, duration: 60, category: "Facial" },
+    { name: "Peeling", price: 150, duration: 45, category: "Facial" },
+    { name: "Drenagem Linfática", price: 100, duration: 60, category: "Corporal" },
+    { name: "Massagem Relaxante", price: 90, duration: 60, category: "Corporal" },
+    { name: "Depilação", price: 50, duration: 30, category: "Depilação" },
+  ],
+  clinica: [
+    { name: "Consulta", price: 200, duration: 30, category: "Consulta" },
+    { name: "Retorno", price: 0, duration: 20, category: "Consulta" },
+    { name: "Exame", price: 100, duration: 30, category: "Exame" },
+  ],
+  petshop: [
+    { name: "Banho Pequeno", price: 50, duration: 60, category: "Banho" },
+    { name: "Banho Grande", price: 80, duration: 90, category: "Banho" },
+    { name: "Tosa Higiênica", price: 40, duration: 30, category: "Tosa" },
+    { name: "Banho e Tosa", price: 90, duration: 90, category: "Combo" },
+    { name: "Hidratação de Pelos", price: 30, duration: 15, category: "Tratamento" },
+  ],
+  veterinaria: [
+    { name: "Consulta", price: 150, duration: 30, category: "Consulta" },
+    { name: "Vacina", price: 80, duration: 15, category: "Vacina" },
+    { name: "Exame de Sangue", price: 120, duration: 20, category: "Exame" },
+    { name: "Retorno", price: 0, duration: 20, category: "Consulta" },
+  ],
+  escritorio: [
+    { name: "Reunião", price: 0, duration: 60, category: "Reunião" },
+    { name: "Consultoria", price: 200, duration: 60, category: "Consultoria" },
+  ],
+  outros: [
+    { name: "Atendimento", price: 100, duration: 30, category: "Geral" },
+    { name: "Consulta", price: 150, duration: 45, category: "Geral" },
+  ],
 };
 
 // Keep backward compatibility
