@@ -27,7 +27,7 @@ const LandingHero = () => (
         transition={{ duration: 0.5 }}
       >
         <Badge variant="outline" className="mb-6 text-sm px-4 py-1.5 border-primary/30 text-primary bg-primary/5 font-medium rounded-full">
-          💈 Automação de WhatsApp para barbearias
+          ✨ Automação de WhatsApp com IA para seu negócio
         </Badge>
       </motion.div>
 
