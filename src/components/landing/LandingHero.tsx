@@ -27,7 +27,7 @@ const LandingHero = () => (
         transition={{ duration: 0.5 }}
       >
         <Badge variant="outline" className="mb-6 text-sm px-4 py-1.5 border-primary/30 text-primary bg-primary/5 font-medium rounded-full">
-          💈 Automação de WhatsApp para barbearias
+          ✨ Automação de WhatsApp com IA para seu negócio
         </Badge>
       </motion.div>
 
@@ -38,7 +38,7 @@ const LandingHero = () => (
         transition={{ duration: 0.6, delay: 0.1 }}
         className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] mb-6 tracking-tight"
       >
-        <span className="text-primary">MagicZap</span> — Automatize o WhatsApp da sua barbearia com{" "}
+        <span className="text-primary">MagicZap</span> — Automatize o WhatsApp do seu negócio com{" "}
         <span className="text-primary">IA</span>
       </motion.h1>
 
@@ -87,7 +87,7 @@ const LandingHero = () => (
         transition={{ duration: 0.5, delay: 0.65 }}
         className="text-sm font-semibold text-primary mt-6"
       >
-        💈 Criado especialmente para barbearias
+        ✨ Para barbearias, salões, clínicas, pet shops e muito mais
       </motion.p>
     </div>
 
@@ -100,7 +100,7 @@ const LandingHero = () => (
         className="mb-3"
       >
         <p className="text-base font-bold text-foreground">👉 Teste a IA agora</p>
-        <p className="text-sm text-muted-foreground">Simule um cliente falando com sua barbearia.</p>
+        <p className="text-sm text-muted-foreground">Simule um cliente falando com seu negócio.</p>
       </motion.div>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
