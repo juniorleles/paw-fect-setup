@@ -38,7 +38,7 @@ const LandingHero = () => (
         transition={{ duration: 0.6, delay: 0.1 }}
         className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.08] mb-6 tracking-tight"
       >
-        <span className="text-primary">MagicZap</span> — Automatize o WhatsApp da sua barbearia com{" "}
+        <span className="text-primary">MagicZap</span> — Automatize o WhatsApp do seu negócio com{" "}
         <span className="text-primary">IA</span>
       </motion.h1>
 
