@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, Loader2, Zap, CalendarDays, Clock, CheckCircle2, MessageSquare, Scissors, DollarSign, CalendarCheck } from "lucide-react";
+import { Send, Bot, Loader2, Zap, CalendarDays, Clock, CheckCircle2, MessageSquare, DollarSign, CalendarCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
