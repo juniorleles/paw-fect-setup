@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OnboardingData, BRAZILIAN_STATES, NICHE_LABELS, BusinessNiche } from "@/types/onboarding";
-import { Store } from "lucide-react";
+import { Store, PawPrint, Stethoscope, Scissors, Sparkles, Building2, Briefcase } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
@@ -14,6 +14,12 @@ interface Props {
 }
 
 const nicheKeys = Object.keys(NICHE_LABELS) as BusinessNiche[];
+
+const NICHE_ICONS: Record<string, React.ElementType> = {
+  petshop: PawPrint, clinica: Stethoscope, salao: Scissors,
+  barbearia: Scissors, estetica: Sparkles, escritorio: Building2,
+  veterinaria: Stethoscope, outros: Briefcase,
+};
 
 const StepBusinessData = ({ data, onChange, errors, showEmail = false }: Props) => {
   const { user } = useAuth();
@@ -29,8 +35,40 @@ const StepBusinessData = ({ data, onChange, errors, showEmail = false }: Props) 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
-        {/* Nicho fixo: barbearia */}
-        <input type="hidden" value="barbearia" />
+        {/* Seleção de Nicho */}
+        <div className="space-y-2">
+          <Label className="font-semibold">Segmento *</Label>
+          <div className="grid grid-cols-4 gap-2">
+            {nicheKeys.map((key) => {
+              const Icon = NICHE_ICONS[key] || Briefcase;
+              const isSelected = data.niche === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onChange({ niche: key })}
+                  className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all duration-200 ${
+                    isSelected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border/60 hover:border-primary/30 hover:bg-secondary/50"
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                    isSelected ? "bg-primary/15" : "bg-muted"
+                  }`}>
+                    <Icon className={`w-4.5 h-4.5 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                  </div>
+                  <span className={`text-[11px] font-medium leading-tight text-center ${
+                    isSelected ? "text-primary" : "text-muted-foreground"
+                  }`}>
+                    {NICHE_LABELS[key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {errors.niche && <p className="text-sm text-destructive">{errors.niche}</p>}
+        </div>
 
         {showEmail && user?.email && (
           <div className="space-y-2">
