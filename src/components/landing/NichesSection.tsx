@@ -33,7 +33,7 @@ const NichesSection = () => {
           </h2>
           <p className="text-muted-foreground text-lg">Adapta-se automaticamente ao seu segmento</p>
         </motion.div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4">
           {nicheKeys.map((key, i) => {
             const Icon = NICHE_ICONS[key] || Briefcase;
             return (
@@ -45,12 +45,12 @@ const NichesSection = () => {
                 transition={{ duration: 0.4, delay: i * 0.06 }}
                 whileHover={{ scale: 1.05, y: -2 }}
               >
-                <Card className="text-center rounded-2xl border border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300 cursor-default">
-                  <CardContent className="p-5">
-                    <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/8 flex items-center justify-center mb-3">
-                      <Icon className="w-7 h-7 text-primary" />
+                <Card className="text-center rounded-xl sm:rounded-2xl border border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300 cursor-default">
+                  <CardContent className="p-2 sm:p-5">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 mx-auto rounded-xl sm:rounded-2xl bg-primary/8 flex items-center justify-center mb-1.5 sm:mb-3">
+                      <Icon className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
                     </div>
-                    <p className="font-semibold text-sm">{NICHE_LABELS[key]}</p>
+                    <p className="font-semibold text-[11px] sm:text-sm leading-tight">{NICHE_LABELS[key]}</p>
                   </CardContent>
                 </Card>
               </motion.div>
