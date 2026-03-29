@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, Loader2, Zap, CalendarDays, Clock, CheckCircle2, MessageSquare, Scissors, DollarSign, CalendarCheck } from "lucide-react";
+import { Send, Bot, Loader2, Zap, CalendarDays, Clock, CheckCircle2, MessageSquare, DollarSign, CalendarCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,14 +32,14 @@ const nowTime = () => {
 };
 
 const DEMO_CONFIG = {
-  shopName: "Barbearia Demo",
+  shopName: "Meu Negócio Demo",
   assistantName: "Ana",
   voiceTone: "friendly",
-  niche: "barbearia",
+  niche: "geral",
   services: [
-    { name: "Corte Masculino", price: 45, duration: 30 },
-    { name: "Barba", price: 30, duration: 20 },
-    { name: "Corte + Barba", price: 65, duration: 50 },
+    { name: "Atendimento Padrão", price: 80, duration: 30 },
+    { name: "Atendimento Premium", price: 120, duration: 45 },
+    { name: "Consulta Rápida", price: 50, duration: 20 },
   ],
   businessHours: [
     { day: "segunda", isOpen: true, openTime: "09:00", closeTime: "19:00" },
@@ -57,9 +57,9 @@ const DEMO_CONFIG = {
 };
 
 const SCENARIOS = [
-  { label: "Agendar corte", icon: Scissors, msg: "Quero marcar um corte masculino para amanhã às 14h" },
+  { label: "Agendar horário", icon: CalendarCheck, msg: "Quero marcar um atendimento para amanhã às 14h" },
   { label: "Ver preços", icon: DollarSign, msg: "Quais serviços vocês oferecem e quanto custa cada um?" },
-  { label: "Horários livres", icon: CalendarCheck, msg: "Quais horários disponíveis para amanhã?" },
+  { label: "Horários livres", icon: Clock, msg: "Quais horários disponíveis para amanhã?" },
   { label: "Cancelar horário", icon: Clock, msg: "Preciso cancelar meu agendamento" },
 ];
 
@@ -140,7 +140,7 @@ const WhatsAppMockup = ({ embedded = false }: { embedded?: boolean }) => {
               <Bot className="w-5 h-5 text-primary-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-primary-foreground font-bold text-sm">Ana • Barbearia Demo</p>
+              <p className="text-primary-foreground font-bold text-sm">Ana • Meu Negócio Demo</p>
               <div className="flex items-center gap-1.5">
                 <motion.div
                   className="w-2 h-2 rounded-full bg-primary-foreground/70"
