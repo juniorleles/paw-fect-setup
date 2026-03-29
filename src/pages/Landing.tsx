@@ -37,7 +37,7 @@ const Landing = () => {
       <AgendaPreviewSection />
       <PainSolutionSection />
       <HowItWorksSection />
-      
+      <NichesSection />
       <MetricsSection />
       <PricingSection />
       <FaqSection />
