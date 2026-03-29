@@ -87,7 +87,7 @@ const LandingHero = () => (
         transition={{ duration: 0.5, delay: 0.65 }}
         className="text-sm font-semibold text-primary mt-6"
       >
-        💈 Criado especialmente para barbearias
+        ✨ Para barbearias, salões, clínicas, pet shops e muito mais
       </motion.p>
     </div>
 
