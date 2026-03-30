@@ -15,9 +15,25 @@ import FaqSection from "@/components/landing/FaqSection";
 import CtaSection from "@/components/landing/CtaSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
 const Landing = () => {
   const { user, loading } = useAuth();
   const { completed, loading: onboardingLoading } = useOnboardingStatus();
+
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag('event', 'conversion', {
+        'send_to': 'AW-18051605915/iwNbCN_wvZIcEJvL1p9D',
+        'value': 1.0,
+        'currency': 'BRL'
+      });
+    }
+  }, []);
   const navigate = useNavigate();
 
   useEffect(() => {
