@@ -35,7 +35,15 @@ const CtaSection = () => (
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
         >
-          <a href="/auth?signup=true&plan=free">
+          <a href="/auth?signup=true&plan=free" onClick={() => {
+            if ((window as any).gtag) {
+              (window as any).gtag('event', 'conversion', {
+                'send_to': 'AW-18051605915/iwNbCN_wvZIcEJvL1p9D',
+                'value': 1.0,
+                'currency': 'BRL'
+              });
+            }
+          }}>
             <Button
               size="lg"
               className="h-14 px-10 text-base font-bold bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-xl shadow-lg"

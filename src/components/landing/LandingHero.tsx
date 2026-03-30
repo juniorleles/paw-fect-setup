@@ -59,7 +59,15 @@ const LandingHero = () => (
         transition={{ duration: 0.5, delay: 0.4 }}
         className="flex justify-center"
       >
-        <a href="/auth?signup=true&plan=free">
+        <a href="/auth?signup=true&plan=free" onClick={() => {
+          if (window.gtag) {
+            window.gtag('event', 'conversion', {
+              'send_to': 'AW-18051605915/iwNbCN_wvZIcEJvL1p9D',
+              'value': 1.0,
+              'currency': 'BRL'
+            });
+          }
+        }}>
           <Button size="lg" className="h-14 px-10 text-base font-bold rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:scale-[1.02] transition-all duration-200">
             Testar grátis agora <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
