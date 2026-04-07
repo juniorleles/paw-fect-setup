@@ -4,7 +4,7 @@ import NichePainSolutionSection from "@/components/landing-niches/NichePainSolut
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import PricingSection from "@/components/landing/PricingSection";
 import NicheFaqSection from "@/components/landing-niches/NicheFaqSection";
-import NicheLeadForm from "@/components/landing-niches/NicheLeadForm";
+
 import CtaSection from "@/components/landing/CtaSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 
@@ -52,13 +52,8 @@ const LandingClinicas = () => (
       ]}
     />
     <HowItWorksSection />
-    <NicheLeadForm
-      title="Comece a automatizar sua clínica"
-      subtitle="Preencha o formulário e receba uma demonstração personalizada"
-      businessLabel="Nome da clínica/consultório"
-      businessPlaceholder="Ex: Clínica Saúde Total"
-      ctaText="Quero automatizar minha clínica"
-    />
+
+
     <PricingSection />
     <NicheFaqSection items={CLINICAS_FAQ} />
     <CtaSection />
