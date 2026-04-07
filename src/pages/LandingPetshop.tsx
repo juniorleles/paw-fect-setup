@@ -7,6 +7,8 @@ import NicheFaqSection from "@/components/landing-niches/NicheFaqSection";
 
 import CtaSection from "@/components/landing/CtaSection";
 import LandingFooter from "@/components/landing/LandingFooter";
+import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
+import { motion } from "framer-motion";
 
 const PETSHOP_FAQ = [
   { q: "Funciona para banho e tosa, veterinária e pet shop?", a: "Sim! A solução é ideal para qualquer negócio pet: banho e tosa, clínica veterinária, pet shop com serviços, hotelaria pet e mais." },
@@ -33,6 +35,17 @@ const LandingPetshop = () => (
       ctaText="Quero mais vendas"
       nicheCallout="✨ Para pet shops, clínicas veterinárias, banho e tosa"
     />
+    {/* Simulador WhatsApp */}
+    <div className="relative max-w-lg mx-auto py-12 px-4 text-center">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }} className="mb-3">
+        <p className="text-base font-bold text-foreground">👉 Teste a IA agora</p>
+        <p className="text-sm text-muted-foreground">Simule um cliente agendando um serviço para seu pet.</p>
+      </motion.div>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.3, type: "spring", stiffness: 100 }}>
+        <WhatsAppMockup embedded />
+      </motion.div>
+    </div>
+
     <NichePainSolutionSection
       title={<>Seu pet shop perde clientes <span className="text-destructive">sem perceber</span></>}
       subtitle="Veja como a automação transforma o atendimento do seu pet shop"
