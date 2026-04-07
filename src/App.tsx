@@ -185,6 +185,8 @@ const App = () => (
                   <Route path="/" element={<Landing />} />
                   <Route path="/landing" element={<Navigate to="/" replace />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/clinicas" element={<LandingClinicas />} />
+                  <Route path="/petshop" element={<LandingPetshop />} />
                   <Route path="/professional-login" element={<ProfessionalLogin />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/onboarding" element={<ProtectedRoute><Index /></ProtectedRoute>} />
