@@ -7,6 +7,8 @@ import NicheFaqSection from "@/components/landing-niches/NicheFaqSection";
 
 import CtaSection from "@/components/landing/CtaSection";
 import LandingFooter from "@/components/landing/LandingFooter";
+import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
+import { motion } from "framer-motion";
 
 const CLINICAS_FAQ = [
   { q: "Funciona para qualquer tipo de clínica?", a: "Sim! Funciona para consultórios médicos, clínicas odontológicas, psicólogos, fisioterapeutas, nutricionistas e qualquer profissional de saúde que atenda com agendamento." },

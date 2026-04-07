@@ -7,6 +7,8 @@ import NicheFaqSection from "@/components/landing-niches/NicheFaqSection";
 
 import CtaSection from "@/components/landing/CtaSection";
 import LandingFooter from "@/components/landing/LandingFooter";
+import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
+import { motion } from "framer-motion";
 
 const PETSHOP_FAQ = [
   { q: "Funciona para banho e tosa, veterinária e pet shop?", a: "Sim! A solução é ideal para qualquer negócio pet: banho e tosa, clínica veterinária, pet shop com serviços, hotelaria pet e mais." },
