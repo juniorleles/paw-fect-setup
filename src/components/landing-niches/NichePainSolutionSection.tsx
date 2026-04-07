@@ -9,7 +9,7 @@ const listItem = {
 };
 
 interface Props {
-  title: string;
+  title: React.ReactNode;
   subtitle: string;
   pains: string[];
   solutions: string[];
