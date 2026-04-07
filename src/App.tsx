@@ -21,6 +21,8 @@ import Professionals from "./pages/Professionals";
 import InactiveClients from "./pages/InactiveClients";
 import NoShowReport from "./pages/NoShowReport";
 import FinancialReport from "./pages/FinancialReport";
+import LandingClinicas from "./pages/LandingClinicas";
+import LandingPetshop from "./pages/LandingPetshop";
 
 import MyAccount from "./pages/MyAccount";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
