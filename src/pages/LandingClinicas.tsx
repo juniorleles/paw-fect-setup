@@ -32,7 +32,7 @@ const LandingClinicas = () => (
         </>
       }
       subheadline="A IA responde pacientes, agenda consultas, envia lembretes e faz triagem — automaticamente no WhatsApp da sua clínica."
-      ctaText="Quero automatizar minha clínica"
+      ctaText="Testar grátis agora"
       nicheCallout="✨ Para clínicas médicas, consultórios, dentistas, psicólogos e mais"
     />
     {/* Simulador WhatsApp */}

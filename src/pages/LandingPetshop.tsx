@@ -32,7 +32,7 @@ const LandingPetshop = () => (
         </>
       }
       subheadline="Lembrete automático de banho e tosa, agendamento de consultas e vacinas, respostas rápidas para dúvidas frequentes — tudo pelo WhatsApp."
-      ctaText="Quero mais vendas"
+      ctaText="Testar grátis agora"
       nicheCallout="✨ Para pet shops, clínicas veterinárias, banho e tosa"
     />
     {/* Simulador WhatsApp */}
