@@ -48,7 +48,15 @@ const Simulador = () => (
         transition={{ duration: 0.5, delay: 0.4 }}
         className="text-center space-y-3"
       >
-        <a href="/auth?signup=true&plan=free">
+        <a href="/auth?signup=true&plan=free" onClick={() => {
+          if (window.gtag) {
+            window.gtag('event', 'conversion', {
+              'send_to': 'AW-18051605915/iwNbCN_wvZIcEJvL1p9D',
+              'value': 1.0,
+              'currency': 'BRL'
+            });
+          }
+        }}>
           <Button size="lg" className="h-12 px-8 text-sm font-bold rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground shadow-lg shadow-primary/25">
             Testar grátis agora <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
