@@ -1,13 +1,15 @@
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Download, X, Smartphone } from "lucide-react";
 import { useState } from "react";
 
 const InstallPWABanner = () => {
   const { canInstall, isInstalled, install } = usePWAInstall();
+  const { user } = useAuth();
   const [dismissed, setDismissed] = useState(false);
 
-  if (isInstalled || dismissed || !canInstall) return null;
+  if (!user || isInstalled || dismissed || !canInstall) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-sm">
