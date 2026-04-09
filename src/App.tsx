@@ -49,6 +49,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Support from "./pages/Support";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import Install from "./pages/Install";
+import Simulador from "./pages/Simulador";
 import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -216,6 +217,7 @@ const App = () => (
                   <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
                   <Route path="/admin/blocked" element={<AdminRoute><AdminBlocked /></AdminRoute>} />
                   {/* Institutional & Legal pages */}
+                  <Route path="/simulador" element={<Simulador />} />
                   <Route path="/install" element={<Install />} />
                   <Route path="/sobre" element={<About />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
