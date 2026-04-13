@@ -1738,29 +1738,9 @@ function calculateHumanDelay(text: string): number {
   return 4000 + Math.random() * 2000;
 }
 
-async function sendComposingPresence(instanceName: string, phone: string): Promise<void> {
-  // Skip composing presence for Meta Cloud API instances
-  if (instanceName.startsWith("meta_")) return;
-
-  const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
-  const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-  if (!evolutionUrl || !evolutionKey) return;
-
-  const baseUrl = evolutionUrl.replace(/\/+$/, "");
-  const cleanPhone = phone.replace("@s.whatsapp.net", "");
-  try {
-    await fetch(`${baseUrl}/chat/presence/${instanceName}`, {
-      method: "POST",
-      headers: {
-        apikey: evolutionKey.trim(),
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ number: cleanPhone, presence: "composing" }),
-    });
-    console.log("[TypingDelay] Composing presence sent");
-  } catch (err) {
-    console.warn("[TypingDelay] Failed to send composing presence:", err);
-  }
+async function sendComposingPresence(_instanceName: string, _phone: string): Promise<void> {
+  // Meta Cloud API does not support composing presence — no-op
+  return;
 }
 
 function sleep(ms: number): Promise<void> {
