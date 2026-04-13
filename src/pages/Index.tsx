@@ -113,7 +113,7 @@ const Index = () => {
           }
         }
 
-        // 3. Call activate-subscription to create Evolution instance
+        // 3. Call activate-subscription to set up user account
         if (user) {
           const { data: refreshData } = await supabase.auth.refreshSession();
           if (refreshData?.session?.access_token) {
@@ -337,7 +337,7 @@ const Index = () => {
     setCompletedSteps((prev) => [...new Set([...prev, 6])]);
     await saveConfig(data, true);
 
-    // Activate subscription and create per-user Evolution instance
+    // Activate subscription
     if (user) {
       // Refresh session to ensure valid token before calling edge function
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
