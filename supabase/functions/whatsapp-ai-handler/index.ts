@@ -1792,8 +1792,7 @@ async function sendWhatsAppMessage(instanceName: string, phone: string, text: st
     console.error(`[META-SEND] Failed to send message: ${metaRes.status} ${metaBody}`);
   }
 }
-    const { accessToken, phoneNumberId } = _currentMetaConfig;
-    console.log(`[META-SEND] Sending to ${cleanPhone} via Meta Cloud API (phone_number_id: ${phoneNumberId})`);
+
 
     const metaRes = await fetch(
       `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
