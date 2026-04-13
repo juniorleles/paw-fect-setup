@@ -56,7 +56,7 @@ interface Alert {
 
 interface WhatsAppInstance {
   shop_name: string;
-  evolution_instance_name: string;
+  meta_waba_id: string | null;
   whatsapp_status: string;
   user_id: string;
 }
@@ -111,7 +111,7 @@ const AdminMonitoring = () => {
         .limit(50),
       supabase
         .from("pet_shop_configs")
-        .select("shop_name, evolution_instance_name, whatsapp_status, user_id")
+        .select("shop_name, meta_waba_id, whatsapp_status, user_id")
         .eq("activated", true)
         .limit(200),
       supabase
@@ -529,7 +529,7 @@ const AdminMonitoring = () => {
               )}
               <div className="min-w-0">
                 <p className="text-sm text-white font-medium truncate">{inst.shop_name || "Sem nome"}</p>
-                <p className="text-xs text-[hsl(220,10%,45%)] font-mono truncate">{inst.evolution_instance_name || "—"}</p>
+                <p className="text-xs text-[hsl(220,10%,45%)] font-mono truncate">{inst.meta_waba_id || "—"}</p>
               </div>
               <span
                 className={`ml-auto text-xs px-2 py-0.5 rounded-full ${

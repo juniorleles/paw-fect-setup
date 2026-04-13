@@ -6,48 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function requestPairingCode(
-  baseUrl: string,
-  instanceName: string,
-  evoHeaders: Record<string, string>,
-  userPhone: string,
-  maxRetries = 5,
-  delayMs = 3000
-): Promise<{ pairingCode: string | null; qrBase64: string | null }> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    console.log(`Pairing code attempt ${attempt}/${maxRetries} (delay ${delayMs}ms)`);
-    await new Promise((r) => setTimeout(r, delayMs));
-
-    const connectUrl = `${baseUrl}/instance/connect/${instanceName}?number=${userPhone}`;
-    const connectRes = await fetch(connectUrl, {
-      method: "GET",
-      headers: evoHeaders,
-    });
-    const connectData = await connectRes.json();
-    console.log(`Attempt ${attempt} response:`, JSON.stringify({
-      pairingCode: connectData?.pairingCode,
-      hasBase64: !!(connectData?.base64 || connectData?.qrcode?.base64),
-    }));
-
-    const pairingCode = connectData?.pairingCode || null;
-    if (pairingCode) {
-      return { pairingCode, qrBase64: null };
-    }
-
-    // Increase delay for next attempt
-    delayMs = Math.min(delayMs + 1000, 6000);
-  }
-
-  // Final attempt - get whatever is available (QR fallback)
-  const fallbackRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
-    method: "GET",
-    headers: evoHeaders,
-  });
-  const fallbackData = await fallbackRes.json();
-  const qrBase64 = fallbackData?.base64 || fallbackData?.qrcode?.base64 || null;
-  return { pairingCode: null, qrBase64 };
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -78,95 +36,19 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    let isMobile = false;
     let isDisconnect = false;
     try {
       const body = await req.json();
-      isMobile = body?.mobile === true;
       isDisconnect = body?.disconnect === true;
-    } catch { /* no body or invalid json */ }
-
-    const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
-    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-
-    if (!evolutionUrl || !evolutionKey) {
-      return new Response(JSON.stringify({ error: "Evolution API não configurada" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    } catch { /* no body */ }
 
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // --- SUBSCRIPTION VERIFICATION (before any Evolution API calls) ---
-    // Disconnect is always allowed (user should be able to disconnect even without subscription)
-    if (!isDisconnect) {
-      const { data: subscription } = await serviceClient
-        .from("subscriptions")
-        .select("status, trial_end_at, current_period_end, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      let blockReason: string | null = null;
-
-      if (!subscription) {
-        blockReason = "Você precisa de uma assinatura ativa para conectar o WhatsApp. Assine um plano para começar.";
-      } else if (subscription.status === "cancelled") {
-        blockReason = "Sua assinatura foi cancelada. Reative seu plano para reconectar o WhatsApp.";
-      } else if (subscription.status === "active") {
-        const trialEnd = subscription.trial_end_at ? new Date(subscription.trial_end_at) : null;
-        const hasPaidPeriod = subscription.current_period_end && trialEnd && new Date(subscription.current_period_end) > trialEnd;
-
-        if (!hasPaidPeriod) {
-          // Trial user — check quotas
-          const aptsUsed = subscription.trial_appointments_used ?? 0;
-          const msgsUsed = subscription.trial_messages_used ?? 0;
-           const aptsLimit = subscription.trial_appointments_limit ?? 30;
-           const msgsLimit = subscription.trial_messages_limit ?? 150;
-
-          if (aptsUsed >= aptsLimit || msgsUsed >= msgsLimit) {
-            blockReason = "Suas cotas de teste foram esgotadas. Atualize para um plano pago para continuar usando o WhatsApp.";
-            console.log(`[RECONNECT-BLOCK] Trial quota exhausted for ${user.id}: apts=${aptsUsed}/${aptsLimit}, msgs=${msgsUsed}/${msgsLimit}`);
-          }
-        }
-      } else if (subscription.status !== "active") {
-        blockReason = "Sua assinatura não está ativa. Verifique seu plano para reconectar o WhatsApp.";
-      }
-
-      if (blockReason) {
-        console.log(`[RECONNECT-BLOCK] Blocked instance creation for ${user.id}: ${blockReason}`);
-        return new Response(JSON.stringify({ error: blockReason, blocked: true }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-
-    const instanceName = `user_${user.id.replace(/-/g, "").substring(0, 16)}`;
-    const baseUrl = evolutionUrl.replace(/\/+$/, "");
-    const evoHeaders: Record<string, string> = {
-      apikey: evolutionKey.trim(),
-      "Content-Type": "application/json",
-    };
-
-    // Handle disconnect
+    // Handle disconnect — clear Meta fields
     if (isDisconnect) {
-      try {
-        await fetch(`${baseUrl}/instance/logout/${instanceName}`, {
-          method: "DELETE",
-          headers: evoHeaders,
-        });
-      } catch { /* instance might not exist */ }
-      try {
-        await fetch(`${baseUrl}/instance/delete/${instanceName}`, {
-          method: "DELETE",
-          headers: evoHeaders,
-        });
-      } catch { /* ignore */ }
-
       await serviceClient
         .from("pet_shop_configs")
         .update({
@@ -183,99 +65,49 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get user phone for pairing code
-    const { data: config } = await serviceClient
-      .from("pet_shop_configs")
-      .select("phone")
+    // --- SUBSCRIPTION VERIFICATION ---
+    const { data: subscription } = await serviceClient
+      .from("subscriptions")
+      .select("status, trial_end_at, current_period_end, trial_appointments_used, trial_messages_used, trial_appointments_limit, trial_messages_limit")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    let userPhone = config?.phone?.replace(/\D/g, "") || null;
-    if (userPhone && !userPhone.startsWith("55")) {
-      userPhone = "55" + userPhone;
-    }
+    let blockReason: string | null = null;
 
-    // Delete existing instance for a clean state
-    try {
-      await fetch(`${baseUrl}/instance/delete/${instanceName}`, {
-        method: "DELETE",
-        headers: evoHeaders,
-      });
-    } catch { /* instance might not exist */ }
+    if (!subscription) {
+      blockReason = "Você precisa de uma assinatura ativa para conectar o WhatsApp. Assine um plano para começar.";
+    } else if (subscription.status === "cancelled") {
+      blockReason = "Sua assinatura foi cancelada. Reative seu plano para reconectar o WhatsApp.";
+    } else if (subscription.status === "active") {
+      const trialEnd = subscription.trial_end_at ? new Date(subscription.trial_end_at) : null;
+      const hasPaidPeriod = subscription.current_period_end && trialEnd && new Date(subscription.current_period_end) > trialEnd;
 
-    await new Promise((r) => setTimeout(r, 1500));
+      if (!hasPaidPeriod) {
+        const aptsUsed = subscription.trial_appointments_used ?? 0;
+        const msgsUsed = subscription.trial_messages_used ?? 0;
+        const aptsLimit = subscription.trial_appointments_limit ?? 30;
+        const msgsLimit = subscription.trial_messages_limit ?? 150;
 
-    const webhookUrl = `${supabaseUrl}/functions/v1/evolution-webhook`;
-
-    // For mobile: create WITHOUT qrcode to allow pairing code generation
-    // For desktop: create WITH qrcode for immediate QR
-    const createBody: Record<string, unknown> = {
-      instanceName,
-      integration: "WHATSAPP-BAILEYS",
-      qrcode: !isMobile, // false for mobile, true for desktop
-      webhook: {
-        url: webhookUrl,
-        byEvents: false,
-        base64: false,
-        events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT", "QRCODE_UPDATED"],
-      },
-    };
-
-    console.log("Creating instance with body:", JSON.stringify(createBody));
-
-    const createRes = await fetch(`${baseUrl}/instance/create`, {
-      method: "POST",
-      headers: evoHeaders,
-      body: JSON.stringify(createBody),
-    });
-
-    const createData = await createRes.json();
-    console.log("Create instance response status:", createRes.status);
-
-    // Update status to pending
-    await serviceClient
-      .from("pet_shop_configs")
-      .update({ whatsapp_status: "pending" })
-      .eq("user_id", user.id);
-
-    // For mobile, request pairing code with retry logic
-    if (isMobile && userPhone) {
-      const { pairingCode, qrBase64 } = await requestPairingCode(
-        baseUrl, instanceName, evoHeaders, userPhone, 5, 3000
-      );
-
-      if (pairingCode) {
-        return new Response(
-          JSON.stringify({ success: true, pairingCode, mode: "pairing" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        if (aptsUsed >= aptsLimit || msgsUsed >= msgsLimit) {
+          blockReason = "Suas cotas de teste foram esgotadas. Atualize para um plano pago para continuar usando o WhatsApp.";
+        }
       }
-
-      // Fallback to QR
-      return new Response(
-        JSON.stringify({
-          success: true,
-          qrCode: qrBase64,
-          mode: "qr",
-          note: "Pairing code not available after retries, showing QR",
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    } else if (subscription.status !== "active") {
+      blockReason = "Sua assinatura não está ativa. Verifique seu plano para reconectar o WhatsApp.";
     }
 
-    // For desktop, get QR code from connect
-    await new Promise((r) => setTimeout(r, 2000));
-    const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
-      method: "GET",
-      headers: evoHeaders,
-    });
-    const connectData = await connectRes.json();
-    console.log("Connect response:", JSON.stringify({ hasBase64: !!connectData?.base64 }));
+    if (blockReason) {
+      return new Response(JSON.stringify({ error: blockReason, blocked: true }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const qrBase64 = connectData?.base64 || connectData?.qrcode?.base64 || null;
-
+    // For Meta Cloud API, the connection is done via Embedded Signup on the frontend.
+    // This endpoint now just validates the subscription and returns success,
+    // signaling the frontend to launch the Meta Embedded Signup flow.
     return new Response(
-      JSON.stringify({ success: true, qrCode: qrBase64, mode: "qr" }),
+      JSON.stringify({ success: true, provider: "meta", action: "launch_embedded_signup" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

@@ -57,7 +57,7 @@ const AdminWhatsApp = () => {
   const [clients, setClients] = useState<WhatsAppClient[]>([]);
   const [messageStats, setMessageStats] = useState<MessageStats[]>([]);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "connected" | "disconnected" | "meta" | "evolution">("all");
+  const [filter, setFilter] = useState<"all" | "connected" | "disconnected" | "meta">("all");
   const [dailyMessages, setDailyMessages] = useState<{ day: string; count: number }[]>([]);
 
   const fetchData = useCallback(async () => {
@@ -132,12 +132,10 @@ const AdminWhatsApp = () => {
   const connectedCount = clients.filter((c) => c.whatsapp_status === "connected").length;
   const disconnectedCount = clients.filter((c) => c.whatsapp_status !== "connected").length;
   const metaCount = clients.filter((c) => !!c.meta_waba_id).length;
-  const evolutionCount = clients.filter((c) => !c.meta_waba_id && c.evolution_instance_name).length;
   const totalMessages7d = messageStats.reduce((sum, s) => sum + s.count, 0);
 
   const getIntegrationType = (c: WhatsAppClient) => {
     if (c.meta_waba_id) return "meta";
-    if (c.evolution_instance_name) return "evolution";
     return "none";
   };
 
@@ -159,8 +157,6 @@ const AdminWhatsApp = () => {
         return c.whatsapp_status !== "connected";
       case "meta":
         return !!c.meta_waba_id;
-      case "evolution":
-        return !c.meta_waba_id && !!c.evolution_instance_name;
       default:
         return true;
     }
@@ -168,8 +164,7 @@ const AdminWhatsApp = () => {
 
   const pieData = [
     { name: "Meta Cloud", value: metaCount, color: "hsl(210,90%,55%)" },
-    { name: "Evolution API", value: evolutionCount, color: "hsl(150,60%,45%)" },
-    { name: "Sem integração", value: clients.length - metaCount - evolutionCount, color: "hsl(220,15%,30%)" },
+    { name: "Sem integração", value: clients.length - metaCount, color: "hsl(220,15%,30%)" },
   ].filter((d) => d.value > 0);
 
   const statusColor: Record<string, string> = {
@@ -205,7 +200,7 @@ const AdminWhatsApp = () => {
         <SummaryCard icon={Wifi} label="Conectados" value={connectedCount} color="emerald" />
         <SummaryCard icon={WifiOff} label="Desconectados" value={disconnectedCount} color="red" />
         <SummaryCard icon={Zap} label="Meta Cloud" value={metaCount} color="blue" />
-        <SummaryCard icon={ExternalLink} label="Evolution API" value={evolutionCount} color="teal" />
+        <SummaryCard icon={MessageSquare} label="Msgs 7d" value={totalMessages7d} color="cyan" />
         <SummaryCard icon={MessageSquare} label="Msgs 7d" value={totalMessages7d} color="cyan" />
         <SummaryCard icon={Shield} label="Tokens Meta" value={clients.filter(hasValidToken).length} color="violet" />
       </div>
@@ -323,7 +318,6 @@ const AdminWhatsApp = () => {
             { key: "connected", label: "Conectados" },
             { key: "disconnected", label: "Desconectados" },
             { key: "meta", label: "Meta Cloud" },
-            { key: "evolution", label: "Evolution" },
           ] as const).map((f) => (
             <button
               key={f.key}
@@ -377,11 +371,9 @@ const AdminWhatsApp = () => {
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                         intType === "meta"
                           ? "bg-blue-500/15 text-blue-400"
-                          : intType === "evolution"
-                          ? "bg-emerald-500/15 text-emerald-400"
                           : "bg-[hsl(220,15%,15%)] text-[hsl(220,10%,40%)]"
                       }`}>
-                        {intType === "meta" ? "Meta Cloud" : intType === "evolution" ? "Evolution" : "Nenhuma"}
+                        {intType === "meta" ? "Meta Cloud" : "Nenhuma"}
                       </span>
                     </td>
                     <td className="py-3 pr-4 text-[hsl(220,10%,50%)] font-mono text-xs">

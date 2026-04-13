@@ -1738,29 +1738,9 @@ function calculateHumanDelay(text: string): number {
   return 4000 + Math.random() * 2000;
 }
 
-async function sendComposingPresence(instanceName: string, phone: string): Promise<void> {
-  // Skip composing presence for Meta Cloud API instances
-  if (instanceName.startsWith("meta_")) return;
-
-  const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
-  const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-  if (!evolutionUrl || !evolutionKey) return;
-
-  const baseUrl = evolutionUrl.replace(/\/+$/, "");
-  const cleanPhone = phone.replace("@s.whatsapp.net", "");
-  try {
-    await fetch(`${baseUrl}/chat/presence/${instanceName}`, {
-      method: "POST",
-      headers: {
-        apikey: evolutionKey.trim(),
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ number: cleanPhone, presence: "composing" }),
-    });
-    console.log("[TypingDelay] Composing presence sent");
-  } catch (err) {
-    console.warn("[TypingDelay] Failed to send composing presence:", err);
-  }
+async function sendComposingPresence(_instanceName: string, _phone: string): Promise<void> {
+  // Meta Cloud API does not support composing presence — no-op
+  return;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -1778,54 +1758,43 @@ async function sendWhatsAppMessage(instanceName: string, phone: string, text: st
 
   const cleanPhone = phone.replace("@s.whatsapp.net", "");
 
-  // --- Meta Cloud API ---
-  if (instanceName.startsWith("meta_") && _currentMetaConfig) {
-    const { accessToken, phoneNumberId } = _currentMetaConfig;
-    console.log(`[META-SEND] Sending to ${cleanPhone} via Meta Cloud API (phone_number_id: ${phoneNumberId})`);
-
-    const metaRes = await fetch(
-      `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          recipient_type: "individual",
-          to: cleanPhone,
-          type: "text",
-          text: { body: text },
-        }),
-      }
-    );
-
-    const metaBody = await metaRes.text();
-    console.log(`[META-SEND] Response: ${metaRes.status} ${metaBody.substring(0, 300)}`);
-
-    if (!metaRes.ok) {
-      console.error(`[META-SEND] Failed to send message: ${metaRes.status} ${metaBody}`);
-    }
+  // --- Meta Cloud API (only provider) ---
+  if (!_currentMetaConfig) {
+    console.error(`[SEND] No Meta config available for instance ${instanceName}`);
     return;
   }
 
-  // --- Evolution API (default) ---
-  const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
-  const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-  if (!evolutionUrl || !evolutionKey) return;
+  const { accessToken, phoneNumberId } = _currentMetaConfig;
+  console.log(`[META-SEND] Sending to ${cleanPhone} via Meta Cloud API (phone_number_id: ${phoneNumberId})`);
 
-  const baseUrl = evolutionUrl.replace(/\/+$/, "");
-  const res = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
-    method: "POST",
-    headers: {
-      apikey: evolutionKey.trim(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ number: cleanPhone, text }),
-  });
-  console.log("Send message response:", res.status);
+  const metaRes = await fetch(
+    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "text",
+        text: { body: text },
+      }),
+    }
+  );
+
+  const metaBody = await metaRes.text();
+  console.log(`[META-SEND] Response: ${metaRes.status} ${metaBody.substring(0, 300)}`);
+
+  if (!metaRes.ok) {
+    console.error(`[META-SEND] Failed to send message: ${metaRes.status} ${metaBody}`);
+  }
 }
+
+
+
 
 // --- Conversation Memory ---
 
@@ -3255,30 +3224,18 @@ Deno.serve(async (req) => {
     const serviceClient = getServiceClient();
     const cleanPhone = cleanPhoneNumber(senderPhone);
 
-    // Load pet shop config — support both Evolution (by instance name) and Meta Cloud API (by WABA ID)
+    // Load pet shop config — Meta Cloud API only (instance_name format: "meta_{wabaId}")
     let config: any = null;
     let configErr: any = null;
 
-    if (instanceName.startsWith("meta_")) {
-      // Meta Cloud API: instance_name format is "meta_{wabaId}"
-      const wabaId = instanceName.replace("meta_", "");
-      const result = await serviceClient
-        .from("pet_shop_configs")
-        .select("*")
-        .eq("meta_waba_id", wabaId)
-        .maybeSingle();
-      config = result.data;
-      configErr = result.error;
-    } else {
-      // Evolution API: lookup by evolution_instance_name
-      const result = await serviceClient
-        .from("pet_shop_configs")
-        .select("*")
-        .eq("evolution_instance_name", instanceName)
-        .maybeSingle();
-      config = result.data;
-      configErr = result.error;
-    }
+    const wabaId = instanceName.replace("meta_", "");
+    const result = await serviceClient
+      .from("pet_shop_configs")
+      .select("*")
+      .eq("meta_waba_id", wabaId)
+      .maybeSingle();
+    config = result.data;
+    configErr = result.error;
 
     if (configErr || !config) {
       console.error("Config not found for instance:", instanceName);
@@ -3290,8 +3247,8 @@ Deno.serve(async (req) => {
 
     const shopConfig = config as PetShopConfig;
 
-    // Set Meta config for sendWhatsAppMessage if this is a Meta instance
-    if (instanceName.startsWith("meta_") && shopConfig.meta_access_token && shopConfig.meta_phone_number_id) {
+    // Set Meta config for sendWhatsAppMessage
+    if (shopConfig.meta_access_token && shopConfig.meta_phone_number_id) {
       _currentMetaConfig = {
         accessToken: shopConfig.meta_access_token,
         phoneNumberId: shopConfig.meta_phone_number_id,

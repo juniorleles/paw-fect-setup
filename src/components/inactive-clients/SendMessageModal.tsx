@@ -50,14 +50,14 @@ const SendMessageModal = ({ open, onOpenChange, clients, onSent }: SendMessageMo
     if (!user || !canSend) return;
     setSending(true);
     try {
-      // Get instance name
+      // Get Meta WABA config
       const { data: config } = await supabase
         .from("pet_shop_configs")
-        .select("evolution_instance_name")
+        .select("meta_waba_id")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!config?.evolution_instance_name) {
+      if (!config?.meta_waba_id) {
         toast.error("WhatsApp não configurado. Conecte seu WhatsApp primeiro.");
         return;
       }
@@ -73,7 +73,7 @@ const SendMessageModal = ({ open, onOpenChange, clients, onSent }: SendMessageMo
         body: {
           recipients,
           messageTemplate,
-          instanceName: config.evolution_instance_name,
+          instanceName: `meta_${config.meta_waba_id}`,
         },
       });
 

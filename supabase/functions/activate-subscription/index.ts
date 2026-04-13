@@ -40,12 +40,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const instanceName = `user_${user.id.replace(/-/g, "").substring(0, 16)}`;
-
     // Fetch config and validate onboarding is complete
     const { data: existingConfig } = await serviceClient
       .from("pet_shop_configs")
-      .select("whatsapp_status, activated, shop_name, phone, services")
+      .select("whatsapp_status, activated, shop_name, phone, services, meta_waba_id")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -71,81 +69,18 @@ Deno.serve(async (req) => {
 
     if (existingConfig?.whatsapp_status === "connected") {
       return new Response(
-        JSON.stringify({ success: true, instance_name: instanceName, already_active: true }),
+        JSON.stringify({ success: true, already_active: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
-    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-
-    if (!evolutionUrl || !evolutionKey) {
-      return new Response(JSON.stringify({ error: "Evolution API não configurada" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const baseUrl = evolutionUrl.replace(/\/+$/, "");
-    const evoHeaders: Record<string, string> = {
-      apikey: evolutionKey.trim(),
-      "Content-Type": "application/json",
-    };
-
-    // Single approach: try connect, create only if not found
-    const connectRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
-      method: "GET",
-      headers: evoHeaders,
-    });
-
-    if (!connectRes.ok && connectRes.status === 404) {
-      const { data: config } = await serviceClient
-        .from("pet_shop_configs")
-        .select("phone")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const userPhone = config?.phone?.replace(/\D/g, "") || null;
-
-      await fetch(`${baseUrl}/instance/create`, {
-        method: "POST",
-        headers: evoHeaders,
-        body: JSON.stringify({
-          instanceName,
-          integration: "WHATSAPP-BAILEYS",
-          qrcode: true,
-          ...(userPhone ? { number: userPhone } : {}),
-        }),
-      });
-    }
-
-    // Register webhook
-    const webhookUrl = `${supabaseUrl}/functions/v1/evolution-webhook`;
-    try {
-      await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
-        method: "POST",
-        headers: evoHeaders,
-        body: JSON.stringify({
-          webhook: {
-            url: webhookUrl,
-            webhook_by_events: false,
-            webhook_base64: false,
-            enabled: true,
-            events: ["CONNECTION_UPDATE", "QRCODE_UPDATED", "MESSAGES_UPSERT"],
-          },
-        }),
-      });
-    } catch (whErr) {
-      console.error("Webhook registration error:", whErr);
-    }
-
-    // Update instance name + status
+    // Update status to pending — user will connect via Meta Embedded Signup
     await serviceClient
       .from("pet_shop_configs")
-      .update({ evolution_instance_name: instanceName, whatsapp_status: "pending" })
+      .update({ whatsapp_status: "pending", activated: true })
       .eq("user_id", user.id);
 
-    // Ensure subscription exists and is active (use serviceClient to bypass RLS)
+    // Ensure subscription exists and is active
     const { data: existingSub } = await serviceClient
       .from("subscriptions")
       .select("id, status")
@@ -174,11 +109,11 @@ Deno.serve(async (req) => {
     await supabase.from("subscription_logs").insert({
       user_id: user.id,
       action: "activate",
-      details: { instance_name: instanceName, created_at: new Date().toISOString() },
+      details: { provider: "meta", created_at: new Date().toISOString() },
     });
 
     return new Response(
-      JSON.stringify({ success: true, instance_name: instanceName }),
+      JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

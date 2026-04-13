@@ -145,16 +145,16 @@ const AdminClients = () => {
                 <td className="px-4 py-3 text-white font-medium">{c.shop_name}</td>
                 <td className="px-4 py-3 text-[hsl(220,10%,55%)] font-mono text-xs">
                   <div className="flex items-center gap-1.5">
-                    <span>{c.evolution_instance_name || "—"}</span>
-                    {c.evolution_instance_name && (
+                    <span>{c.meta_waba_id || "—"}</span>
+                    {c.meta_waba_id && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigator.clipboard.writeText(c.evolution_instance_name);
-                          toast.success("Instância copiada!");
+                          navigator.clipboard.writeText(c.meta_waba_id || "");
+                          toast.success("WABA ID copiado!");
                         }}
                         className="p-1 rounded-md text-[hsl(220,10%,40%)] hover:text-blue-400 hover:bg-[hsl(220,20%,15%)] transition-colors"
-                        title="Copiar instância"
+                        title="Copiar WABA ID"
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </button>
@@ -172,16 +172,6 @@ const AdminClients = () => {
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.whatsapp_status === "connected" ? "bg-emerald-500/15 text-emerald-400" : c.whatsapp_status === "pending" ? "bg-orange-500/15 text-orange-400" : "bg-red-500/15 text-red-400"}`}>
                       {c.whatsapp_status}
                     </span>
-                    {c.evolution_instance_name && (
-                      <button
-                        onClick={(e) => checkInstanceStatus(e, c.evolution_instance_name)}
-                        disabled={checkingInstance === c.evolution_instance_name}
-                        className="p-1 rounded-md text-[hsl(220,10%,45%)] hover:text-blue-400 hover:bg-[hsl(220,20%,15%)] disabled:opacity-50 transition-colors"
-                        title="Consultar status real"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${checkingInstance === c.evolution_instance_name ? "animate-spin" : ""}`} />
-                      </button>
-                    )}
                   </div>
                 </td>
               </tr>
