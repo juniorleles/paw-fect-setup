@@ -132,12 +132,11 @@ const AdminWhatsApp = () => {
   const connectedCount = clients.filter((c) => c.whatsapp_status === "connected").length;
   const disconnectedCount = clients.filter((c) => c.whatsapp_status !== "connected").length;
   const metaCount = clients.filter((c) => !!c.meta_waba_id).length;
-  const evolutionCount = clients.filter((c) => !c.meta_waba_id && c.evolution_instance_name).length;
+  const totalMessages7d = messageStats.reduce((sum, s) => sum + s.count, 0);
   const totalMessages7d = messageStats.reduce((sum, s) => sum + s.count, 0);
 
   const getIntegrationType = (c: WhatsAppClient) => {
     if (c.meta_waba_id) return "meta";
-    if (c.evolution_instance_name) return "evolution";
     return "none";
   };
 
@@ -159,8 +158,6 @@ const AdminWhatsApp = () => {
         return c.whatsapp_status !== "connected";
       case "meta":
         return !!c.meta_waba_id;
-      case "evolution":
-        return !c.meta_waba_id && !!c.evolution_instance_name;
       default:
         return true;
     }
@@ -168,8 +165,7 @@ const AdminWhatsApp = () => {
 
   const pieData = [
     { name: "Meta Cloud", value: metaCount, color: "hsl(210,90%,55%)" },
-    { name: "Evolution API", value: evolutionCount, color: "hsl(150,60%,45%)" },
-    { name: "Sem integração", value: clients.length - metaCount - evolutionCount, color: "hsl(220,15%,30%)" },
+    { name: "Sem integração", value: clients.length - metaCount, color: "hsl(220,15%,30%)" },
   ].filter((d) => d.value > 0);
 
   const statusColor: Record<string, string> = {
