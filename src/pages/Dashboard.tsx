@@ -45,7 +45,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { ownerId } = useOwnerId();
   const navigate = useNavigate();
-  const { status: whatsappStatus, provider: whatsappProvider } = useWhatsAppStatus();
+  const { status: whatsappStatus } = useWhatsAppStatus();
   const {
     status: subStatus, trialEndAt, plan: currentPlan,
     trialAppointmentsUsed, trialAppointmentsLimit,
@@ -427,9 +427,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className={`text-sm font-bold ${whatsappStatus === "connected" ? "text-success" : "text-destructive"}`}>
-                    {whatsappStatus === "connected"
-                      ? whatsappProvider === "meta" ? "Conectado (Meta)" : "Conectado"
-                      : "Desconectado"}
+                    {whatsappStatus === "connected" ? "Conectado (Meta)" : "Desconectado"}
                   </p>
                   <p className="text-xs text-muted-foreground">WhatsApp</p>
                   {whatsappStatus !== "connected" && (
