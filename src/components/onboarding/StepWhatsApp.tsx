@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { OnboardingData } from "@/types/onboarding";
-import { Phone, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
+import { Phone, CheckCircle2, Loader2, MessageCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
@@ -19,6 +19,34 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
+// DDDs válidos no Brasil
+const VALID_DDDS = [
+  "11","12","13","14","15","16","17","18","19",
+  "21","22","24","27","28",
+  "31","32","33","34","35","37","38",
+  "41","42","43","44","45","46",
+  "47","48","49",
+  "51","53","54","55",
+  "61","62","63","64","65","66","67","68","69",
+  "71","73","74","75","77","79",
+  "81","82","83","84","85","86","87","88","89",
+  "91","92","93","94","95","96","97","98","99",
+];
+
+const validateBrazilianPhone = (digits: string): string | null => {
+  if (digits.length !== 11) return "Informe um número válido com DDD (11 dígitos)";
+  const ddd = digits.slice(0, 2);
+  if (!VALID_DDDS.includes(ddd)) return `DDD "${ddd}" não é válido. Verifique o número.`;
+  if (digits[2] !== "9") return "Número de celular deve começar com 9 após o DDD.";
+  if (/^(\d)\1{10}$/.test(digits)) return "Número inválido. Não use dígitos repetidos.";
+  // Bloquear números de teste conhecidos (555, 000, etc.)
+  const localPart = digits.slice(2);
+  if (localPart.startsWith("9555") || localPart.startsWith("9000")) {
+    return "Este parece ser um número de teste. Use um número real.";
+  }
+  return null;
+};
+
 const StepWhatsApp = ({ data, onChange }: Props) => {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
@@ -31,10 +59,14 @@ const StepWhatsApp = ({ data, onChange }: Props) => {
 
   const handleVerify = async () => {
     const digits = data.phone.replace(/\D/g, "");
-    if (digits.length < 11) {
-      setError("Informe um número válido com DDD");
+    
+    // Validação rigorosa de formato brasileiro
+    const validationError = validateBrazilianPhone(digits);
+    if (validationError) {
+      setError(validationError);
       return;
     }
+
     setVerifying(true);
     setError("");
 
@@ -61,7 +93,6 @@ const StepWhatsApp = ({ data, onChange }: Props) => {
       setVerifying(false);
     }
   };
-
   return (
     <Card className="border-none shadow-xl bg-card">
       <CardHeader className="text-center pb-2">
