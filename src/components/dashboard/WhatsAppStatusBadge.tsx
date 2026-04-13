@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useWhatsAppStatus, type WhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { Button } from "@/components/ui/button";
-import { Smartphone, Loader2, Shield } from "lucide-react";
+import { Smartphone, Loader2, Shield, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,7 +34,24 @@ const WhatsAppStatusBadge = () => {
   const { user } = useAuth();
 
   const [metaConnecting, setMetaConnecting] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState<boolean | null>(null);
 
+  // Check if phone is verified before allowing Meta connect
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("pet_shop_configs")
+      .select("phone_verified, phone")
+      .eq("user_id", user.id)
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          const digits = (data.phone || "").replace(/\D/g, "");
+          setPhoneVerified(data.phone_verified && digits.length === 11);
+        }
+      });
+  }, [user?.id]);
   // --- Meta Embedded Signup ---
   const handleMetaConnect = useCallback(() => {
     if (!user?.id) return;
