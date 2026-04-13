@@ -1795,10 +1795,6 @@ async function sendWhatsAppMessage(instanceName: string, phone: string, text: st
 
 
 
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
