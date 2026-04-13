@@ -1795,43 +1795,6 @@ async function sendWhatsAppMessage(instanceName: string, phone: string, text: st
 
 
 
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          recipient_type: "individual",
-          to: cleanPhone,
-          type: "text",
-          text: { body: text },
-        }),
-      }
-    );
-
-    const metaBody = await metaRes.text();
-    console.log(`[META-SEND] Response: ${metaRes.status} ${metaBody.substring(0, 300)}`);
-
-    if (!metaRes.ok) {
-      console.error(`[META-SEND] Failed to send message: ${metaRes.status} ${metaBody}`);
-    }
-    return;
-  }
-
-  // --- Evolution API (default) ---
-  const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
-  const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-  if (!evolutionUrl || !evolutionKey) return;
-
-  const baseUrl = evolutionUrl.replace(/\/+$/, "");
-  const res = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
-    method: "POST",
-    headers: {
-      apikey: evolutionKey.trim(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ number: cleanPhone, text }),
-  });
-  console.log("Send message response:", res.status);
-}
 
 // --- Conversation Memory ---
 
