@@ -1758,8 +1758,40 @@ async function sendWhatsAppMessage(instanceName: string, phone: string, text: st
 
   const cleanPhone = phone.replace("@s.whatsapp.net", "");
 
-  // --- Meta Cloud API ---
-  if (instanceName.startsWith("meta_") && _currentMetaConfig) {
+  // --- Meta Cloud API (only provider) ---
+  if (!_currentMetaConfig) {
+    console.error(`[SEND] No Meta config available for instance ${instanceName}`);
+    return;
+  }
+
+  const { accessToken, phoneNumberId } = _currentMetaConfig;
+  console.log(`[META-SEND] Sending to ${cleanPhone} via Meta Cloud API (phone_number_id: ${phoneNumberId})`);
+
+  const metaRes = await fetch(
+    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "text",
+        text: { body: text },
+      }),
+    }
+  );
+
+  const metaBody = await metaRes.text();
+  console.log(`[META-SEND] Response: ${metaRes.status} ${metaBody.substring(0, 300)}`);
+
+  if (!metaRes.ok) {
+    console.error(`[META-SEND] Failed to send message: ${metaRes.status} ${metaBody}`);
+  }
+}
     const { accessToken, phoneNumberId } = _currentMetaConfig;
     console.log(`[META-SEND] Sending to ${cleanPhone} via Meta Cloud API (phone_number_id: ${phoneNumberId})`);
 
