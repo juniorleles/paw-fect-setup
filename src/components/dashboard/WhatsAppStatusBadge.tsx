@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useWhatsAppStatus, type WhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { Button } from "@/components/ui/button";
-import { Smartphone, Loader2, Shield } from "lucide-react";
+import { Smartphone, Loader2, Shield, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,7 +34,24 @@ const WhatsAppStatusBadge = () => {
   const { user } = useAuth();
 
   const [metaConnecting, setMetaConnecting] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState<boolean | null>(null);
 
+  // Check if phone is verified before allowing Meta connect
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("pet_shop_configs")
+      .select("phone_verified, phone")
+      .eq("user_id", user.id)
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          const digits = (data.phone || "").replace(/\D/g, "");
+          setPhoneVerified(data.phone_verified && digits.length === 11);
+        }
+      });
+  }, [user?.id]);
   // --- Meta Embedded Signup ---
   const handleMetaConnect = useCallback(() => {
     if (!user?.id) return;
@@ -176,20 +193,27 @@ const WhatsAppStatusBadge = () => {
         <span className={`font-medium ${config.textClass}`}>{config.label}</span>
       </div>
       {(status === "disconnected" || status === "pending") && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleMetaConnect}
-          disabled={metaConnecting}
-          className="gap-1.5 text-xs"
-        >
-          {metaConnecting ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Shield className="w-3.5 h-3.5" />
-          )}
-          Conectar com Meta
-        </Button>
+        phoneVerified === false ? (
+          <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-md">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Verifique seu telefone nas configurações antes de conectar</span>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMetaConnect}
+            disabled={metaConnecting || phoneVerified === null}
+            className="gap-1.5 text-xs"
+          >
+            {metaConnecting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Shield className="w-3.5 h-3.5" />
+            )}
+            Conectar com Meta
+          </Button>
+        )
       )}
     </div>
   );
