@@ -193,20 +193,27 @@ const WhatsAppStatusBadge = () => {
         <span className={`font-medium ${config.textClass}`}>{config.label}</span>
       </div>
       {(status === "disconnected" || status === "pending") && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleMetaConnect}
-          disabled={metaConnecting}
-          className="gap-1.5 text-xs"
-        >
-          {metaConnecting ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Shield className="w-3.5 h-3.5" />
-          )}
-          Conectar com Meta
-        </Button>
+        phoneVerified === false ? (
+          <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-md">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Verifique seu telefone nas configurações antes de conectar</span>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMetaConnect}
+            disabled={metaConnecting || phoneVerified === null}
+            className="gap-1.5 text-xs"
+          >
+            {metaConnecting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Shield className="w-3.5 h-3.5" />
+            )}
+            Conectar com Meta
+          </Button>
+        )
       )}
     </div>
   );
