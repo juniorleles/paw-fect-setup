@@ -7,8 +7,6 @@ project_id = "kxcqizfxfqzmnhxeaepc"
     verify_jwt = false
   [functions.cancel-subscription]
     verify_jwt = false
-  [functions.evolution-webhook]
-    verify_jwt = false
   [functions.reactivate-subscription]
     verify_jwt = false
   [functions.whatsapp-ai-handler]
