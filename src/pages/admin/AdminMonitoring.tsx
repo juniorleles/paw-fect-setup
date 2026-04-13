@@ -56,7 +56,7 @@ interface Alert {
 
 interface WhatsAppInstance {
   shop_name: string;
-  evolution_instance_name: string;
+  meta_waba_id: string | null;
   whatsapp_status: string;
   user_id: string;
 }
