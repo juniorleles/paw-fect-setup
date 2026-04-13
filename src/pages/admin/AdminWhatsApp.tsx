@@ -133,7 +133,6 @@ const AdminWhatsApp = () => {
   const disconnectedCount = clients.filter((c) => c.whatsapp_status !== "connected").length;
   const metaCount = clients.filter((c) => !!c.meta_waba_id).length;
   const totalMessages7d = messageStats.reduce((sum, s) => sum + s.count, 0);
-  const totalMessages7d = messageStats.reduce((sum, s) => sum + s.count, 0);
 
   const getIntegrationType = (c: WhatsAppClient) => {
     if (c.meta_waba_id) return "meta";
