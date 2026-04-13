@@ -200,7 +200,7 @@ const AdminWhatsApp = () => {
         <SummaryCard icon={Wifi} label="Conectados" value={connectedCount} color="emerald" />
         <SummaryCard icon={WifiOff} label="Desconectados" value={disconnectedCount} color="red" />
         <SummaryCard icon={Zap} label="Meta Cloud" value={metaCount} color="blue" />
-        <SummaryCard icon={ExternalLink} label="Evolution API" value={evolutionCount} color="teal" />
+        <SummaryCard icon={MessageSquare} label="Msgs 7d" value={totalMessages7d} color="cyan" />
         <SummaryCard icon={MessageSquare} label="Msgs 7d" value={totalMessages7d} color="cyan" />
         <SummaryCard icon={Shield} label="Tokens Meta" value={clients.filter(hasValidToken).length} color="violet" />
       </div>
@@ -318,7 +318,6 @@ const AdminWhatsApp = () => {
             { key: "connected", label: "Conectados" },
             { key: "disconnected", label: "Desconectados" },
             { key: "meta", label: "Meta Cloud" },
-            { key: "evolution", label: "Evolution" },
           ] as const).map((f) => (
             <button
               key={f.key}
@@ -372,11 +371,9 @@ const AdminWhatsApp = () => {
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                         intType === "meta"
                           ? "bg-blue-500/15 text-blue-400"
-                          : intType === "evolution"
-                          ? "bg-emerald-500/15 text-emerald-400"
                           : "bg-[hsl(220,15%,15%)] text-[hsl(220,10%,40%)]"
                       }`}>
-                        {intType === "meta" ? "Meta Cloud" : intType === "evolution" ? "Evolution" : "Nenhuma"}
+                        {intType === "meta" ? "Meta Cloud" : "Nenhuma"}
                       </span>
                     </td>
                     <td className="py-3 pr-4 text-[hsl(220,10%,50%)] font-mono text-xs">
