@@ -1794,8 +1794,7 @@ async function sendWhatsAppMessage(instanceName: string, phone: string, text: st
 }
 
 
-    const metaRes = await fetch(
-      `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+
       {
         method: "POST",
         headers: {
