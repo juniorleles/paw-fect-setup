@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
 const META_APP_ID = "932970802701874";
-const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "1971865603763858";
+const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "933740906250215";
 
 const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; textClass: string }> = {
   connected: {
