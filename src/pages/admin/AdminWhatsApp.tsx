@@ -57,7 +57,7 @@ const AdminWhatsApp = () => {
   const [clients, setClients] = useState<WhatsAppClient[]>([]);
   const [messageStats, setMessageStats] = useState<MessageStats[]>([]);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "connected" | "disconnected" | "meta" | "evolution">("all");
+  const [filter, setFilter] = useState<"all" | "connected" | "disconnected" | "meta">("all");
   const [dailyMessages, setDailyMessages] = useState<{ day: string; count: number }[]>([]);
 
   const fetchData = useCallback(async () => {
