@@ -41,63 +41,116 @@ const WhatsAppStatusBadge = () => {
     setMetaConnecting(true);
 
     const launchLogin = () => {
-      (window as any).FB.login(
-        (response: any) => {
-          if (response.authResponse?.accessToken) {
-            supabase.functions
-              .invoke("whatsapp-embedded-signup", {
-                method: "POST",
-                body: { accessToken: response.authResponse.accessToken, userId: user.id },
-              })
-              .then(({ data, error }) => {
-                if (error || data?.error) {
-                  toast({
-                    title: "Erro ao conectar",
-                    description: data?.error || error?.message,
-                    variant: "destructive",
-                  });
-                } else {
-                  toast({
-                    title: "WhatsApp conectado!",
-                    description: "Conexão oficial da Meta configurada com sucesso.",
-                  });
-                }
-              })
-              .finally(() => setMetaConnecting(false));
-          } else {
-            setMetaConnecting(false);
-          }
-        },
-        {
-          config_id: META_CONFIG_ID,
-          response_type: "token",
-          override_default_response_type: true,
-          extras: {
-            setup: {},
-            featureType: "",
-            sessionInfoVersion: "3",
+      try {
+        (window as any).FB.login(
+          (response: any) => {
+            console.log("[META-CONNECT] FB.login response:", JSON.stringify(response));
+            if (response.authResponse?.accessToken) {
+              toast({
+                title: "Processando conexão...",
+                description: "Configurando sua conta WhatsApp Business.",
+              });
+              supabase.functions
+                .invoke("whatsapp-embedded-signup", {
+                  method: "POST",
+                  body: { accessToken: response.authResponse.accessToken, userId: user.id },
+                })
+                .then(({ data, error }) => {
+                  console.log("[META-CONNECT] Embedded signup result:", { data, error });
+                  if (error || data?.error) {
+                    toast({
+                      title: "Erro ao conectar",
+                      description: data?.error || error?.message,
+                      variant: "destructive",
+                    });
+                  } else {
+                    toast({
+                      title: "WhatsApp conectado!",
+                      description: "Conexão oficial da Meta configurada com sucesso.",
+                    });
+                  }
+                })
+                .finally(() => setMetaConnecting(false));
+            } else {
+              console.warn("[META-CONNECT] Login cancelled or failed:", response);
+              toast({
+                title: "Conexão cancelada",
+                description: "O processo de login com o Facebook foi cancelado. Tente novamente.",
+                variant: "destructive",
+              });
+              setMetaConnecting(false);
+            }
           },
-        }
-      );
+          {
+            config_id: META_CONFIG_ID,
+            response_type: "token",
+            override_default_response_type: true,
+            extras: {
+              setup: {},
+              featureType: "",
+              sessionInfoVersion: "3",
+            },
+          }
+        );
+      } catch (err) {
+        console.error("[META-CONNECT] FB.login error:", err);
+        toast({
+          title: "Erro ao abrir login",
+          description: "Não foi possível abrir o popup do Facebook. Verifique se popups estão habilitados no seu navegador.",
+          variant: "destructive",
+        });
+        setMetaConnecting(false);
+      }
     };
 
     if ((window as any).FB) {
       launchLogin();
     } else {
-      (window as any).fbAsyncInit = () => {
-        (window as any).FB.init({
-          appId: META_APP_ID,
-          autoLogAppEvents: true,
-          xfbml: true,
-          version: "v21.0",
-        });
-        launchLogin();
-      };
-      const script = document.createElement("script");
-      script.src = "https://connect.facebook.net/pt_BR/sdk.js";
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
+      console.warn("[META-CONNECT] FB SDK not loaded, loading dynamically...");
+      const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
+      if (existingScript) {
+        // SDK script exists but not initialized yet - wait a bit
+        const waitForFB = setInterval(() => {
+          if ((window as any).FB) {
+            clearInterval(waitForFB);
+            launchLogin();
+          }
+        }, 200);
+        setTimeout(() => {
+          clearInterval(waitForFB);
+          if (!(window as any).FB) {
+            toast({
+              title: "Facebook SDK não carregou",
+              description: "Recarregue a página e tente novamente. Se o problema persistir, desative bloqueadores de anúncios.",
+              variant: "destructive",
+            });
+            setMetaConnecting(false);
+          }
+        }, 5000);
+      } else {
+        (window as any).fbAsyncInit = () => {
+          (window as any).FB.init({
+            appId: META_APP_ID,
+            autoLogAppEvents: true,
+            xfbml: true,
+            version: "v21.0",
+          });
+          launchLogin();
+        };
+        const script = document.createElement("script");
+        script.src = "https://connect.facebook.net/pt_BR/sdk.js";
+        script.async = true;
+        script.defer = true;
+        script.onerror = () => {
+          toast({
+            title: "Erro ao carregar Facebook",
+            description: "Não foi possível carregar o SDK do Facebook. Desative bloqueadores de anúncios e tente novamente.",
+            variant: "destructive",
+          });
+          setMetaConnecting(false);
+        };
+        document.body.appendChild(script);
+      }
     }
   }, [user, toast]);
 
