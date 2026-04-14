@@ -62,6 +62,7 @@ const Settings = () => {
           assistantName: c.assistant_name,
           maxConcurrentAppointments: (c as any).max_concurrent_appointments ?? 1,
           attendants: (c as any).attendants ?? [""],
+          paymentMethods: (c as any).payment_methods ?? [],
         });
       }
       setLoading(false);
@@ -93,6 +94,7 @@ const Settings = () => {
         assistant_name: dataToSave.assistantName,
         max_concurrent_appointments: dataToSave.maxConcurrentAppointments,
         attendants: dataToSave.attendants as any,
+        payment_methods: dataToSave.paymentMethods as any,
         campaign_messages: campaignMessages as any,
         human_handoff_triggers: handoffTriggers as any,
       } as any)
