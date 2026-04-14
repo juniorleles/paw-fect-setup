@@ -35,6 +35,65 @@ setInterval(() => {
   }
 }, 300_000);
 
+// --- Emoji reactions pool for human-like feedback ---
+const REACTION_EMOJIS = ["👍", "👀", "⚡", "✨", "🙏", "😊"];
+function getRandomReaction(): string {
+  return REACTION_EMOJIS[Math.floor(Math.random() * REACTION_EMOJIS.length)];
+}
+
+// Send reaction to a message via Meta Cloud API (fire-and-forget)
+async function reactToMessage(phoneNumberId: string, accessToken: string, messageId: string, senderPhone: string) {
+  try {
+    const emoji = getRandomReaction();
+    console.log(`[META-REACT] Reacting to ${messageId} with ${emoji}`);
+    
+    const res = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: senderPhone,
+        type: "reaction",
+        reaction: {
+          message_id: messageId,
+          emoji,
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[META-REACT] Failed: ${res.status} ${body.substring(0, 200)}`);
+    }
+  } catch (e) {
+    console.error("[META-REACT] Error:", e);
+  }
+}
+
+// Mark message as read (blue ticks) via Meta Cloud API
+async function markAsRead(phoneNumberId: string, accessToken: string, messageId: string) {
+  try {
+    await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        status: "read",
+        message_id: messageId,
+      }),
+    });
+  } catch (e) {
+    console.error("[META-READ] Error:", e);
+  }
+}
+
 function getServiceClient() {
   return createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -238,6 +297,15 @@ Deno.serve(async (req) => {
                 });
               }
               continue;
+            }
+
+            // Mark as read + react with emoji (fire-and-forget, don't block buffering)
+            const accessToken = Deno.env.get("META_SYSTEM_USER_TOKEN") || config.meta_access_token;
+            const phoneNumberId = config.meta_phone_number_id;
+            if (accessToken && phoneNumberId && msg.id) {
+              // Run both in parallel, don't await to avoid slowing down webhook
+              markAsRead(phoneNumberId, accessToken, msg.id);
+              reactToMessage(phoneNumberId, accessToken, msg.id, senderPhone);
             }
 
             // Deduplication
