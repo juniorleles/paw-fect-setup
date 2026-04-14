@@ -299,6 +299,15 @@ Deno.serve(async (req) => {
               continue;
             }
 
+            // Mark as read + react with emoji (fire-and-forget, don't block buffering)
+            const accessToken = Deno.env.get("META_SYSTEM_USER_TOKEN") || config.meta_access_token;
+            const phoneNumberId = config.meta_phone_number_id;
+            if (accessToken && phoneNumberId && msg.id) {
+              // Run both in parallel, don't await to avoid slowing down webhook
+              markAsRead(phoneNumberId, accessToken, msg.id);
+              reactToMessage(phoneNumberId, accessToken, msg.id, senderPhone);
+            }
+
             // Deduplication
             const thirtySecAgo = new Date(Date.now() - 30_000).toISOString();
             const { data: existing } = await serviceClient
