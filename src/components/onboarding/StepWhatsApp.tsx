@@ -71,11 +71,23 @@ const StepWhatsApp = ({ data, onChange }: Props) => {
     setError("");
 
     try {
-      const { data: existing, error: queryError } = await supabase
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) throw authError;
+
+      let duplicateQuery = supabase
         .from("pet_shop_configs")
-        .select("id")
-        .eq("phone", digits)
-        .limit(1);
+        .select("id, user_id")
+        .in("phone", [digits, formatPhone(digits)]);
+
+      if (user?.id) {
+        duplicateQuery = duplicateQuery.neq("user_id", user.id);
+      }
+
+      const { data: existing, error: queryError } = await duplicateQuery.limit(1);
 
       if (queryError) throw queryError;
 
