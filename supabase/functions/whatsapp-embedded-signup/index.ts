@@ -13,8 +13,22 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { accessToken, userId, action, wabaId: manualWabaId } = body;
+    const { accessToken, action, wabaId: manualWabaId } = body;
 
+    // Extract authenticated user ID from JWT (ignore client-sent userId)
+    let authenticatedUserId: string | null = null;
+    const authHeader = req.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "");
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        authenticatedUserId = payload.sub || null;
+      } catch {
+        // JWT decode failed, will fall back below
+      }
+    }
+
+    // For admin utility actions, allow without JWT user
     // Quick subscribe-only action (admin utility)
     if (action === "subscribe_waba" && manualWabaId) {
       const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
@@ -80,14 +94,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // For the main signup flow, require JWT user and accessToken
+    const userId = authenticatedUserId;
     if (!accessToken || !userId) {
       return new Response(
-        JSON.stringify({ error: "Missing 'accessToken' or 'userId'" }),
+        JSON.stringify({ error: "Missing 'accessToken' or authenticated user" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[EMBEDDED-SIGNUP] Processing token for userId: ${userId}`);
+    console.log(`[EMBEDDED-SIGNUP] Processing token for authenticated userId: ${userId}`);
 
     const appId = Deno.env.get("META_APP_ID") || "932970802701874";
     const appSecret = Deno.env.get("META_APP_SECRET")!;
