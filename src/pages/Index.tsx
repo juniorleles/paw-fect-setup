@@ -174,6 +174,7 @@ const Index = () => {
           assistantName: c.assistant_name,
           maxConcurrentAppointments: (c as any).max_concurrent_appointments ?? 1,
           attendants: (c as any).attendants ?? [""],
+          paymentMethods: (c as any).payment_methods ?? [],
         });
         if (c.activated) {
           navigate("/dashboard", { replace: true });
@@ -204,6 +205,7 @@ const Index = () => {
       assistant_name: updatedData.assistantName,
       max_concurrent_appointments: updatedData.maxConcurrentAppointments,
       attendants: updatedData.attendants as any,
+      payment_methods: updatedData.paymentMethods as any,
       activated: isActivated,
     };
 
