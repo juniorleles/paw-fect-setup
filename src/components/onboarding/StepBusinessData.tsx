@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OnboardingData, BRAZILIAN_STATES, NICHE_LABELS, BusinessNiche } from "@/types/onboarding";
-import { Store, PawPrint, Stethoscope, Scissors, Sparkles, Building2, Briefcase, CreditCard } from "lucide-react";
+import { Store, PawPrint, Stethoscope, Scissors, Sparkles, Building2, Briefcase, CreditCard, Info } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
@@ -183,6 +184,25 @@ const StepBusinessData = ({ data, onChange, errors, showEmail = false }: Props) 
               );
             })}
           </div>
+        </div>
+
+        {/* Informações Extras */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-primary" />
+            <Label className="font-semibold">Informações Extras</Label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Adicione informações adicionais que a IA pode usar para responder perguntas dos clientes (estacionamento, Wi-Fi, acessibilidade, etc.)
+          </p>
+          <Textarea
+            placeholder={"Ex:\n• Estacionamento gratuito no local\n• Wi-Fi disponível para clientes\n• Acessível para cadeirantes\n• Aceita agendamento para grupos"}
+            value={data.extraInfo ?? ""}
+            onChange={(e) => onChange({ extraInfo: e.target.value })}
+            className="min-h-[100px] resize-y"
+            maxLength={500}
+          />
+          <p className="text-xs text-muted-foreground text-right">{(data.extraInfo ?? "").length}/500</p>
         </div>
       </CardContent>
     </Card>
