@@ -3562,35 +3562,76 @@ Deno.serve(async (req) => {
 
     let longTermMemory = "";
     if (totalVisits > 0) {
+      // Compute days since last visit
+      const lastVisitDate = pastCustomerAppts[0]?.date;
+      const daysSinceLastVisit = lastVisitDate
+        ? Math.floor((Date.now() - new Date(lastVisitDate + "T12:00:00-03:00").getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+
+      // Find most frequent service
+      const serviceCount: Record<string, number> = {};
+      pastCustomerAppts.forEach((a: any) => { serviceCount[a.service] = (serviceCount[a.service] || 0) + 1; });
+      const mostFrequentService = Object.entries(serviceCount).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+
+      // Last service details
+      const lastService = pastCustomerAppts[0]?.service || null;
+      const lastPetName = pastCustomerAppts[0]?.pet_name || null;
+
+      // Preferred time pattern
+      const times = pastCustomerAppts.map((a: any) => a.time?.substring(0, 5)).filter(Boolean);
+      const timeCount: Record<string, number> = {};
+      times.forEach((t: string) => { timeCount[t] = (timeCount[t] || 0) + 1; });
+      const preferredTime = Object.entries(timeCount).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+
       if (isPetNiche) {
         const petNames = [...new Set(pastCustomerAppts.map((a: any) => a.pet_name).filter((n: string) => n && n !== "—"))];
         longTermMemory = `\nMEMÓRIA DO CLIENTE (telefone: ${cleanPhone}):
 - Nome do tutor: ${ownerName || "Desconhecido"}
 - Pets conhecidos: ${petNames.join(", ") || "Nenhum"}
 - Serviços já utilizados: ${favoriteServices.join(", ")}
+- Serviço mais frequente: ${mostFrequentService || "N/A"}
+- Último serviço: ${lastService || "N/A"}${lastPetName && lastPetName !== "—" ? ` (pet: ${lastPetName})` : ""}
+- Horário preferido: ${preferredTime || "N/A"}
 - Total de visitas anteriores: ${totalVisits}
+- Dias desde a última visita: ${daysSinceLastVisit !== null ? daysSinceLastVisit : "N/A"}
 - Últimas visitas:
 ${pastCustomerAppts.slice(0, 5).map((a: any) => `  · ${a.date} - ${a.service} (${a.pet_name})${a.notes ? ` [obs: ${a.notes}]` : ""}`).join("\n")}
 
-USE ESSAS INFORMAÇÕES para personalizar o atendimento:
-- Chame o tutor pelo nome se souber.
-- Mencione os pets pelos nomes conhecidos.
-- Sugira serviços que o cliente já usou antes.
-- Lembre de observações anteriores relevantes (ex: alergias, preferências).
-- NÃO peça nome do tutor ou do pet se já souber.`;
+REGRAS DE PERSONALIZAÇÃO PROATIVA (OBRIGATÓRIO para clientes recorrentes):
+- SEMPRE chame o tutor pelo nome na primeira interação. Ex: "Oi Maria! 😊"
+- Na PRIMEIRA mensagem da conversa, mencione PROATIVAMENTE a última visita de forma natural. Exemplos:
+  · "Da última vez ${lastPetName && lastPetName !== "—" ? `o(a) ${lastPetName}` : "você"} fez ${lastService}, né? Quer o mesmo?"
+  · "Faz ${daysSinceLastVisit} dias desde a última visita${lastPetName && lastPetName !== "—" ? ` do(a) ${lastPetName}` : ""}! Tá na hora de voltar? 😊"
+  · "Que bom te ver de novo! Da última vez foi ${lastService}. O que vai ser hoje?"
+- Se o cliente pedir agendamento sem especificar serviço, SUGIRA o serviço mais frequente: "${mostFrequentService}". Ex: "Vai ser ${mostFrequentService} de novo? 😊"
+- Se o horário preferido (${preferredTime}) estiver disponível, ofereça-o como sugestão: "Seu horário de sempre (${preferredTime}) tá livre! Quer?"
+- MENCIONE os pets pelos nomes conhecidos sempre que relevante.
+- Lembre de observações anteriores (alergias, preferências, etc.).
+- NÃO peça nome do tutor ou do pet se já souber.
+- NÃO force a menção do histórico se não for natural — use bom senso.`;
       } else {
         longTermMemory = `\nMEMÓRIA DO CLIENTE (telefone: ${cleanPhone}):
 - Nome: ${ownerName || "Desconhecido"}
 - Serviços já utilizados: ${favoriteServices.join(", ")}
+- Serviço mais frequente: ${mostFrequentService || "N/A"}
+- Último serviço: ${lastService || "N/A"}
+- Horário preferido: ${preferredTime || "N/A"}
 - Total de visitas anteriores: ${totalVisits}
+- Dias desde a última visita: ${daysSinceLastVisit !== null ? daysSinceLastVisit : "N/A"}
 - Últimas visitas:
 ${pastCustomerAppts.slice(0, 5).map((a: any) => `  · ${a.date} - ${a.service}${a.notes ? ` [obs: ${a.notes}]` : ""}`).join("\n")}
 
-USE ESSAS INFORMAÇÕES para personalizar o atendimento:
-- Chame o cliente pelo nome se souber.
-- Sugira serviços que já usou antes.
-- Lembre de observações anteriores relevantes (ex: preferências).
-- NÃO peça o nome novamente se já souber.`;
+REGRAS DE PERSONALIZAÇÃO PROATIVA (OBRIGATÓRIO para clientes recorrentes):
+- SEMPRE chame o cliente pelo nome na primeira interação. Ex: "Oi ${ownerName || ""}! 😊"
+- Na PRIMEIRA mensagem da conversa, mencione PROATIVAMENTE a última visita de forma natural. Exemplos:
+  · "Da última vez você fez ${lastService}, né? Quer o mesmo?"
+  · "Faz ${daysSinceLastVisit} dias desde a última visita! Que bom te ver de volta 😊"
+  · "Que bom falar com você de novo! Da última vez foi ${lastService}. O que vai ser hoje?"
+- Se o cliente pedir agendamento sem especificar serviço, SUGIRA o serviço mais frequente: "${mostFrequentService}". Ex: "Vai ser ${mostFrequentService} de novo? 😊"
+- Se o horário preferido (${preferredTime}) estiver disponível, ofereça-o como sugestão: "Seu horário de sempre (${preferredTime}) tá livre! Quer?"
+- Lembre de observações anteriores (preferências, etc.).
+- NÃO peça o nome novamente se já souber.
+- NÃO force a menção do histórico se não for natural — use bom senso.`;
       }
     }
 
