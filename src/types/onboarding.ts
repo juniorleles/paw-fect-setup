@@ -46,6 +46,9 @@ export interface OnboardingData {
 
   // Payment
   paymentMethods: string[];
+
+  // Extra info
+  extraInfo: string;
 }
 
 export interface DaySchedule {
@@ -91,6 +94,7 @@ export const INITIAL_DATA: OnboardingData = {
   voiceTone: "friendly",
   assistantName: "",
   paymentMethods: [],
+  extraInfo: "",
 };
 
 export const BRAZILIAN_STATES = [
