@@ -436,6 +436,7 @@ export type Database = {
           city: string
           created_at: string
           evolution_instance_name: string
+          extra_info: string
           human_handoff_triggers: Json
           id: string
           max_concurrent_appointments: number
@@ -465,6 +466,7 @@ export type Database = {
           city?: string
           created_at?: string
           evolution_instance_name?: string
+          extra_info?: string
           human_handoff_triggers?: Json
           id?: string
           max_concurrent_appointments?: number
@@ -494,6 +496,7 @@ export type Database = {
           city?: string
           created_at?: string
           evolution_instance_name?: string
+          extra_info?: string
           human_handoff_triggers?: Json
           id?: string
           max_concurrent_appointments?: number
