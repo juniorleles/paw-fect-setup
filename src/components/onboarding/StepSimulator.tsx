@@ -91,6 +91,7 @@ const StepSimulator = ({ data, acceptedTerms, onAcceptedTermsChange }: Props) =>
             state: data.state,
             niche: data.niche,
             paymentMethods: data.paymentMethods,
+            extraInfo: data.extraInfo,
           },
           messages: updatedMessages.map((m) => ({ role: m.role, content: m.content })),
           simulatedAppointments,
