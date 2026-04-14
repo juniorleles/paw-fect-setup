@@ -96,6 +96,7 @@ const Settings = () => {
         max_concurrent_appointments: dataToSave.maxConcurrentAppointments,
         attendants: dataToSave.attendants as any,
         payment_methods: dataToSave.paymentMethods as any,
+        extra_info: dataToSave.extraInfo,
         campaign_messages: campaignMessages as any,
         human_handoff_triggers: handoffTriggers as any,
       } as any)

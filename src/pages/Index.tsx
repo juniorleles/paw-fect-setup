@@ -207,6 +207,7 @@ const Index = () => {
       max_concurrent_appointments: updatedData.maxConcurrentAppointments,
       attendants: updatedData.attendants as any,
       payment_methods: updatedData.paymentMethods as any,
+      extra_info: updatedData.extraInfo,
       activated: isActivated,
     };
 
