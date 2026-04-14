@@ -2,8 +2,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { OnboardingData, BRAZILIAN_STATES, NICHE_LABELS, BusinessNiche } from "@/types/onboarding";
-import { Store, PawPrint, Stethoscope, Scissors, Sparkles, Building2, Briefcase } from "lucide-react";
+import { Store, PawPrint, Stethoscope, Scissors, Sparkles, Building2, Briefcase, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
@@ -143,6 +144,44 @@ const StepBusinessData = ({ data, onChange, errors, showEmail = false }: Props) 
               </SelectContent>
             </Select>
             {errors.state && <p className="text-sm text-destructive">{errors.state}</p>}
+          </div>
+        </div>
+
+        {/* Formas de Pagamento */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-primary" />
+            <Label className="font-semibold">Formas de Pagamento Aceitas</Label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Selecione as formas de pagamento para que a IA informe seus clientes automaticamente
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {["Pix", "Dinheiro", "Cartão de Crédito", "Cartão de Débito", "Transferência Bancária", "Boleto"].map((method) => {
+              const selected = data.paymentMethods?.includes(method) ?? false;
+              return (
+                <label
+                  key={method}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                    selected
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/30"
+                  }`}
+                >
+                  <Checkbox
+                    checked={selected}
+                    onCheckedChange={(checked) => {
+                      const current = data.paymentMethods ?? [];
+                      const updated = checked
+                        ? [...current, method]
+                        : current.filter((m) => m !== method);
+                      onChange({ paymentMethods: updated });
+                    }}
+                  />
+                  <span className="text-sm">{method}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
       </CardContent>
