@@ -1,0 +1,1 @@
+ALTER TABLE public.pet_shop_configs ADD COLUMN payment_methods jsonb NOT NULL DEFAULT '[]'::jsonb;

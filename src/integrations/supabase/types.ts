@@ -444,6 +444,7 @@ export type Database = {
           meta_waba_id: string | null
           neighborhood: string
           niche: string
+          payment_methods: Json
           phone: string
           phone_verified: boolean
           services: Json
@@ -472,6 +473,7 @@ export type Database = {
           meta_waba_id?: string | null
           neighborhood?: string
           niche?: string
+          payment_methods?: Json
           phone?: string
           phone_verified?: boolean
           services?: Json
@@ -500,6 +502,7 @@ export type Database = {
           meta_waba_id?: string | null
           neighborhood?: string
           niche?: string
+          payment_methods?: Json
           phone?: string
           phone_verified?: boolean
           services?: Json
