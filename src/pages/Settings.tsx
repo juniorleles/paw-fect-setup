@@ -63,6 +63,7 @@ const Settings = () => {
           maxConcurrentAppointments: (c as any).max_concurrent_appointments ?? 1,
           attendants: (c as any).attendants ?? [""],
           paymentMethods: (c as any).payment_methods ?? [],
+          extraInfo: (c as any).extra_info ?? "",
         });
       }
       setLoading(false);
