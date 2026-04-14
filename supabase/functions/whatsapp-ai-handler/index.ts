@@ -1728,14 +1728,22 @@ function enforceKnownServiceNoRedundantQuestion(
 
 function calculateHumanDelay(text: string): number {
   const len = (text || "").length;
-  // Short messages (greetings): 1-2s
-  if (len <= 50) return 1000 + Math.random() * 1000;
-  // Simple choices: 2-3s
-  if (len <= 150) return 2000 + Math.random() * 1000;
+  // Short messages (greetings): 1.5-3s
+  if (len <= 50) return 1500 + Math.random() * 1500;
+  // Simple choices: 2-4s
+  if (len <= 150) return 2000 + Math.random() * 2000;
   // Full booking confirmations: 3-5s
   if (len <= 400) return 3000 + Math.random() * 2000;
   // Long detailed responses: 4-6s
   return 4000 + Math.random() * 2000;
+}
+
+// Delay between chunks when sending split messages (shorter than initial delay)
+function calculateInterChunkDelay(text: string): number {
+  const len = (text || "").length;
+  if (len <= 50) return 800 + Math.random() * 700;
+  if (len <= 150) return 1200 + Math.random() * 800;
+  return 1500 + Math.random() * 1000;
 }
 
 async function sendComposingPresence(_instanceName: string, _phone: string): Promise<void> {
@@ -1747,25 +1755,76 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Split long messages into natural chunks for more human-like delivery
+function splitMessageNaturally(text: string): string[] {
+  if (!text || text.trim().length === 0) return [text];
+
+  // Don't split short messages (under ~250 chars)
+  if (text.length <= 250) return [text];
+
+  // Don't split messages with action tags
+  if (/<action>.*?<\/action>/s.test(text)) return [text];
+
+  // Strategy: split on double newlines (paragraph breaks) first
+  const paragraphs = text.split(/\n\n+/).filter(p => p.trim().length > 0);
+
+  if (paragraphs.length >= 2) {
+    // Group small paragraphs together to avoid sending tiny messages
+    const chunks: string[] = [];
+    let current = "";
+
+    for (const para of paragraphs) {
+      if (current.length === 0) {
+        current = para;
+      } else if (current.length + para.length < 300) {
+        current += "\n\n" + para;
+      } else {
+        chunks.push(current.trim());
+        current = para;
+      }
+    }
+    if (current.trim()) chunks.push(current.trim());
+
+    // Limit to max 3 chunks to avoid spam
+    if (chunks.length > 3) {
+      const merged: string[] = [];
+      const perChunk = Math.ceil(chunks.length / 3);
+      for (let i = 0; i < chunks.length; i += perChunk) {
+        merged.push(chunks.slice(i, i + perChunk).join("\n\n"));
+      }
+      return merged.filter(c => c.trim().length > 0);
+    }
+
+    return chunks.filter(c => c.trim().length > 0);
+  }
+
+  // Fallback: split on single newlines if text is very long
+  if (text.length > 500) {
+    const lines = text.split(/\n/).filter(l => l.trim().length > 0);
+    if (lines.length >= 3) {
+      const mid = Math.ceil(lines.length / 2);
+      return [
+        lines.slice(0, mid).join("\n").trim(),
+        lines.slice(mid).join("\n").trim(),
+      ].filter(c => c.length > 0);
+    }
+  }
+
+  return [text];
+}
+
 // Global variable to hold Meta config for the current request (set during config lookup)
 let _currentMetaConfig: { accessToken: string; phoneNumberId: string } | null = null;
 
-async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
-  const delay = calculateHumanDelay(text);
-  console.log(`[TypingDelay] Text length: ${text.length}, delay: ${delay}ms`);
-  await sendComposingPresence(instanceName, phone);
-  await sleep(delay);
-
+async function sendWhatsAppMessageRaw(phone: string, text: string) {
   const cleanPhone = phone.replace("@s.whatsapp.net", "");
 
-  // --- Meta Cloud API (only provider) ---
   if (!_currentMetaConfig) {
-    console.error(`[SEND] No Meta config available for instance ${instanceName}`);
+    console.error(`[SEND] No Meta config available`);
     return;
   }
 
   const { accessToken, phoneNumberId } = _currentMetaConfig;
-  console.log(`[META-SEND] Sending to ${cleanPhone} via Meta Cloud API (phone_number_id: ${phoneNumberId})`);
 
   const metaRes = await fetch(
     `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
@@ -1790,6 +1849,36 @@ async function sendWhatsAppMessage(instanceName: string, phone: string, text: st
 
   if (!metaRes.ok) {
     console.error(`[META-SEND] Failed to send message: ${metaRes.status} ${metaBody}`);
+  }
+}
+
+// Main send function: splits long messages and sends with human-like delays
+async function sendWhatsAppMessage(instanceName: string, phone: string, text: string) {
+  const chunks = splitMessageNaturally(text);
+
+  if (chunks.length === 1) {
+    // Single message — use normal delay
+    const delay = calculateHumanDelay(text);
+    console.log(`[TypingDelay] Single message, length: ${text.length}, delay: ${delay}ms`);
+    await sendComposingPresence(instanceName, phone);
+    await sleep(delay);
+    await sendWhatsAppMessageRaw(phone, text);
+    return;
+  }
+
+  // Multiple chunks — send with inter-chunk delays
+  console.log(`[SplitMessage] Splitting into ${chunks.length} chunks: ${chunks.map(c => c.length).join(', ')} chars`);
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const delay = i === 0
+      ? calculateHumanDelay(chunk)         // First chunk: normal typing delay
+      : calculateInterChunkDelay(chunk);   // Subsequent: shorter inter-chunk delay
+
+    console.log(`[SplitMessage] Chunk ${i + 1}/${chunks.length}, length: ${chunk.length}, delay: ${delay}ms`);
+    await sendComposingPresence(instanceName, phone);
+    await sleep(delay);
+    await sendWhatsAppMessageRaw(phone, chunk);
   }
 }
 
