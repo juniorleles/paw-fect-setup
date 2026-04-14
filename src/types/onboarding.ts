@@ -43,6 +43,9 @@ export interface OnboardingData {
   // Step 5
   voiceTone: "formal" | "friendly" | "fun";
   assistantName: string;
+
+  // Payment
+  paymentMethods: string[];
 }
 
 export interface DaySchedule {
@@ -87,6 +90,7 @@ export const INITIAL_DATA: OnboardingData = {
   services: [],
   voiceTone: "friendly",
   assistantName: "",
+  paymentMethods: [],
 };
 
 export const BRAZILIAN_STATES = [
