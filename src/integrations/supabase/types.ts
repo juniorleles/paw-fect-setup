@@ -437,6 +437,12 @@ export type Database = {
           created_at: string
           evolution_instance_name: string
           extra_info: string
+          gupshup_app_id: string | null
+          gupshup_app_name: string | null
+          gupshup_connected_at: string | null
+          gupshup_partner_app_token: string | null
+          gupshup_phone_number: string | null
+          gupshup_status: string
           human_handoff_triggers: Json
           id: string
           max_concurrent_appointments: number
@@ -456,6 +462,7 @@ export type Database = {
           updated_at: string
           user_id: string
           voice_tone: string
+          whatsapp_provider: string
           whatsapp_status: string
         }
         Insert: {
@@ -469,6 +476,12 @@ export type Database = {
           created_at?: string
           evolution_instance_name?: string
           extra_info?: string
+          gupshup_app_id?: string | null
+          gupshup_app_name?: string | null
+          gupshup_connected_at?: string | null
+          gupshup_partner_app_token?: string | null
+          gupshup_phone_number?: string | null
+          gupshup_status?: string
           human_handoff_triggers?: Json
           id?: string
           max_concurrent_appointments?: number
@@ -488,6 +501,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           voice_tone?: string
+          whatsapp_provider?: string
           whatsapp_status?: string
         }
         Update: {
@@ -501,6 +515,12 @@ export type Database = {
           created_at?: string
           evolution_instance_name?: string
           extra_info?: string
+          gupshup_app_id?: string | null
+          gupshup_app_name?: string | null
+          gupshup_connected_at?: string | null
+          gupshup_partner_app_token?: string | null
+          gupshup_phone_number?: string | null
+          gupshup_status?: string
           human_handoff_triggers?: Json
           id?: string
           max_concurrent_appointments?: number
@@ -520,6 +540,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           voice_tone?: string
+          whatsapp_provider?: string
           whatsapp_status?: string
         }
         Relationships: []
@@ -736,6 +757,99 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_messages: {
+        Row: {
+          content: string | null
+          created_at: string
+          direction: string
+          error_message: string | null
+          external_message_id: string | null
+          id: string
+          message_type: string
+          metadata: Json | null
+          phone: string
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          direction: string
+          error_message?: string | null
+          external_message_id?: string | null
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          phone: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          direction?: string
+          error_message?: string | null
+          external_message_id?: string | null
+          id?: string
+          message_type?: string
+          metadata?: Json | null
+          phone?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_templates: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          language: string
+          metadata: Json | null
+          name: string
+          provider: string
+          status: string
+          template_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          language?: string
+          metadata?: Json | null
+          name: string
+          provider?: string
+          status?: string
+          template_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          language?: string
+          metadata?: Json | null
+          name?: string
+          provider?: string
+          status?: string
+          template_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
