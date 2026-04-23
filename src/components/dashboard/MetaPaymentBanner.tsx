@@ -60,7 +60,7 @@ const MetaPaymentBanner = () => {
   if (!show) return null;
 
   return (
-    <Card className="border-none shadow-lg bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent overflow-hidden relative">
+    <Card className="border-none shadow-lg bg-gradient-to-r from-accent/20 via-accent/10 to-transparent overflow-hidden relative">
       <button
         type="button"
         onClick={handleDismiss}
@@ -72,8 +72,8 @@ const MetaPaymentBanner = () => {
       <CardContent className="py-5 px-5 pr-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-              <CreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            <div className="w-12 h-12 rounded-2xl bg-accent/30 flex items-center justify-center flex-shrink-0">
+              <CreditCard className="w-6 h-6 text-accent-foreground" />
             </div>
             <div className="min-w-0">
               <p className="text-base font-bold text-foreground">
