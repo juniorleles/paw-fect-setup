@@ -47,6 +47,7 @@ import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
 import AdminLayout from "./components/admin/AdminLayout";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import DataDeletion from "./pages/DataDeletion";
 import Support from "./pages/Support";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import Install from "./pages/Install";
@@ -224,6 +225,7 @@ const App = () => (
                   <Route path="/sobre" element={<About />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/data-deletion" element={<DataDeletion />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <InstallPWABanner />
