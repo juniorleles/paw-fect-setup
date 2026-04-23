@@ -236,6 +236,8 @@ Deno.serve(async (req) => {
         meta_phone_number_id: phoneNumberId,
         meta_access_token: finalToken,
         whatsapp_status: phoneNumberId ? "connected" : "pending",
+        meta_credit_attached: creditAttached,
+        meta_credit_attached_at: creditAttached ? new Date().toISOString() : null,
       })
       .eq("user_id", userId);
 
