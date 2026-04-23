@@ -81,13 +81,39 @@ Deno.serve(async (req) => {
         metadata: data,
       });
 
+      // Bloqueio anti-loop: se a mensagem foi enviada pelo próprio número conectado, ignora
+      const ownPhone = config.gupshup_phone_number?.replace(/\D/g, "");
+      const cleanSender = senderPhone?.replace(/\D/g, "");
+      if (ownPhone && cleanSender === ownPhone) {
+        console.log(`[gupshup-webhook] Ignoring own message from ${senderPhone}`);
+        return new Response(JSON.stringify({ ok: true, ignored: "self" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Adicionar ao buffer para processamento pelo whatsapp-ai-handler
+      // Prefixo "gupshup_" diferencia do Meta ("meta_{wabaId}")
+      const bufferInstanceName = `gupshup_${appName}`;
       await supabase.from("message_buffer").insert({
-        instance_name: appName,
+        instance_name: bufferInstanceName,
         sender_phone: senderPhone,
         content,
         processed: false,
       });
+
+      // Disparar process-sender (com debounce/buffer)
+      try {
+        await fetch(`${SUPABASE_URL}/functions/v1/process-sender`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({ instanceName: bufferInstanceName, senderPhone }),
+        });
+      } catch (e) {
+        console.error("[gupshup-webhook] Failed to trigger process-sender:", e);
+      }
 
       console.log(`[gupshup-webhook] Message buffered from ${senderPhone}`);
     }
