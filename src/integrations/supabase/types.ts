@@ -395,6 +395,42 @@ export type Database = {
         }
         Relationships: []
       }
+      meta_data_deletion_requests: {
+        Row: {
+          completed_at: string | null
+          confirmation_code: string
+          created_at: string
+          id: string
+          meta_user_id: string
+          notes: string | null
+          requested_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          confirmation_code: string
+          created_at?: string
+          id?: string
+          meta_user_id: string
+          notes?: string | null
+          requested_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          confirmation_code?: string
+          created_at?: string
+          id?: string
+          meta_user_id?: string
+          notes?: string | null
+          requested_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_history: {
         Row: {
           amount: number
