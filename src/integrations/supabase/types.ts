@@ -441,6 +441,8 @@ export type Database = {
           id: string
           max_concurrent_appointments: number
           meta_access_token: string | null
+          meta_credit_attached: boolean
+          meta_credit_attached_at: string | null
           meta_phone_number_id: string | null
           meta_waba_id: string | null
           neighborhood: string
@@ -471,6 +473,8 @@ export type Database = {
           id?: string
           max_concurrent_appointments?: number
           meta_access_token?: string | null
+          meta_credit_attached?: boolean
+          meta_credit_attached_at?: string | null
           meta_phone_number_id?: string | null
           meta_waba_id?: string | null
           neighborhood?: string
@@ -501,6 +505,8 @@ export type Database = {
           id?: string
           max_concurrent_appointments?: number
           meta_access_token?: string | null
+          meta_credit_attached?: boolean
+          meta_credit_attached_at?: string | null
           meta_phone_number_id?: string | null
           meta_waba_id?: string | null
           neighborhood?: string
