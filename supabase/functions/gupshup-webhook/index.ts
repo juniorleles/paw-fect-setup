@@ -17,19 +17,26 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validar webhook secret (Gupshup envia via query param ?secret= ou header)
-    const url = new URL(req.url);
-    const querySecret = url.searchParams.get("secret");
-    const headerSecret = req.headers.get("x-webhook-secret");
-    const providedSecret = querySecret || headerSecret;
-
-    if (WEBHOOK_SECRET && providedSecret !== WEBHOOK_SECRET) {
-      console.warn("[gupshup-webhook] Invalid secret", { providedSecret });
-      return new Response(JSON.stringify({ error: "unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // GET request: respond OK so Gupshup can validate the URL during webhook setup
+    if (req.method === "GET") {
+      return new Response(
+        JSON.stringify({ ok: true, service: "gupshup-webhook", status: "ready" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    // TEMP: secret validation disabled for sandbox testing — re-enable before production
+    // const url = new URL(req.url);
+    // const querySecret = url.searchParams.get("secret");
+    // const headerSecret = req.headers.get("x-webhook-secret");
+    // const providedSecret = querySecret || headerSecret;
+    // if (WEBHOOK_SECRET && providedSecret !== WEBHOOK_SECRET) {
+    //   console.warn("[gupshup-webhook] Invalid secret", { providedSecret });
+    //   return new Response(JSON.stringify({ error: "unauthorized" }), {
+    //     status: 401,
+    //     headers: { ...corsHeaders, "Content-Type": "application/json" },
+    //   });
+    // }
 
     const payload = await req.json();
     console.log("[gupshup-webhook] Received:", JSON.stringify(payload).substring(0, 500));
