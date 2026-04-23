@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[EMBEDDED-SIGNUP] Saved: WABA=${wabaId}, Phone=${phoneNumberId} for user ${userId}`);
+    console.log(`[EMBEDDED-SIGNUP] Saved: WABA=${wabaId}, Phone=${phoneNumberId}, CreditAttached=${creditAttached} for user ${userId}`);
 
     return new Response(
       JSON.stringify({
@@ -257,6 +257,8 @@ Deno.serve(async (req) => {
         waba_id: wabaId,
         phone_number_id: phoneNumberId,
         status: phoneNumberId ? "connected" : "pending",
+        credit_attached: creditAttached,
+        billing_model: creditAttached ? "B" : "A",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
