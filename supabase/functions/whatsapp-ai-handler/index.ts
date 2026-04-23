@@ -1813,14 +1813,44 @@ function splitMessageNaturally(text: string): string[] {
   return [text];
 }
 
-// Global variable to hold Meta config for the current request (set during config lookup)
+// Global variable to hold provider config for the current request (set during config lookup)
 let _currentMetaConfig: { accessToken: string; phoneNumberId: string } | null = null;
+let _currentGupshupConfig: { userId: string; appName: string; phoneNumber: string } | null = null;
 
 async function sendWhatsAppMessageRaw(phone: string, text: string) {
   const cleanPhone = phone.replace("@s.whatsapp.net", "");
 
+  // --- GUPSHUP branch ---
+  if (_currentGupshupConfig) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    try {
+      const res = await fetch(`${supabaseUrl}/functions/v1/gupshup-send-message`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({
+          userId: _currentGupshupConfig.userId,
+          destination: cleanPhone,
+          message: text,
+        }),
+      });
+      const body = await res.text();
+      console.log(`[GUPSHUP-SEND] Response: ${res.status} ${body.substring(0, 300)}`);
+      if (!res.ok) {
+        console.error(`[GUPSHUP-SEND] Failed: ${res.status} ${body}`);
+      }
+    } catch (e) {
+      console.error("[GUPSHUP-SEND] Exception:", e);
+    }
+    return;
+  }
+
+  // --- META branch (default/fallback) ---
   if (!_currentMetaConfig) {
-    console.error(`[SEND] No Meta config available`);
+    console.error(`[SEND] No provider config available (Meta nor Gupshup)`);
     return;
   }
 
