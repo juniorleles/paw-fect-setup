@@ -44,6 +44,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import AdminBlocked from "./pages/admin/AdminBlocked";
 import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
+import AdminWhatsAppTemplates from "./pages/admin/AdminWhatsAppTemplates";
 import AdminLayout from "./components/admin/AdminLayout";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -211,6 +212,7 @@ const App = () => (
                   <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                   <Route path="/admin/monitoring" element={<AdminRoute><AdminMonitoring /></AdminRoute>} />
                   <Route path="/admin/whatsapp" element={<AdminRoute><AdminWhatsApp /></AdminRoute>} />
+                  <Route path="/admin/whatsapp-templates" element={<AdminRoute><AdminWhatsAppTemplates /></AdminRoute>} />
                   <Route path="/admin/clients" element={<AdminRoute><AdminClients /></AdminRoute>} />
                   <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
                   <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
