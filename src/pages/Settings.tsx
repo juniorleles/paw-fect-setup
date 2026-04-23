@@ -17,7 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import WhatsAppStatusCard from "@/components/dashboard/WhatsAppStatusCard";
+import { GupshupConnectionCard } from "@/components/settings/GupshupConnectionCard";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -211,7 +211,7 @@ const Settings = () => {
         </TabsList>
 
         <TabsContent value="whatsapp" className="mt-6 space-y-4">
-          <WhatsAppStatusCard />
+          <GupshupConnectionCard />
           <StepWhatsApp data={data} onChange={updateData} />
         </TabsContent>
         <TabsContent value="shop" className="mt-6">
