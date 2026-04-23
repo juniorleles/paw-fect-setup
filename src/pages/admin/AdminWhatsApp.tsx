@@ -41,6 +41,8 @@ interface WhatsAppClient {
   meta_waba_id: string | null;
   meta_phone_number_id: string | null;
   meta_access_token: string | null;
+  meta_credit_attached: boolean;
+  meta_credit_attached_at: string | null;
   niche: string;
   activated: boolean;
   updated_at: string;
@@ -69,7 +71,7 @@ const AdminWhatsApp = () => {
     const [configsRes, messagesRes, dailyMsgsRes] = await Promise.all([
       supabase
         .from("pet_shop_configs")
-        .select("id, user_id, shop_name, phone, evolution_instance_name, whatsapp_status, meta_waba_id, meta_phone_number_id, meta_access_token, niche, activated, updated_at")
+        .select("id, user_id, shop_name, phone, evolution_instance_name, whatsapp_status, meta_waba_id, meta_phone_number_id, meta_access_token, meta_credit_attached, meta_credit_attached_at, niche, activated, updated_at")
         .order("shop_name", { ascending: true })
         .limit(500),
       // Messages per user in last 7 days
@@ -344,6 +346,7 @@ const AdminWhatsApp = () => {
                 <th className="pb-3 pr-4">Integração</th>
                 <th className="pb-3 pr-4">WABA ID</th>
                 <th className="pb-3 pr-4">Token</th>
+                <th className="pb-3 pr-4">Quem paga?</th>
                 <th className="pb-3 pr-4">Msgs 7d</th>
                 <th className="pb-3">Atualizado</th>
               </tr>
@@ -394,6 +397,21 @@ const AdminWhatsApp = () => {
                         <span className="text-xs text-[hsl(220,10%,35%)]">N/A</span>
                       )}
                     </td>
+                    <td className="py-3 pr-4">
+                      {intType === "meta" ? (
+                        c.meta_credit_attached ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-400" title={c.meta_credit_attached_at ? `Vinculado em ${new Date(c.meta_credit_attached_at).toLocaleString("pt-BR")}` : ""}>
+                            🟢 MagicZap
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-amber-400" title="Cliente paga as mensagens (Modelo A)">
+                            🟡 Cliente
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-xs text-[hsl(220,10%,35%)]">—</span>
+                      )}
+                    </td>
                     <td className="py-3 pr-4 text-white font-medium text-xs">{msgs7d > 0 ? msgs7d : "—"}</td>
                     <td className="py-3 text-[hsl(220,10%,45%)] text-xs">
                       {new Date(c.updated_at).toLocaleDateString("pt-BR")}
@@ -403,7 +421,7 @@ const AdminWhatsApp = () => {
               })}
               {filteredClients.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-[hsl(220,10%,40%)]">
+                  <td colSpan={9} className="py-12 text-center text-[hsl(220,10%,40%)]">
                     Nenhuma conexão encontrada
                   </td>
                 </tr>
