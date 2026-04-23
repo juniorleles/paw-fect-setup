@@ -39,3 +39,7 @@ project_id = "kxcqizfxfqzmnhxeaepc"
     verify_jwt = false
   [functions.support-chat]
     verify_jwt = false
+  [functions.gupshup-webhook]
+    verify_jwt = false
+  [functions.gupshup-send-message]
+    verify_jwt = false
