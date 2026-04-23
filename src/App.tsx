@@ -25,6 +25,7 @@ import LandingClinicas from "./pages/LandingClinicas";
 import LandingPetshop from "./pages/LandingPetshop";
 
 import MyAccount from "./pages/MyAccount";
+import CadastrarCartaoMeta from "./pages/CadastrarCartaoMeta";
 import SubscriptionCancelled from "./pages/SubscriptionCancelled";
 import UpgradeRequired from "./pages/UpgradeRequired";
 import DashboardLayout from "./components/DashboardLayout";
@@ -199,6 +200,7 @@ const App = () => (
                   <Route path="/financial-report" element={<DashboardRoute><FinancialReport /></DashboardRoute>} />
                   <Route path="/my-account" element={<DashboardRoute><MyAccount /></DashboardRoute>} />
                   <Route path="/support" element={<DashboardRoute><Support /></DashboardRoute>} />
+                  <Route path="/cadastrar-cartao-meta" element={<DashboardRoute><CadastrarCartaoMeta /></DashboardRoute>} />
                   <Route path="/settings" element={<DashboardRoute><Settings /></DashboardRoute>} />
                   <Route path="/subscription-cancelled" element={<ProtectedRoute><SubscriptionCancelled /></ProtectedRoute>} />
                   <Route path="/upgrade" element={<ProtectedRoute><UpgradeRequired /></ProtectedRoute>} />

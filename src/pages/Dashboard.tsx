@@ -40,6 +40,7 @@ import InactiveClientsCard from "@/components/dashboard/InactiveClientsCard";
 import NoShowMetricsCard from "@/components/dashboard/NoShowMetricsCard";
 import WinbackMetricsCard from "@/components/dashboard/WinbackMetricsCard";
 import LockedFeatureOverlay from "@/components/dashboard/LockedFeatureOverlay";
+import MetaPaymentBanner from "@/components/dashboard/MetaPaymentBanner";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -236,6 +237,9 @@ const Dashboard = () => {
     <div className="flex-1 p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
       {/* ─── Trial Banner ─── */}
       <TrialBanner />
+
+      {/* ─── Meta Payment Method Banner (Model A reminder) ─── */}
+      <MetaPaymentBanner />
 
       {/* ─── WhatsApp Connection Banner ─── */}
       {whatsappStatus !== "connected" && ownerId === user?.id && (
