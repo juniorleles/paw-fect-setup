@@ -3414,18 +3414,29 @@ Deno.serve(async (req) => {
     const serviceClient = getServiceClient();
     const cleanPhone = cleanPhoneNumber(senderPhone);
 
-    // Load pet shop config — Meta Cloud API only (instance_name format: "meta_{wabaId}")
+    // Load pet shop config — supports both Meta ("meta_{wabaId}") and Gupshup ("gupshup_{appName}")
     let config: any = null;
     let configErr: any = null;
 
-    const wabaId = instanceName.replace("meta_", "");
-    const result = await serviceClient
-      .from("pet_shop_configs")
-      .select("*")
-      .eq("meta_waba_id", wabaId)
-      .maybeSingle();
-    config = result.data;
-    configErr = result.error;
+    if (instanceName.startsWith("gupshup_")) {
+      const appName = instanceName.replace("gupshup_", "");
+      const result = await serviceClient
+        .from("pet_shop_configs")
+        .select("*")
+        .eq("gupshup_app_name", appName)
+        .maybeSingle();
+      config = result.data;
+      configErr = result.error;
+    } else {
+      const wabaId = instanceName.replace("meta_", "");
+      const result = await serviceClient
+        .from("pet_shop_configs")
+        .select("*")
+        .eq("meta_waba_id", wabaId)
+        .maybeSingle();
+      config = result.data;
+      configErr = result.error;
+    }
 
     if (configErr || !config) {
       console.error("Config not found for instance:", instanceName);
@@ -3437,15 +3448,24 @@ Deno.serve(async (req) => {
 
     const shopConfig = config as PetShopConfig;
 
-    // Set Meta config for sendWhatsAppMessage
-    if (shopConfig.meta_access_token && shopConfig.meta_phone_number_id) {
+    // Reset provider configs
+    _currentMetaConfig = null;
+    _currentGupshupConfig = null;
+
+    // Set provider config based on whatsapp_provider
+    if ((shopConfig as any).whatsapp_provider === "gupshup" && (shopConfig as any).gupshup_app_name) {
+      _currentGupshupConfig = {
+        userId: shopConfig.user_id,
+        appName: (shopConfig as any).gupshup_app_name,
+        phoneNumber: (shopConfig as any).gupshup_phone_number || "",
+      };
+      console.log(`[GUPSHUP] Using Gupshup for sending (app: ${_currentGupshupConfig.appName})`);
+    } else if (shopConfig.meta_access_token && shopConfig.meta_phone_number_id) {
       _currentMetaConfig = {
         accessToken: shopConfig.meta_access_token,
         phoneNumberId: shopConfig.meta_phone_number_id,
       };
       console.log(`[META] Using Meta Cloud API for sending (WABA: ${shopConfig.meta_waba_id})`);
-    } else {
-      _currentMetaConfig = null;
     }
 
     // --- TRIAL / SUBSCRIPTION ENFORCEMENT (quota-based) ---
