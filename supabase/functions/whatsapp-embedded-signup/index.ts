@@ -150,9 +150,12 @@ Deno.serve(async (req) => {
       );
     }
 
+    const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
+    const systemUserId = Deno.env.get("META_SYSTEM_USER_ID");
+    const extendedCreditId = Deno.env.get("META_EXTENDED_CREDIT_ID");
+
     // Step 3: Register the phone number for the webhook (subscribe to messages)
     if (phoneNumberId) {
-      const systemToken = Deno.env.get("META_SYSTEM_USER_TOKEN")!;
       const subscribeUrl = `https://graph.facebook.com/v21.0/${wabaId}/subscribed_apps`;
       const subscribeRes = await fetch(subscribeUrl, {
         method: "POST",
@@ -163,6 +166,45 @@ Deno.serve(async (req) => {
       });
       const subscribeData = await subscribeRes.json();
       console.log("[EMBEDDED-SIGNUP] Subscribe result:", JSON.stringify(subscribeData));
+    }
+
+    // Step 3b (Model B): Assign system user to WABA + attach MagicZap credit line
+    // Only runs when both META_SYSTEM_USER_ID and META_EXTENDED_CREDIT_ID are configured.
+    // Failures here do NOT block the connection — client stays in Model A fallback.
+    let creditAttached = false;
+    if (systemUserId && extendedCreditId && wabaId) {
+      try {
+        // 3b.1 — Assign the System User as MANAGE on the client's WABA
+        const assignUrl = `https://graph.facebook.com/v21.0/${wabaId}/assigned_users?user=${systemUserId}&tasks=["MANAGE"]&access_token=${systemToken}`;
+        const assignRes = await fetch(assignUrl, { method: "POST" });
+        const assignData = await assignRes.json();
+        console.log("[EMBEDDED-SIGNUP] Assign system user result:", JSON.stringify(assignData));
+
+        // 3b.2 — Attach MagicZap's Extended Credit Line as the payer for this WABA
+        const attachUrl = `https://graph.facebook.com/v21.0/${extendedCreditId}/whatsapp_credit_sharing_and_attach`;
+        const attachRes = await fetch(attachUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${systemToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ waba_id: wabaId, waba_currency: "USD" }),
+        });
+        const attachData = await attachRes.json();
+        console.log("[EMBEDDED-SIGNUP] Credit attach result:", JSON.stringify(attachData));
+
+        // Meta returns { allocation_config_id: "..." } on success
+        if (attachData.allocation_config_id || attachData.success === true) {
+          creditAttached = true;
+          console.log(`[EMBEDDED-SIGNUP] ✅ Model B active for WABA ${wabaId} (MagicZap pays)`);
+        } else {
+          console.warn(`[EMBEDDED-SIGNUP] ⚠️ Credit attach failed, falling back to Model A. Response:`, JSON.stringify(attachData));
+        }
+      } catch (creditErr) {
+        console.error("[EMBEDDED-SIGNUP] Credit attach error (non-blocking):", creditErr);
+      }
+    } else {
+      console.log("[EMBEDDED-SIGNUP] Model B skipped (missing META_SYSTEM_USER_ID or META_EXTENDED_CREDIT_ID). Running in Model A.");
     }
 
     // Step 4: Exchange short-lived token for a long-lived token (60 days)
@@ -194,6 +236,8 @@ Deno.serve(async (req) => {
         meta_phone_number_id: phoneNumberId,
         meta_access_token: finalToken,
         whatsapp_status: phoneNumberId ? "connected" : "pending",
+        meta_credit_attached: creditAttached,
+        meta_credit_attached_at: creditAttached ? new Date().toISOString() : null,
       })
       .eq("user_id", userId);
 
@@ -205,7 +249,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[EMBEDDED-SIGNUP] Saved: WABA=${wabaId}, Phone=${phoneNumberId} for user ${userId}`);
+    console.log(`[EMBEDDED-SIGNUP] Saved: WABA=${wabaId}, Phone=${phoneNumberId}, CreditAttached=${creditAttached} for user ${userId}`);
 
     return new Response(
       JSON.stringify({
@@ -213,6 +257,8 @@ Deno.serve(async (req) => {
         waba_id: wabaId,
         phone_number_id: phoneNumberId,
         status: phoneNumberId ? "connected" : "pending",
+        credit_attached: creditAttached,
+        billing_model: creditAttached ? "B" : "A",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
