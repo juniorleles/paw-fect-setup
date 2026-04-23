@@ -238,6 +238,9 @@ const Dashboard = () => {
       {/* ─── Trial Banner ─── */}
       <TrialBanner />
 
+      {/* ─── Meta Payment Method Banner (Model A reminder) ─── */}
+      <MetaPaymentBanner />
+
       {/* ─── WhatsApp Connection Banner ─── */}
       {whatsappStatus !== "connected" && ownerId === user?.id && (
         <Card className="border-none shadow-lg bg-gradient-to-r from-primary/15 via-primary/5 to-transparent overflow-hidden">
