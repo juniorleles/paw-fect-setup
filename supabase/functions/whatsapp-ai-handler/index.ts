@@ -3456,7 +3456,7 @@ Deno.serve(async (req) => {
     const serviceClient = getServiceClient();
     const cleanPhone = cleanPhoneNumber(senderPhone);
 
-    // Load pet shop config — supports both Meta ("meta_{wabaId}") and Gupshup ("gupshup_{appName}")
+    // Load pet shop config — supports Evolution (default), Meta ("meta_*") and Gupshup ("gupshup_*")
     let config: any = null;
     let configErr: any = null;
 
@@ -3469,12 +3469,21 @@ Deno.serve(async (req) => {
         .maybeSingle();
       config = result.data;
       configErr = result.error;
-    } else {
+    } else if (instanceName.startsWith("meta_")) {
       const wabaId = instanceName.replace("meta_", "");
       const result = await serviceClient
         .from("pet_shop_configs")
         .select("*")
         .eq("meta_waba_id", wabaId)
+        .maybeSingle();
+      config = result.data;
+      configErr = result.error;
+    } else {
+      // Evolution instance — direct lookup by instance name
+      const result = await serviceClient
+        .from("pet_shop_configs")
+        .select("*")
+        .eq("evolution_instance_name", instanceName)
         .maybeSingle();
       config = result.data;
       configErr = result.error;
@@ -3493,9 +3502,15 @@ Deno.serve(async (req) => {
     // Reset provider configs
     _currentMetaConfig = null;
     _currentGupshupConfig = null;
+    _currentEvolutionConfig = null;
 
-    // Set provider config based on whatsapp_provider
-    if ((shopConfig as any).whatsapp_provider === "gupshup" && (shopConfig as any).gupshup_app_name) {
+    // Set provider config priority: Evolution (current default) > Gupshup > Meta (legacy)
+    if ((shopConfig as any).evolution_instance_name && !instanceName.startsWith("meta_") && !instanceName.startsWith("gupshup_")) {
+      _currentEvolutionConfig = {
+        instanceName: (shopConfig as any).evolution_instance_name,
+      };
+      console.log(`[EVOLUTION] Using Evolution API for sending (instance: ${_currentEvolutionConfig.instanceName})`);
+    } else if ((shopConfig as any).whatsapp_provider === "gupshup" && (shopConfig as any).gupshup_app_name) {
       _currentGupshupConfig = {
         userId: shopConfig.user_id,
         appName: (shopConfig as any).gupshup_app_name,
