@@ -101,7 +101,7 @@ const WhatsAppStatusBadge = () => {
           },
           {
             config_id: META_CONFIG_ID,
-            response_type: "token",
+            response_type: "code",
             override_default_response_type: true,
             extras: {
               setup: {},
