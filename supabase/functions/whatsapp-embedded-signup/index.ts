@@ -74,6 +74,21 @@ Deno.serve(async (req) => {
         const res = await fetch(url);
         results.wabas = await res.json();
       }
+
+      // Inspect a specific WABA directly: phone numbers + ownership info
+      if (body.wabaId) {
+        const infoUrl = `https://graph.facebook.com/v21.0/${body.wabaId}?fields=id,name,currency,timezone_id,message_template_namespace,owner_business_info,on_behalf_of_business_info,account_review_status&access_token=${systemToken}`;
+        const infoRes = await fetch(infoUrl);
+        results.wabaInfo = await infoRes.json();
+
+        const phUrl = `https://graph.facebook.com/v21.0/${body.wabaId}/phone_numbers?access_token=${systemToken}`;
+        const phRes = await fetch(phUrl);
+        results.wabaPhones = await phRes.json();
+
+        const subUrl = `https://graph.facebook.com/v21.0/${body.wabaId}/subscribed_apps?access_token=${systemToken}`;
+        const subRes = await fetch(subUrl);
+        results.wabaSubs = await subRes.json();
+      }
       
       // List WABAs shared with app
       const appId = "1335266151850577";
