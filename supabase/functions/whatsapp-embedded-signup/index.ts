@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { accessToken, action, wabaId: manualWabaId } = body;
+    let { accessToken, action, wabaId: manualWabaId, code } = body;
 
     // Extract authenticated user ID from JWT (ignore client-sent userId)
     let authenticatedUserId: string | null = null;
@@ -109,19 +109,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    // For the main signup flow, require JWT user and accessToken
+    // For the main signup flow, require JWT user and accessToken (or code)
     const userId = authenticatedUserId;
-    if (!accessToken || !userId) {
+    if ((!accessToken && !code) || !userId) {
       return new Response(
-        JSON.stringify({ error: "Missing 'accessToken' or authenticated user" }),
+        JSON.stringify({ error: "Missing 'accessToken' or 'code' or authenticated user" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[EMBEDDED-SIGNUP] Processing token for authenticated userId: ${userId}`);
+    console.log(`[EMBEDDED-SIGNUP] Processing for authenticated userId: ${userId} (mode: ${code ? 'code' : 'token'})`);
 
     const appId = Deno.env.get("META_APP_ID") || "1335266151850577";
     const appSecret = Deno.env.get("META_APP_SECRET")!;
+
+    // If we received a code (Embedded Signup with response_type=code), exchange it for an access token
+    if (code && !accessToken) {
+      const exchangeUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}`;
+      const exchangeRes = await fetch(exchangeUrl);
+      const exchangeData = await exchangeRes.json();
+      if (!exchangeData.access_token) {
+        console.error("[EMBEDDED-SIGNUP] Code-for-token exchange failed:", JSON.stringify(exchangeData));
+        return new Response(
+          JSON.stringify({ error: "Failed to exchange code for access token", details: exchangeData }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      accessToken = exchangeData.access_token;
+      console.log(`[EMBEDDED-SIGNUP] Code exchanged for access token successfully`);
+    }
 
     // Step 1: Get WABA info using debug_token endpoint
     const wabaUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${accessToken}&access_token=${appId}|${appSecret}`;

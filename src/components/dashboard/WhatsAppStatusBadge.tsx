@@ -7,8 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
 const META_APP_ID = "1335266151850577";
-// MagicZap WhatsApp Embed v2 — variação "WhatsApp Embedded Signup" (criada 2026-04-24)
-const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "989487280213573";
+// MagicZap WhatsApp Embed v3 — variação "Cadastro incorporado do WhatsApp" (criada 2026-04-24)
+const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "26825466373816190";
 
 const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; textClass: string }> = {
   connected: {
@@ -63,7 +63,10 @@ const WhatsAppStatusBadge = () => {
         (window as any).FB.login(
           (response: any) => {
             console.log("[META-CONNECT] FB.login response:", JSON.stringify(response));
-            if (response.authResponse?.accessToken) {
+            // With response_type=code, Meta returns response.authResponse.code (not accessToken)
+            const code = response.authResponse?.code;
+            const accessToken = response.authResponse?.accessToken;
+            if (code || accessToken) {
               toast({
                 title: "Processando conexão...",
                 description: "Configurando sua conta WhatsApp Business.",
@@ -71,7 +74,7 @@ const WhatsAppStatusBadge = () => {
               supabase.functions
                 .invoke("whatsapp-embedded-signup", {
                   method: "POST",
-                  body: { accessToken: response.authResponse.accessToken, userId: user.id },
+                  body: { code, accessToken, userId: user.id },
                 })
                 .then(({ data, error }) => {
                   console.log("[META-CONNECT] Embedded signup result:", { data, error });
@@ -101,7 +104,7 @@ const WhatsAppStatusBadge = () => {
           },
           {
             config_id: META_CONFIG_ID,
-            response_type: "token",
+            response_type: "code",
             override_default_response_type: true,
             extras: {
               setup: {},
