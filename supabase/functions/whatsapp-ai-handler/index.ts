@@ -1746,9 +1746,22 @@ function calculateInterChunkDelay(text: string): number {
   return 1500 + Math.random() * 1000;
 }
 
-async function sendComposingPresence(_instanceName: string, _phone: string): Promise<void> {
-  // Meta Cloud API does not support composing presence — no-op
-  return;
+async function sendComposingPresence(instanceName: string, phone: string): Promise<void> {
+  // Evolution API supports presence (typing indicator). Meta Cloud and Gupshup don't.
+  if (!_currentEvolutionConfig) return;
+  try {
+    const evolutionUrl = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
+    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "";
+    if (!evolutionUrl || !evolutionKey) return;
+    const cleanPhone = phone.replace("@s.whatsapp.net", "");
+    await fetch(`${evolutionUrl}/chat/sendPresence/${instanceName}`, {
+      method: "POST",
+      headers: { apikey: evolutionKey.trim(), "Content-Type": "application/json" },
+      body: JSON.stringify({ number: cleanPhone, presence: "composing", delay: 1200 }),
+    });
+  } catch {
+    // non-fatal
+  }
 }
 
 function sleep(ms: number): Promise<void> {
