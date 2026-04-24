@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { accessToken, action, wabaId: manualWabaId } = body;
+    let { accessToken, action, wabaId: manualWabaId, code } = body;
 
     // Extract authenticated user ID from JWT (ignore client-sent userId)
     let authenticatedUserId: string | null = null;
