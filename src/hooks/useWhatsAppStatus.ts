@@ -68,5 +68,5 @@ export const useWhatsAppStatus = () => {
     };
   }, [user]);
 
-  return { status, provider: "meta" as const };
+  return { status, provider: "evolution" as const };
 };

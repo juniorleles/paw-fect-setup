@@ -1746,9 +1746,22 @@ function calculateInterChunkDelay(text: string): number {
   return 1500 + Math.random() * 1000;
 }
 
-async function sendComposingPresence(_instanceName: string, _phone: string): Promise<void> {
-  // Meta Cloud API does not support composing presence — no-op
-  return;
+async function sendComposingPresence(instanceName: string, phone: string): Promise<void> {
+  // Evolution API supports presence (typing indicator). Meta Cloud and Gupshup don't.
+  if (!_currentEvolutionConfig) return;
+  try {
+    const evolutionUrl = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
+    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "";
+    if (!evolutionUrl || !evolutionKey) return;
+    const cleanPhone = phone.replace("@s.whatsapp.net", "");
+    await fetch(`${evolutionUrl}/chat/sendPresence/${instanceName}`, {
+      method: "POST",
+      headers: { apikey: evolutionKey.trim(), "Content-Type": "application/json" },
+      body: JSON.stringify({ number: cleanPhone, presence: "composing", delay: 1200 }),
+    });
+  } catch {
+    // non-fatal
+  }
 }
 
 function sleep(ms: number): Promise<void> {
@@ -1816,9 +1829,38 @@ function splitMessageNaturally(text: string): string[] {
 // Global variable to hold provider config for the current request (set during config lookup)
 let _currentMetaConfig: { accessToken: string; phoneNumberId: string } | null = null;
 let _currentGupshupConfig: { userId: string; appName: string; phoneNumber: string } | null = null;
+let _currentEvolutionConfig: { instanceName: string } | null = null;
 
 async function sendWhatsAppMessageRaw(phone: string, text: string) {
   const cleanPhone = phone.replace("@s.whatsapp.net", "");
+
+  // --- EVOLUTION branch (priority — used by all plans now) ---
+  if (_currentEvolutionConfig) {
+    const evolutionUrl = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
+    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "";
+    if (!evolutionUrl || !evolutionKey) {
+      console.error("[EVO-SEND] Evolution API env vars missing");
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${evolutionUrl}/message/sendText/${_currentEvolutionConfig.instanceName}`,
+        {
+          method: "POST",
+          headers: { apikey: evolutionKey.trim(), "Content-Type": "application/json" },
+          body: JSON.stringify({ number: cleanPhone, text }),
+        }
+      );
+      const body = await res.text();
+      console.log(`[EVO-SEND] Response: ${res.status} ${body.substring(0, 200)}`);
+      if (!res.ok) {
+        console.error(`[EVO-SEND] Failed: ${res.status} ${body}`);
+      }
+    } catch (e) {
+      console.error("[EVO-SEND] Exception:", e);
+    }
+    return;
+  }
 
   // --- GUPSHUP branch ---
   if (_currentGupshupConfig) {
@@ -1848,9 +1890,9 @@ async function sendWhatsAppMessageRaw(phone: string, text: string) {
     return;
   }
 
-  // --- META branch (default/fallback) ---
+  // --- META branch (legacy fallback) ---
   if (!_currentMetaConfig) {
-    console.error(`[SEND] No provider config available (Meta nor Gupshup)`);
+    console.error(`[SEND] No provider config available`);
     return;
   }
 
@@ -3414,7 +3456,7 @@ Deno.serve(async (req) => {
     const serviceClient = getServiceClient();
     const cleanPhone = cleanPhoneNumber(senderPhone);
 
-    // Load pet shop config — supports both Meta ("meta_{wabaId}") and Gupshup ("gupshup_{appName}")
+    // Load pet shop config — supports Evolution (default), Meta ("meta_*") and Gupshup ("gupshup_*")
     let config: any = null;
     let configErr: any = null;
 
@@ -3427,12 +3469,21 @@ Deno.serve(async (req) => {
         .maybeSingle();
       config = result.data;
       configErr = result.error;
-    } else {
+    } else if (instanceName.startsWith("meta_")) {
       const wabaId = instanceName.replace("meta_", "");
       const result = await serviceClient
         .from("pet_shop_configs")
         .select("*")
         .eq("meta_waba_id", wabaId)
+        .maybeSingle();
+      config = result.data;
+      configErr = result.error;
+    } else {
+      // Evolution instance — direct lookup by instance name
+      const result = await serviceClient
+        .from("pet_shop_configs")
+        .select("*")
+        .eq("evolution_instance_name", instanceName)
         .maybeSingle();
       config = result.data;
       configErr = result.error;
@@ -3451,9 +3502,15 @@ Deno.serve(async (req) => {
     // Reset provider configs
     _currentMetaConfig = null;
     _currentGupshupConfig = null;
+    _currentEvolutionConfig = null;
 
-    // Set provider config based on whatsapp_provider
-    if ((shopConfig as any).whatsapp_provider === "gupshup" && (shopConfig as any).gupshup_app_name) {
+    // Set provider config priority: Evolution (current default) > Gupshup > Meta (legacy)
+    if ((shopConfig as any).evolution_instance_name && !instanceName.startsWith("meta_") && !instanceName.startsWith("gupshup_")) {
+      _currentEvolutionConfig = {
+        instanceName: (shopConfig as any).evolution_instance_name,
+      };
+      console.log(`[EVOLUTION] Using Evolution API for sending (instance: ${_currentEvolutionConfig.instanceName})`);
+    } else if ((shopConfig as any).whatsapp_provider === "gupshup" && (shopConfig as any).gupshup_app_name) {
       _currentGupshupConfig = {
         userId: shopConfig.user_id,
         appName: (shopConfig as any).gupshup_app_name,

@@ -6,6 +6,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Build a stable, safe instance name from the user's UUID
+function buildInstanceName(userId: string): string {
+  return `magiczap_${userId.replace(/-/g, "").substring(0, 16)}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -47,12 +52,46 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Handle disconnect — clear Meta fields
+    const evolutionUrl = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
+    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "";
+
+    if (!evolutionUrl || !evolutionKey) {
+      return new Response(JSON.stringify({ error: "Evolution API não configurada" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const evoHeaders = {
+      apikey: evolutionKey.trim(),
+      "Content-Type": "application/json",
+    };
+
+    // Get current config to know the instance name (if any)
+    const { data: existingConfig } = await serviceClient
+      .from("pet_shop_configs")
+      .select("evolution_instance_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const instanceName = existingConfig?.evolution_instance_name || buildInstanceName(user.id);
+
+    // --- DISCONNECT: logout instance and clear DB fields ---
     if (isDisconnect) {
+      try {
+        await fetch(`${evolutionUrl}/instance/logout/${instanceName}`, {
+          method: "DELETE",
+          headers: evoHeaders,
+        });
+      } catch (e) {
+        console.warn("[DISCONNECT] Evolution logout error (non-fatal):", e);
+      }
+
       await serviceClient
         .from("pet_shop_configs")
         .update({
           whatsapp_status: "disconnected",
+          // Clear Meta fields too (legacy)
           meta_waba_id: null,
           meta_phone_number_id: null,
           meta_access_token: null,
@@ -103,14 +142,130 @@ Deno.serve(async (req) => {
       });
     }
 
-    // For Meta Cloud API, the connection is done via Embedded Signup on the frontend.
-    // This endpoint now just validates the subscription and returns success,
-    // signaling the frontend to launch the Meta Embedded Signup flow.
+    // --- CREATE OR REUSE EVOLUTION INSTANCE + GET QR CODE ---
+    const webhookUrl = `${supabaseUrl}/functions/v1/evolution-webhook`;
+
+    // 1. Check if instance already exists
+    const stateRes = await fetch(`${evolutionUrl}/instance/connectionState/${instanceName}`, {
+      method: "GET",
+      headers: evoHeaders,
+    });
+
+    let needsCreate = false;
+    if (stateRes.status === 404) {
+      needsCreate = true;
+    } else if (stateRes.ok) {
+      const stateData = await stateRes.json();
+      const evoState = stateData?.instance?.state || stateData?.state || "unknown";
+      // If already connected, just sync status and return
+      if (evoState === "open" || evoState === "connected") {
+        await serviceClient
+          .from("pet_shop_configs")
+          .update({
+            whatsapp_status: "connected",
+            evolution_instance_name: instanceName,
+          })
+          .eq("user_id", user.id);
+        return new Response(
+          JSON.stringify({ success: true, status: "connected", instance: instanceName }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // 2. Create instance if needed (Evolution API v2 syntax)
+    if (needsCreate) {
+      const createRes = await fetch(`${evolutionUrl}/instance/create`, {
+        method: "POST",
+        headers: evoHeaders,
+        body: JSON.stringify({
+          instanceName,
+          qrcode: true,
+          integration: "WHATSAPP-BAILEYS",
+          webhook: {
+            url: webhookUrl,
+            byEvents: false,
+            base64: false,
+            events: [
+              "QRCODE_UPDATED",
+              "CONNECTION_UPDATE",
+              "MESSAGES_UPSERT",
+            ],
+          },
+        }),
+      });
+
+      if (!createRes.ok) {
+        const errBody = await createRes.text();
+        console.error("[CREATE] Evolution error:", createRes.status, errBody);
+        return new Response(
+          JSON.stringify({ error: "Erro ao criar instância", details: errBody }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const createData = await createRes.json();
+      const qrFromCreate = createData?.qrcode?.base64 || createData?.qrcode?.code || createData?.base64;
+
+      // Persist instance name + pending status
+      await serviceClient
+        .from("pet_shop_configs")
+        .update({
+          whatsapp_status: "pending",
+          evolution_instance_name: instanceName,
+        })
+        .eq("user_id", user.id);
+
+      if (qrFromCreate) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            status: "pending",
+            instance: instanceName,
+            qrcode: qrFromCreate,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // 3. Fetch QR code (instance exists but not connected)
+    const qrRes = await fetch(`${evolutionUrl}/instance/connect/${instanceName}`, {
+      method: "GET",
+      headers: evoHeaders,
+    });
+
+    if (!qrRes.ok) {
+      const errBody = await qrRes.text();
+      console.error("[QR] Evolution error:", qrRes.status, errBody);
+      return new Response(
+        JSON.stringify({ error: "Erro ao obter QR Code", details: errBody }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const qrData = await qrRes.json();
+    const qrcode = qrData?.base64 || qrData?.qrcode?.base64 || qrData?.code;
+
+    await serviceClient
+      .from("pet_shop_configs")
+      .update({
+        whatsapp_status: "pending",
+        evolution_instance_name: instanceName,
+      })
+      .eq("user_id", user.id);
+
     return new Response(
-      JSON.stringify({ success: true, provider: "meta", action: "launch_embedded_signup" }),
+      JSON.stringify({
+        success: true,
+        status: "pending",
+        instance: instanceName,
+        qrcode,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("[reconnect-whatsapp] Error:", err);
     return new Response(JSON.stringify({ error: "Erro interno", details: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

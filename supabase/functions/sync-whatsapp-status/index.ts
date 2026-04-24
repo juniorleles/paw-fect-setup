@@ -43,59 +43,83 @@ Deno.serve(async (req) => {
     // Get user's config
     const { data: config } = await serviceClient
       .from("pet_shop_configs")
-      .select("whatsapp_status, meta_waba_id, meta_phone_number_id, meta_access_token")
+      .select("whatsapp_status, evolution_instance_name")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!config) {
-      return new Response(JSON.stringify({ status: "disconnected", synced: false, provider: "meta" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!config || !config.evolution_instance_name) {
+      return new Response(
+        JSON.stringify({ status: "disconnected", synced: false, provider: "evolution" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Validate Meta token by calling Meta API
-    if (config.meta_waba_id && config.meta_access_token && config.meta_phone_number_id) {
-      let metaStatus = "connected";
+    const evolutionUrl = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
+    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "";
 
-      try {
-        const metaRes = await fetch(
-          `https://graph.facebook.com/v21.0/${config.meta_phone_number_id}?fields=verified_name,quality_rating`,
-          {
-            headers: { Authorization: `Bearer ${config.meta_access_token}` },
-          }
-        );
+    if (!evolutionUrl || !evolutionKey) {
+      return new Response(
+        JSON.stringify({ status: config.whatsapp_status || "disconnected", synced: false, provider: "evolution" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-        if (metaRes.ok) {
-          metaStatus = "connected";
-        } else {
-          const body = await metaRes.text();
-          console.warn(`[SYNC] Meta token validation failed: ${metaRes.status} ${body.substring(0, 200)}`);
-          metaStatus = "disconnected";
+    let mappedStatus: "connected" | "pending" | "disconnected" = "disconnected";
+
+    try {
+      const stateRes = await fetch(
+        `${evolutionUrl}/instance/connectionState/${config.evolution_instance_name}`,
+        {
+          method: "GET",
+          headers: { apikey: evolutionKey.trim(), "Content-Type": "application/json" },
         }
-      } catch (err) {
-        console.warn("[SYNC] Meta API check error:", err);
-        metaStatus = config.whatsapp_status || "connected";
-      }
+      );
 
-      if (metaStatus !== config.whatsapp_status) {
-        await serviceClient
-          .from("pet_shop_configs")
-          .update({ whatsapp_status: metaStatus })
-          .eq("user_id", user.id);
+      if (stateRes.ok) {
+        const stateData = await stateRes.json();
+        const evoState = stateData?.instance?.state || stateData?.state || "unknown";
+        if (evoState === "open" || evoState === "connected") {
+          mappedStatus = "connected";
+        } else if (evoState === "connecting" || evoState === "qrcode") {
+          mappedStatus = "pending";
+        } else {
+          mappedStatus = "disconnected";
+        }
+      } else if (stateRes.status === 401) {
+        // Pre-ban signal — alert admin
+        console.warn(`[SYNC] Pre-ban 401 detected for ${config.evolution_instance_name}`);
+        try {
+          await serviceClient.from("system_alerts").insert({
+            alert_type: "pre_ban",
+            severity: "critical",
+            message: `⚠️ Possível pré-ban detectado: ${config.evolution_instance_name}`,
+            details: { instance: config.evolution_instance_name, user_id: user.id, status: 401 },
+          });
+        } catch { /* ignore */ }
+        mappedStatus = "disconnected";
+      } else {
+        mappedStatus = "disconnected";
       }
-
-      return new Response(JSON.stringify({ status: metaStatus, synced: metaStatus !== config.whatsapp_status, provider: "meta" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    } catch (err) {
+      console.warn("[SYNC] Evolution API check error:", err);
+      mappedStatus = (config.whatsapp_status as any) || "disconnected";
     }
 
-    // No Meta config — user hasn't connected yet
-    return new Response(JSON.stringify({ status: "disconnected", synced: false, provider: "meta" }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (mappedStatus !== config.whatsapp_status) {
+      await serviceClient
+        .from("pet_shop_configs")
+        .update({ whatsapp_status: mappedStatus })
+        .eq("user_id", user.id);
+    }
+
+    return new Response(
+      JSON.stringify({
+        status: mappedStatus,
+        synced: mappedStatus !== config.whatsapp_status,
+        provider: "evolution",
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (err) {
     console.error("Sync error:", err);
     return new Response(JSON.stringify({ error: "Erro interno" }), {

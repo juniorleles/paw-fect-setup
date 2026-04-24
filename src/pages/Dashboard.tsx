@@ -40,7 +40,7 @@ import InactiveClientsCard from "@/components/dashboard/InactiveClientsCard";
 import NoShowMetricsCard from "@/components/dashboard/NoShowMetricsCard";
 import WinbackMetricsCard from "@/components/dashboard/WinbackMetricsCard";
 import LockedFeatureOverlay from "@/components/dashboard/LockedFeatureOverlay";
-import MetaPaymentBanner from "@/components/dashboard/MetaPaymentBanner";
+// MetaPaymentBanner removido — voltamos para Evolution API (QR Code)
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -238,8 +238,7 @@ const Dashboard = () => {
       {/* ─── Trial Banner ─── */}
       <TrialBanner />
 
-      {/* ─── Meta Payment Method Banner (Model A reminder) ─── */}
-      <MetaPaymentBanner />
+      {/* Meta Payment Banner removido — Evolution API não exige cadastro de cartão Meta */}
 
       {/* ─── WhatsApp Connection Banner ─── */}
       {whatsappStatus !== "connected" && ownerId === user?.id && (
