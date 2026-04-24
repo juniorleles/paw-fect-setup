@@ -63,7 +63,10 @@ const WhatsAppStatusBadge = () => {
         (window as any).FB.login(
           (response: any) => {
             console.log("[META-CONNECT] FB.login response:", JSON.stringify(response));
-            if (response.authResponse?.accessToken) {
+            // With response_type=code, Meta returns response.authResponse.code (not accessToken)
+            const code = response.authResponse?.code;
+            const accessToken = response.authResponse?.accessToken;
+            if (code || accessToken) {
               toast({
                 title: "Processando conexão...",
                 description: "Configurando sua conta WhatsApp Business.",
@@ -71,7 +74,7 @@ const WhatsAppStatusBadge = () => {
               supabase.functions
                 .invoke("whatsapp-embedded-signup", {
                   method: "POST",
-                  body: { accessToken: response.authResponse.accessToken, userId: user.id },
+                  body: { code, accessToken, userId: user.id },
                 })
                 .then(({ data, error }) => {
                   console.log("[META-CONNECT] Embedded signup result:", { data, error });
