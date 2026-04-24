@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       }
       
       // List WABAs shared with app
-      const appId = "932970802701874";
+      const appId = "1335266151850577";
       const appSecret = Deno.env.get("META_APP_SECRET")!;
       const appToken = `${appId}|${appSecret}`;
       
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
 
     console.log(`[EMBEDDED-SIGNUP] Processing token for authenticated userId: ${userId}`);
 
-    const appId = Deno.env.get("META_APP_ID") || "932970802701874";
+    const appId = Deno.env.get("META_APP_ID") || "1335266151850577";
     const appSecret = Deno.env.get("META_APP_SECRET")!;
 
     // Step 1: Get WABA info using debug_token endpoint
