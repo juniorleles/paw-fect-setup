@@ -7,8 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
 const META_APP_ID = "1335266151850577";
-// MagicZap WhatsApp Embed v2 — variação "WhatsApp Embedded Signup" (criada 2026-04-24)
-const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "989487280213573";
+// MagicZap WhatsApp Embed v3 — variação "Cadastro incorporado do WhatsApp" (criada 2026-04-24)
+const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "26825466373816190";
 
 const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; textClass: string }> = {
   connected: {
