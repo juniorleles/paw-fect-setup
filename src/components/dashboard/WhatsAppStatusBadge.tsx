@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useWhatsAppStatus, type WhatsAppStatus } from "@/hooks/useWhatsAppStatus";
 import { Button } from "@/components/ui/button";
-import { Smartphone, Loader2, Shield, AlertTriangle } from "lucide-react";
+import { Smartphone, Loader2, QrCode, AlertTriangle, RefreshCw, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-
-const META_APP_ID = "1335266151850577";
-// MagicZap WhatsApp Embed v3 — variação "Cadastro incorporado do WhatsApp" (criada 2026-04-24)
-const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID || "26825466373816190";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const STATUS_CONFIG: Record<WhatsAppStatus, { label: string; dotClass: string; textClass: string }> = {
   connected: {
-    label: "WhatsApp conectado (Meta)",
+    label: "WhatsApp conectado",
     dotClass: "bg-success",
     textClass: "text-success",
   },
@@ -34,10 +37,14 @@ const WhatsAppStatusBadge = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const [metaConnecting, setMetaConnecting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState<boolean | null>(null);
+  const pollRef = useRef<number | null>(null);
 
-  // Check if phone is verified before allowing Meta connect
+  // Check if phone is verified before allowing connect
   useEffect(() => {
     if (!user?.id) return;
     supabase
@@ -53,141 +60,76 @@ const WhatsAppStatusBadge = () => {
         }
       });
   }, [user?.id]);
-  // --- Meta Embedded Signup ---
-  const handleMetaConnect = useCallback(() => {
-    if (!user?.id) return;
-    setMetaConnecting(true);
 
-    const launchLogin = () => {
-      try {
-        (window as any).FB.login(
-          (response: any) => {
-            console.log("[META-CONNECT] FB.login response:", JSON.stringify(response));
-            // With response_type=code, Meta returns response.authResponse.code (not accessToken)
-            const code = response.authResponse?.code;
-            const accessToken = response.authResponse?.accessToken;
-            if (code || accessToken) {
-              toast({
-                title: "Processando conexão...",
-                description: "Configurando sua conta WhatsApp Business.",
-              });
-              supabase.functions
-                .invoke("whatsapp-embedded-signup", {
-                  method: "POST",
-                  body: { code, accessToken, userId: user.id },
-                })
-                .then(({ data, error }) => {
-                  console.log("[META-CONNECT] Embedded signup result:", { data, error });
-                  if (error || data?.error) {
-                    toast({
-                      title: "Erro ao conectar",
-                      description: data?.error || error?.message,
-                      variant: "destructive",
-                    });
-                  } else {
-                    toast({
-                      title: "WhatsApp conectado!",
-                      description: "Conexão oficial da Meta configurada com sucesso.",
-                    });
-                  }
-                })
-                .finally(() => setMetaConnecting(false));
-            } else {
-              console.warn("[META-CONNECT] Login cancelled or failed:", response);
-              toast({
-                title: "Conexão cancelada",
-                description: "O processo de login com o Facebook foi cancelado. Tente novamente.",
-                variant: "destructive",
-              });
-              setMetaConnecting(false);
-            }
-          },
-          {
-            config_id: META_CONFIG_ID,
-            response_type: "code",
-            override_default_response_type: true,
-            extras: {
-              setup: {},
-              featureType: "",
-              sessionInfoVersion: "3",
-            },
-          }
-        );
-      } catch (err) {
-        console.error("[META-CONNECT] FB.login error:", err);
+  // Auto-close modal on connect, poll status while QR is open
+  useEffect(() => {
+    if (status === "connected" && qrOpen) {
+      toast({ title: "WhatsApp conectado!", description: "Sua secretária digital está ativa." });
+      setQrOpen(false);
+      setQrCode(null);
+    }
+  }, [status, qrOpen, toast]);
+
+  // Poll for new QR every 25s while modal is open (Evolution rotates QR ~30s)
+  useEffect(() => {
+    if (!qrOpen) {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      return;
+    }
+    pollRef.current = window.setInterval(() => {
+      requestQrCode(true);
+    }, 25_000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrOpen]);
+
+  const requestQrCode = useCallback(async (silent = false) => {
+    if (!silent) setConnecting(true);
+    else setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reconnect-whatsapp", {
+        method: "POST",
+        body: {},
+      });
+      if (error || data?.error) {
         toast({
-          title: "Erro ao abrir login",
-          description: "Não foi possível abrir o popup do Facebook. Verifique se popups estão habilitados no seu navegador.",
+          title: "Erro ao conectar",
+          description: data?.error || error?.message || "Tente novamente.",
           variant: "destructive",
         });
-        setMetaConnecting(false);
+        if (!silent) setQrOpen(false);
+        return;
       }
-    };
-
-    if ((window as any).FB) {
-      launchLogin();
-    } else {
-      console.warn("[META-CONNECT] FB SDK not loaded, loading dynamically...");
-      const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
-      if (existingScript) {
-        // SDK script exists but not initialized yet - wait a bit
-        const waitForFB = setInterval(() => {
-          if ((window as any).FB) {
-            clearInterval(waitForFB);
-            launchLogin();
-          }
-        }, 200);
-        setTimeout(() => {
-          clearInterval(waitForFB);
-          if (!(window as any).FB) {
-            toast({
-              title: "Facebook SDK não carregou",
-              description: "Recarregue a página e tente novamente. Se o problema persistir, desative bloqueadores de anúncios.",
-              variant: "destructive",
-            });
-            setMetaConnecting(false);
-          }
-        }, 5000);
-      } else {
-        (window as any).fbAsyncInit = () => {
-          (window as any).FB.init({
-            appId: META_APP_ID,
-            autoLogAppEvents: true,
-            xfbml: true,
-            version: "v21.0",
-          });
-          launchLogin();
-        };
-        const script = document.createElement("script");
-        script.src = "https://connect.facebook.net/pt_BR/sdk.js";
-        script.async = true;
-        script.defer = true;
-        script.onerror = () => {
-          toast({
-            title: "Erro ao carregar Facebook",
-            description: "Não foi possível carregar o SDK do Facebook. Desative bloqueadores de anúncios e tente novamente.",
-            variant: "destructive",
-          });
-          setMetaConnecting(false);
-        };
-        document.body.appendChild(script);
+      if (data?.status === "connected") {
+        toast({ title: "WhatsApp já estava conectado!" });
+        setQrOpen(false);
+        return;
       }
-    }
-  }, [user, toast]);
-
-  const handleDisconnect = useCallback(async () => {
-    try {
-      const { error } = await supabase.functions.invoke("reconnect-whatsapp", {
-        method: "POST",
-        body: { disconnect: true },
+      if (data?.qrcode) {
+        setQrCode(data.qrcode);
+        if (!silent) setQrOpen(true);
+      }
+    } catch (e: any) {
+      toast({
+        title: "Erro ao conectar",
+        description: e?.message || "Verifique sua conexão.",
+        variant: "destructive",
       });
-      if (!error) {
-        toast({ title: "WhatsApp desconectado", description: "Você pode reconectar a qualquer momento." });
-      }
-    } catch {
-      toast({ title: "Erro ao desconectar", variant: "destructive" });
+    } finally {
+      setConnecting(false);
+      setRefreshing(false);
     }
   }, [toast]);
+
+  // Normalize QR (Evolution may return raw base64 or data URL)
+  const qrImageSrc = qrCode
+    ? qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`
+    : null;
 
   return (
     <div className="flex items-center gap-2">
@@ -206,19 +148,80 @@ const WhatsAppStatusBadge = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleMetaConnect}
-            disabled={metaConnecting || phoneVerified === null}
+            onClick={() => requestQrCode(false)}
+            disabled={connecting || phoneVerified === null}
             className="gap-1.5 text-xs"
           >
-            {metaConnecting ? (
+            {connecting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Shield className="w-3.5 h-3.5" />
+              <QrCode className="w-3.5 h-3.5" />
             )}
-            Conectar com Meta
+            Conectar via QR Code
           </Button>
         )
       )}
+
+      <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              Conectar WhatsApp
+            </DialogTitle>
+            <DialogDescription>
+              Abra o WhatsApp no seu celular e escaneie o código abaixo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="text-xs text-muted-foreground space-y-1 bg-secondary/50 rounded-md p-3">
+              <p className="font-semibold text-foreground">Como escanear:</p>
+              <p>1. Abra o WhatsApp no seu celular</p>
+              <p>2. Toque em <strong>Menu (⋮)</strong> → <strong>Aparelhos conectados</strong></p>
+              <p>3. Toque em <strong>Conectar um aparelho</strong></p>
+              <p>4. Aponte a câmera para este código</p>
+            </div>
+
+            <div className="flex items-center justify-center bg-white rounded-lg p-4 border">
+              {qrImageSrc ? (
+                <img
+                  src={qrImageSrc}
+                  alt="QR Code do WhatsApp"
+                  className="w-64 h-64 object-contain"
+                />
+              ) : (
+                <div className="w-64 h-64 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
+              <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Recomendações de segurança:</p>
+                <p>Use um número limpo, com pelo menos 6 meses de uso pessoal. Evite envio em massa para contatos que não salvaram seu número.</p>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => requestQrCode(true)}
+              disabled={refreshing}
+              className="w-full gap-1.5"
+            >
+              {refreshing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              Atualizar QR Code
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
