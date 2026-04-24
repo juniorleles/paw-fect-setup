@@ -130,31 +130,60 @@ Deno.serve(async (req) => {
 
     console.log("[EMBEDDED-SIGNUP] Debug token data:", JSON.stringify(wabaData).substring(0, 500));
 
-    // Extract WABA ID from the granular scopes
-    let wabaId: string | null = null;
-    let phoneNumberId: string | null = null;
-
+    // Extract ALL candidate WABA IDs from granular scopes
+    // The user may have multiple WABAs in their Business Manager — we must scan ALL of them
+    // and pick the one that actually has a connected phone number, not just target_ids[0].
+    const candidateWabaIds = new Set<string>();
     const granularScopes = wabaData.data?.granular_scopes || [];
     for (const scope of granularScopes) {
-      if (scope.scope === "whatsapp_business_management" && scope.target_ids?.length > 0) {
-        wabaId = scope.target_ids[0];
-      }
-      if (scope.scope === "whatsapp_business_messaging" && scope.target_ids?.length > 0) {
-        if (!wabaId) wabaId = scope.target_ids[0];
+      if (
+        (scope.scope === "whatsapp_business_management" ||
+          scope.scope === "whatsapp_business_messaging") &&
+        Array.isArray(scope.target_ids)
+      ) {
+        for (const id of scope.target_ids) candidateWabaIds.add(id);
       }
     }
 
-    // Step 2: If we have a WABA ID, get the phone number ID
-    if (wabaId) {
-      const phoneUrl = `https://graph.facebook.com/v21.0/${wabaId}/phone_numbers?access_token=${accessToken}`;
+    console.log(
+      `[EMBEDDED-SIGNUP] Candidate WABAs from token (${candidateWabaIds.size}):`,
+      [...candidateWabaIds].join(", ")
+    );
+
+    // Step 2: Iterate ALL candidate WABAs and pick the first one with a phone number.
+    // This fixes the bug where users with multiple WABAs got the wrong (empty) one selected.
+    let wabaId: string | null = null;
+    let phoneNumberId: string | null = null;
+    let firstWabaWithoutPhone: string | null = null;
+
+    for (const candidate of candidateWabaIds) {
+      const phoneUrl = `https://graph.facebook.com/v21.0/${candidate}/phone_numbers?access_token=${accessToken}`;
       const phoneRes = await fetch(phoneUrl);
       const phoneData = await phoneRes.json();
 
-      console.log("[EMBEDDED-SIGNUP] Phone numbers:", JSON.stringify(phoneData).substring(0, 300));
+      console.log(
+        `[EMBEDDED-SIGNUP] WABA ${candidate} phones:`,
+        JSON.stringify(phoneData).substring(0, 300)
+      );
 
-      if (phoneData.data && phoneData.data.length > 0) {
+      if (phoneData?.data && phoneData.data.length > 0) {
+        wabaId = candidate;
         phoneNumberId = phoneData.data[0].id;
+        console.log(
+          `[EMBEDDED-SIGNUP] ✅ Selected WABA ${wabaId} with phone ${phoneNumberId}`
+        );
+        break;
+      } else if (!firstWabaWithoutPhone) {
+        firstWabaWithoutPhone = candidate;
       }
+    }
+
+    // Fallback: if no WABA had a phone, keep the first candidate so we can still save state
+    if (!wabaId && firstWabaWithoutPhone) {
+      wabaId = firstWabaWithoutPhone;
+      console.warn(
+        `[EMBEDDED-SIGNUP] ⚠️ No WABA had phone numbers. Falling back to ${wabaId} with status=pending`
+      );
     }
 
     if (!wabaId) {
