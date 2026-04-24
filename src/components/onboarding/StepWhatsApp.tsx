@@ -150,22 +150,31 @@ const StepWhatsApp = ({ data, onChange }: Props) => {
             )}
           </Button>
         ) : (
-          <div className="flex items-center justify-between p-4 rounded-xl bg-success/10 border border-success/20">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0" />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-success/10 border border-success/20">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0" />
+                <div>
+                  <p className="font-bold text-success">Número verificado!</p>
+                  <p className="text-sm text-muted-foreground">Você conectará via QR Code no próximo passo</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onChange({ phoneVerified: false })}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Alterar número
+              </Button>
+            </div>
+            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold text-success">Número verificado!</p>
-                <p className="text-sm text-muted-foreground">Seu WhatsApp está pronto para usar</p>
+                <p className="font-semibold">Para evitar bloqueios do WhatsApp:</p>
+                <p>Use um número com pelo menos 6 meses de uso pessoal. Evite envios em massa para contatos que não salvaram seu número. A IA respeita limites e horários comerciais automaticamente.</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onChange({ phoneVerified: false })}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Alterar número
-            </Button>
           </div>
         )}
       </CardContent>
