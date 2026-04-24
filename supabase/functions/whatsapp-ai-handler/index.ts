@@ -1829,9 +1829,38 @@ function splitMessageNaturally(text: string): string[] {
 // Global variable to hold provider config for the current request (set during config lookup)
 let _currentMetaConfig: { accessToken: string; phoneNumberId: string } | null = null;
 let _currentGupshupConfig: { userId: string; appName: string; phoneNumber: string } | null = null;
+let _currentEvolutionConfig: { instanceName: string } | null = null;
 
 async function sendWhatsAppMessageRaw(phone: string, text: string) {
   const cleanPhone = phone.replace("@s.whatsapp.net", "");
+
+  // --- EVOLUTION branch (priority — used by all plans now) ---
+  if (_currentEvolutionConfig) {
+    const evolutionUrl = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/+$/, "");
+    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "";
+    if (!evolutionUrl || !evolutionKey) {
+      console.error("[EVO-SEND] Evolution API env vars missing");
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${evolutionUrl}/message/sendText/${_currentEvolutionConfig.instanceName}`,
+        {
+          method: "POST",
+          headers: { apikey: evolutionKey.trim(), "Content-Type": "application/json" },
+          body: JSON.stringify({ number: cleanPhone, text }),
+        }
+      );
+      const body = await res.text();
+      console.log(`[EVO-SEND] Response: ${res.status} ${body.substring(0, 200)}`);
+      if (!res.ok) {
+        console.error(`[EVO-SEND] Failed: ${res.status} ${body}`);
+      }
+    } catch (e) {
+      console.error("[EVO-SEND] Exception:", e);
+    }
+    return;
+  }
 
   // --- GUPSHUP branch ---
   if (_currentGupshupConfig) {
@@ -1861,9 +1890,9 @@ async function sendWhatsAppMessageRaw(phone: string, text: string) {
     return;
   }
 
-  // --- META branch (default/fallback) ---
+  // --- META branch (legacy fallback) ---
   if (!_currentMetaConfig) {
-    console.error(`[SEND] No provider config available (Meta nor Gupshup)`);
+    console.error(`[SEND] No provider config available`);
     return;
   }
 
